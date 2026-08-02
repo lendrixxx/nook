@@ -56,6 +56,7 @@ export default {
       if (url.pathname === '/auth/start') return handleAuthStart(url, env);
       if (url.pathname === '/auth/callback') return handleAuthCallback(url, env);
       if (url.pathname === '/calendar/events') return handleCalendarEvents(url, env, origin);
+      if (url.pathname === '/calendar/list') return handleCalendarList(url, env, origin);
       if (url.pathname === '/auth/logout') return handleLogout(url, env, origin);
       return json({ error: 'not_found' }, 404, origin);
     } catch (err) {
@@ -177,18 +178,23 @@ async function getFreshAccessToken(sessionId, env) {
 /* ---------------------------------------------------------------------
    /calendar/events — the only "real" API Nook calls day to day.
    Read-only proxy to Google's Calendar API; Nook never sees a Google
-   token of any kind, only its own opaque session id.
+   token of any kind, only its own opaque session id. Accepts an
+   optional calendarId (defaults to "primary") so Nook can pull from
+   any calendar the account has access to, one at a time.
    --------------------------------------------------------------------- */
 async function handleCalendarEvents(url, env, origin) {
   const sessionId = url.searchParams.get('session');
   const timeMin = url.searchParams.get('timeMin');
   const timeMax = url.searchParams.get('timeMax');
+  const calendarId = url.searchParams.get('calendarId') || 'primary';
   if (!sessionId) return json({ error: 'missing_session' }, 401, origin);
 
   const { accessToken, error } = await getFreshAccessToken(sessionId, env);
   if (error) return json({ error }, 401, origin);
 
-  const evUrl = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  const evUrl = new URL(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`
+  );
   if (timeMin) evUrl.searchParams.set('timeMin', timeMin);
   if (timeMax) evUrl.searchParams.set('timeMax', timeMax);
   evUrl.searchParams.set('singleEvents', 'true');
@@ -199,6 +205,32 @@ async function handleCalendarEvents(url, env, origin) {
 
   const data = await evRes.json();
   return json({ items: data.items || [] }, 200, origin);
+}
+
+/* ---------------------------------------------------------------------
+   /calendar/list — returns the account's calendars (id, name, color) so
+   Nook can offer a picker instead of being stuck on just "primary".
+   --------------------------------------------------------------------- */
+async function handleCalendarList(url, env, origin) {
+  const sessionId = url.searchParams.get('session');
+  if (!sessionId) return json({ error: 'missing_session' }, 401, origin);
+
+  const { accessToken, error } = await getFreshAccessToken(sessionId, env);
+  if (error) return json({ error }, 401, origin);
+
+  const listRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!listRes.ok) return json({ error: 'calendar_api_error', status: listRes.status }, 502, origin);
+
+  const data = await listRes.json();
+  const items = (data.items || []).map((c) => ({
+    id: c.id,
+    summary: c.summaryOverride || c.summary,
+    backgroundColor: c.backgroundColor || '#7C9A92',
+    primary: !!c.primary,
+  }));
+  return json({ items }, 200, origin);
 }
 
 /* ---------------------------------------------------------------------
