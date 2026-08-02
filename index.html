@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nook">
+<meta name="theme-color" content="#7C9A92">
+<link rel="manifest" href="manifest.json">
+<title>Nook — a cozy weather companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF3E7;
+    --ink:#4A3F35;
+    --ink-soft:#8A7C6D;
+    --sage:#7C9A92;
+    --sage-dark:#5F7B73;
+    --card:#FFFFFF;
+    --line:#EEE3D3;
+    --radius:26px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Nunito',sans-serif;
+    color:var(--ink);
+    background:var(--cream);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    max-width:480px;
+    margin:0 auto;
+    position:relative;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 10px;
+    z-index:20;
+    position:relative;
+  }
+  .place{ display:flex; flex-direction:column; line-height:1.15; }
+  .place .name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:17px; color:var(--ink); }
+  .place .sub{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+  .iconbtn{
+    width:38px;height:38px; border-radius:50%; border:none;
+    background:rgba(255,255,255,0.6); backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer; color:var(--ink); transition:transform .15s ease;
+  }
+  .iconbtn:active{transform:scale(0.9);}
+  .header-actions{display:flex;gap:8px;}
+
+  /* ---------- Stage (isometric room) ---------- */
+  .stage{
+    position:relative;
+    flex:1;
+    margin:0 14px;
+    border-radius:var(--radius);
+    overflow:hidden;
+    isolation:isolate;
+    box-shadow:0 18px 40px -18px rgba(74,63,53,0.35);
+    background:#CDEAF7;
+  }
+  #skyBg{ position:absolute; inset:0; z-index:0; transition:background 1.4s ease; }
+  #bgScene{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; }
+  #roomSvg{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:2; }
+  #windowFog{
+    position:absolute;
+    border-radius:6px;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,0.85), rgba(255,255,255,0.3) 70%, transparent 100%);
+    opacity:0;
+    transition:opacity 1s ease;
+    pointer-events:none;
+  }
+  #flash{ position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
+  #particles{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  #stageChar{
+    position:absolute;
+    left:50%; top:62%;
+    width:64px;
+    margin-left:-32px;
+    transition:left 3.2s cubic-bezier(.45,0,.55,1), top 3.2s cubic-bezier(.45,0,.55,1);
+    z-index:5;
+  }
+  #stageChar .charShadow{
+    width:40px;height:9px; margin:0 auto;
+    background:rgba(0,0,0,0.2); border-radius:50%; filter:blur(2px);
+  }
+  #stageChar .charInner{ animation:floaty 3.2s ease-in-out infinite; }
+  #stageChar.facing-left .charInner{ animation:floatyFlip 3.2s ease-in-out infinite; }
+  @keyframes floaty{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+  @keyframes floatyFlip{ 0%,100%{transform:scaleX(-1) translateY(0);} 50%{transform:scaleX(-1) translateY(-5px);} }
+  .windy #stageChar .charInner{ animation:floaty 3.2s ease-in-out infinite, windTilt 1.6s ease-in-out infinite; }
+  .windy #stageChar.facing-left .charInner{ animation:floatyFlip 3.2s ease-in-out infinite, windTilt 1.6s ease-in-out infinite; }
+  @keyframes windTilt{ 0%,100%{ rotate:0deg; } 30%{ rotate:-6deg; } 60%{ rotate:3deg; } }
+
+  /* ---------- Bottom info card ---------- */
+  .infocard{
+    margin:14px; background:var(--card); border-radius:22px;
+    padding:18px 20px 14px; box-shadow:0 10px 26px -14px rgba(74,63,53,0.3);
+  }
+  .temp-row{ display:flex; align-items:flex-end; justify-content:space-between; }
+  .temp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:52px; line-height:1; letter-spacing:-1px; }
+  .temp sup{ font-size:22px; font-weight:600; }
+  .condition{ text-align:right; }
+  .condition .cond{ font-weight:800; font-size:15px; text-transform:capitalize; }
+  .condition .feel{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+  .stat-row{ display:flex; gap:18px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .stat{ display:flex; flex-direction:column; gap:2px; }
+  .stat .k{ font-size:10px; letter-spacing:.06em; color:var(--ink-soft); font-weight:700; text-transform:uppercase; }
+  .stat .v{ font-size:13px; font-weight:700; }
+
+  /* ---------- Character switcher ---------- */
+  .switcher{ display:flex; gap:10px; padding:0 14px 14px; overflow-x:auto; scrollbar-width:none; }
+  .switcher::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto; display:flex; align-items:center; gap:8px;
+    padding:7px 14px 7px 7px; border-radius:999px; background:var(--card);
+    border:2px solid transparent; cursor:pointer; font-weight:700; font-size:13px; color:var(--ink);
+  }
+  .chip.active{ border-color:var(--sage); background:#F1F6F2; }
+  .chip .dot{ width:22px;height:22px;border-radius:50%; }
+  .chip.add{ color:var(--sage-dark); background:transparent; border:2px dashed var(--line); }
+
+  /* ---------- Settings sheet ---------- */
+  .sheet-backdrop{
+    position:fixed;inset:0; background:rgba(74,63,53,0.35);
+    opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:40;
+  }
+  .sheet-backdrop.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:fixed; left:0;right:0;bottom:0; max-width:480px;margin:0 auto;
+    background:var(--cream); border-radius:24px 24px 0 0;
+    padding:18px 20px calc(env(safe-area-inset-bottom,0px) + 24px);
+    transform:translateY(100%); transition:transform .3s ease; z-index:41;
+    max-height:82vh; overflow-y:auto;
+  }
+  .sheet.open{ transform:translateY(0); }
+  .sheet h2{ font-family:'Fredoka',sans-serif; font-size:19px; margin:6px 0 14px; }
+  .sheet-handle{ width:36px;height:4px;border-radius:2px; background:var(--line); margin:0 auto 12px; }
+  .field label{
+    display:block; font-size:11px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--ink-soft); margin:12px 0 6px;
+  }
+  .field input, .field select{
+    width:100%; padding:11px 13px; border-radius:12px; border:1.5px solid var(--line);
+    background:#fff; font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; color:var(--ink);
+  }
+  .row2{ display:flex; gap:10px; }
+  .row2 .field{ flex:1; }
+  .colorfield{ display:flex; align-items:center; gap:8px; }
+  .colorfield input[type=color]{ width:44px; height:38px; padding:2px; border-radius:10px; }
+  .btn{
+    margin-top:16px; width:100%; padding:13px; border-radius:14px; border:none;
+    background:var(--sage); color:#fff; font-weight:800; font-size:14px; cursor:pointer;
+  }
+  .btn.secondary{ background:transparent; color:var(--sage-dark); border:2px solid var(--line); margin-top:8px; }
+  .searchresults{ margin-top:8px; }
+  .searchresults div{
+    padding:10px 12px; background:#fff; border-radius:10px; margin-top:6px;
+    font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--line);
+  }
+  .divider{ height:1px; background:var(--line); margin:18px 0; }
+  .hint{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; margin-top:4px; }
+  #statusMsg{ font-size:12px; color:var(--ink-soft); text-align:center; padding:6px 0; }
+
+  /* ---------- Todos ---------- */
+  .todo-row{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 4px; border-bottom:1px solid var(--line);
+  }
+  .todo-row:last-child{ border-bottom:none; }
+  .todo-check{
+    width:24px;height:24px; border-radius:50%; border:2px solid var(--sage);
+    flex:0 0 auto; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    background:#fff; font-size:13px; color:#fff;
+  }
+  .todo-check.checked{ background:var(--sage); }
+  .todo-text{ flex:1; font-size:14px; font-weight:700; line-height:1.3; }
+  .todo-text.done{ text-decoration:line-through; color:var(--ink-soft); font-weight:600; }
+  .todo-date{
+    font-size:10.5px; font-weight:800; color:var(--sage-dark);
+    background:#EAF2ED; padding:3px 8px; border-radius:999px; white-space:nowrap;
+  }
+  .todo-del{
+    width:22px;height:22px; border-radius:50%; border:none; background:transparent;
+    color:var(--ink-soft); font-size:15px; cursor:pointer; flex:0 0 auto;
+  }
+  .todo-empty{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:10px 0; }
+  .hist-toggle{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-soft); cursor:pointer; padding:4px 2px;
+  }
+  .hist-row{ display:flex; align-items:center; gap:10px; padding:8px 4px; opacity:0.75; }
+  .hist-row .todo-text{ text-decoration:line-through; font-weight:600; }
+  .hist-when{ font-size:10px; color:var(--ink-soft); white-space:nowrap; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="place">
+      <span class="name" id="placeName">Locating…</span>
+      <span class="sub" id="placeSub">&nbsp;</span>
+    </div>
+    <div class="header-actions">
+      <button class="iconbtn" id="todoBtn" title="To-dos">✓</button>
+      <button class="iconbtn" id="refreshBtn" title="Refresh">↻</button>
+      <button class="iconbtn" id="settingsBtn" title="Settings">⚙︎</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <div id="skyBg"></div>
+    <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
+    <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
+    <div id="windowFog"></div>
+    <canvas id="particles"></canvas>
+    <div id="stageChar">
+      <div class="charInner"></div>
+      <div class="charShadow"></div>
+    </div>
+    <div id="flash"></div>
+  </div>
+
+  <div class="infocard">
+    <div class="temp-row">
+      <div class="temp" id="tempVal">--<sup>°C</sup></div>
+      <div class="condition">
+        <div class="cond" id="condVal">—</div>
+        <div class="feel" id="feelVal">&nbsp;</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
+      <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
+      <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
+    </div>
+  </div>
+
+  <div class="switcher" id="switcher"></div>
+
+  <div id="statusMsg">&nbsp;</div>
+</div>
+
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <h2>Settings</h2>
+
+  <div class="field">
+    <label>Search a city</label>
+    <input type="text" id="citySearch" placeholder="e.g. Singapore, Kyoto, Lisbon">
+    <div class="searchresults" id="cityResults"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>New character</h2>
+  <div class="field">
+    <label>Name</label>
+    <input type="text" id="cName" placeholder="e.g. Pip">
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>Ear style</label>
+      <select id="cEar">
+        <option value="round">Round (bear)</option>
+        <option value="pointy">Pointy (fox/cat)</option>
+        <option value="long">Long (bunny)</option>
+        <option value="floppy">Floppy (dog)</option>
+        <option value="none">None (blob)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tail</label>
+      <select id="cTail">
+        <option value="none">None</option>
+        <option value="fluffy">Fluffy</option>
+        <option value="straight">Straight</option>
+      </select>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>Body</label>
+      <div class="colorfield"><input type="color" id="cBody" value="#F2A65A"></div>
+    </div>
+    <div class="field">
+      <label>Belly</label>
+      <div class="colorfield"><input type="color" id="cBelly" value="#FFF3E0"></div>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>Cheeks</label>
+      <div class="colorfield"><input type="color" id="cCheek" value="#FF9E80"></div>
+    </div>
+    <div class="field">
+      <label>Accent</label>
+      <div class="colorfield"><input type="color" id="cAccent" value="#8D6E63"></div>
+    </div>
+  </div>
+  <button class="btn" id="addCharBtn">Add character</button>
+  <p class="hint">This creates an original character from these shape and color choices — it won't copy an existing cartoon, but you can tune it until it feels like "yours."</p>
+
+  <button class="btn secondary" id="closeSheetBtn">Close</button>
+</div>
+
+<div class="sheet" id="todoSheet">
+  <div class="sheet-handle"></div>
+  <h2>To-dos</h2>
+
+  <div class="row2">
+    <div class="field" style="flex:2">
+      <label>Task</label>
+      <input type="text" id="todoText" placeholder="Water the plants">
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="todoDate">
+    </div>
+  </div>
+  <button class="btn" id="addTodoBtn">Add to-do</button>
+
+  <div class="divider"></div>
+  <div id="todoActiveList"></div>
+
+  <div class="divider"></div>
+  <div class="hist-toggle" id="historyToggle">
+    <span>Completed history</span>
+    <span id="historyCaret">▾</span>
+  </div>
+  <div id="todoHistoryList" style="display:none;"></div>
+
+  <button class="btn secondary" id="closeTodoBtn">Close</button>
+</div>
+
+<script>
+/* =========================================================================
+   NOOK — a cozy weather companion, living in a small isometric room.
+   Single file, no build step. Add to Home Screen on iPhone to use as an app.
+   ========================================================================= */
+
+const CHARACTERS = [
+  { id:'mochi', name:'Mochi', earType:'long', tailType:'none',
+    palette:{ body:'#FBD8C4', belly:'#FFF6EC', cheek:'#FF9E80', accent:'#B08968' } },
+  { id:'ember', name:'Ember', earType:'pointy', tailType:'fluffy',
+    palette:{ body:'#F2A65A', belly:'#FFF3E0', cheek:'#FF7A59', accent:'#8D5A2B' } },
+  { id:'bramble', name:'Bramble', earType:'round', tailType:'none',
+    palette:{ body:'#A9C6A2', belly:'#F4EFDF', cheek:'#F6A9A0', accent:'#5F7B57' } }
+];
+
+let state = { lat:null, lon:null, locationName:'—', locationSub:'', weather:null, characterId: CHARACTERS[0].id };
+
+/* ---------------- Weather classification (Open-Meteo WMO codes) ---------------- */
+function classify(code, windKph){
+  let base;
+  if(code === 0) base='sunny';
+  else if(code === 1 || code === 2) base='partly';
+  else if(code === 3) base='cloudy';
+  else if(code === 45 || code === 48) base='foggy';
+  else if((code>=51&&code<=67) || (code>=80&&code<=82)) base='rainy';
+  else if((code>=71&&code<=77) || code===85 || code===86) base='snowy';
+  else if(code>=95) base='thunder';
+  else base='cloudy';
+  return { base, windy: windKph >= 28 };
+}
+const CONDITION_LABEL = { sunny:'Clear sky', partly:'Partly cloudy', cloudy:'Overcast', foggy:'Foggy', rainy:'Rainy', snowy:'Snowy', thunder:'Thunderstorm' };
+const WINDOW_SKY = {
+  sunny:   { day:['#8FCBEA','#FFE8B8'], night:['#0F1B3C','#5C4B7A'] },
+  partly:  { day:['#9FCBE0','#F3E9D2'], night:['#16203F','#5A5178'] },
+  cloudy:  { day:['#B7C2C2','#E6E1D2'], night:['#232A33','#565049'] },
+  foggy:   { day:['#C9CFCB','#EDE7DA'], night:['#2B3130','#5A544A'] },
+  rainy:   { day:['#6E8CA0','#B9C2B4'], night:['#141B2A','#3C4A52'] },
+  snowy:   { day:['#C9DCE8','#F5F1E8'], night:['#1C2536','#57596A'] },
+  thunder: { day:['#4A5568','#8B8C7A'], night:['#0B0E1A','#333243'] }
+};
+
+/* ---------------- DOM refs ---------------- */
+const $ = id => document.getElementById(id);
+const stageEl = $('stage'), flashEl = $('flash'), windowFogEl = $('windowFog');
+const charWrapEl = $('stageChar');
+const charEl = charWrapEl.querySelector('.charInner');
+const particlesCanvas = $('particles');
+const ctx = particlesCanvas.getContext('2d');
+
+/* =========================================================================
+   ISOMETRIC ROOM
+   A simple 2:1 grid projection. Everything (walls, floor, furniture, the
+   window, and the character's walk path) is placed in "grid units" via
+   iso(gx,gy,gz) and converted to the SVG's 400x380 viewBox.
+   ========================================================================= */
+const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, ROOM_W=6, ROOM_D=6, WALL_H=5, VB_W=400, VB_H=380;
+function iso(gx,gy,gz){ return { x: ORIGIN_X+(gx-gy)*TILE, y: ORIGIN_Y+(gx+gy)*(TILE/2)-gz*ZSTEP }; }
+function pts(arr){ return arr.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '); }
+function shade(hex, percent){
+  const num = parseInt(hex.replace('#',''),16);
+  let r=(num>>16)+Math.round(255*percent/100);
+  let g=((num>>8)&0xff)+Math.round(255*percent/100);
+  let b=(num&0xff)+Math.round(255*percent/100);
+  r=Math.min(255,Math.max(0,r)); g=Math.min(255,Math.max(0,g)); b=Math.min(255,Math.max(0,b));
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+function isoBox(gx,gy,gz,w,d,h, baseColor){
+  const top   = [iso(gx,gy,gz+h), iso(gx+w,gy,gz+h), iso(gx+w,gy+d,gz+h), iso(gx,gy+d,gz+h)];
+  const right = [iso(gx+w,gy,gz), iso(gx+w,gy+d,gz), iso(gx+w,gy+d,gz+h), iso(gx+w,gy,gz+h)];
+  const front = [iso(gx,gy+d,gz), iso(gx+w,gy+d,gz), iso(gx+w,gy+d,gz+h), iso(gx,gy+d,gz+h)];
+  return '<polygon points="'+pts(front)+'" fill="'+shade(baseColor,-18)+'"/>'
+       + '<polygon points="'+pts(right)+'" fill="'+shade(baseColor,-8)+'"/>'
+       + '<polygon points="'+pts(top)+'" fill="'+shade(baseColor,10)+'"/>';
+}
+function boundingBox(quad){
+  const xs=quad.map(p=>p.x), ys=quad.map(p=>p.y);
+  return { x:Math.min.apply(null,xs), y:Math.min.apply(null,ys), w:Math.max.apply(null,xs)-Math.min.apply(null,xs), h:Math.max.apply(null,ys)-Math.min.apply(null,ys) };
+}
+
+let WINDOW_VB = null, WINDOW_PX = null;
+
+function buildRoom(){
+  const rightWall = [iso(0,0,0), iso(ROOM_W,0,0), iso(ROOM_W,0,WALL_H), iso(0,0,WALL_H)];
+  const leftWall  = [iso(0,0,0), iso(0,ROOM_D,0), iso(0,ROOM_D,WALL_H), iso(0,0,WALL_H)];
+  const floor     = [iso(0,0,0), iso(ROOM_W,0,0), iso(ROOM_W,ROOM_D,0), iso(0,ROOM_D,0)];
+
+  const winY0=1.0, winY1=3.4, winZ0=1.6, winZ1=3.6;
+  const windowQuad = [iso(0,winY0,winZ0), iso(0,winY1,winZ0), iso(0,winY1,winZ1), iso(0,winY0,winZ1)];
+  WINDOW_VB = boundingBox(windowQuad);
+
+  const rugPts = [iso(1.6,1.2,0.02), iso(4.6,1.2,0.02), iso(4.6,4.2,0.02), iso(1.6,4.2,0.02)];
+  const rugInnerPts = [iso(2.0,1.6,0.03), iso(4.2,1.6,0.03), iso(4.2,3.8,0.03), iso(2.0,3.8,0.03)];
+
+  let svg = '';
+  svg += '<polygon points="'+pts(rightWall)+'" fill="#E7D3A6"/>';
+  svg += '<polygon points="'+pts(leftWall)+'" fill="#F2E4C4"/>';
+  svg += '<polygon points="'+pts(floor)+'" fill="#D9B384"/>';
+
+  svg += '<polygon points="'+pts(rugPts)+'" fill="#E7B7A3"/>';
+  svg += '<polygon points="'+pts(rugInnerPts)+'" fill="none" stroke="#D89A82" stroke-width="2"/>';
+
+  svg += isoBox(0.3,0.4,0, 1.1,2.6,0.75, '#9CBBA8');
+  svg += isoBox(0.3,0.4,0.75, 1.1,0.35,1.15, '#7FA491');
+  svg += isoBox(0.45,0.55,0.75, 0.8,0.55,0.32, '#FFF3E0');
+
+  svg += isoBox(3.4,0,2.6, 2.0,0.28,0.2, '#8D6A4B');
+  svg += isoBox(3.6,0.02,2.8, 0.2,0.2,0.3, '#E76F51');
+  svg += isoBox(3.85,0.02,2.8, 0.2,0.2,0.28, '#457B9D');
+  svg += isoBox(4.1,0.02,2.8, 0.28,0.2,0.2, '#2A9D8F');
+
+  svg += isoBox(0.55,4.5,0, 0.42,0.42,0.32, '#B5835A');
+  const leafA = iso(0.76,4.71,0.72), leafB = iso(0.62,4.58,0.6);
+  svg += '<circle cx="'+leafA.x+'" cy="'+leafA.y+'" r="19" fill="#8FB88A"/>';
+  svg += '<circle cx="'+leafB.x+'" cy="'+leafB.y+'" r="13" fill="#9DC79A"/>';
+
+  // small writing desk + stool (this is where the character goes to manage to-dos)
+  svg += isoBox(2.0,0.55,0, 1.0,0.55,0.55, '#8D6A4B');
+  svg += isoBox(2.15,0.68,0.55, 0.28,0.2,0.1, '#F6EEDC');
+  svg += isoBox(2.55,0.68,0.55, 0.14,0.14,0.14, '#E76F51');
+  svg += isoBox(2.35,1.35,0, 0.36,0.36,0.4, '#B08968');
+
+  svg += '<polygon id="windowPane" points="'+pts(windowQuad)+'" fill="url(#windowSkyGrad)"/>';
+  svg += '<polygon points="'+pts(windowQuad)+'" fill="none" stroke="#8D6A4B" stroke-width="6" stroke-linejoin="round"/>';
+  const midY=(winY0+winY1)/2, midZ=(winZ0+winZ1)/2;
+  const mv0=iso(0,midY,winZ0), mv1=iso(0,midY,winZ1), mh0=iso(0,winY0,midZ), mh1=iso(0,winY1,midZ);
+  svg += '<line x1="'+mv0.x+'" y1="'+mv0.y+'" x2="'+mv1.x+'" y2="'+mv1.y+'" stroke="#8D6A4B" stroke-width="3"/>';
+  svg += '<line x1="'+mh0.x+'" y1="'+mh0.y+'" x2="'+mh1.x+'" y2="'+mh1.y+'" stroke="#8D6A4B" stroke-width="3"/>';
+
+  return svg;
+}
+
+function initRoom(){
+  const defs = '<defs><linearGradient id="windowSkyGrad" x1="0" y1="0" x2="0" y2="1">'
+             + '<stop id="winStop0" offset="0" stop-color="#8FCBEA"/>'
+             + '<stop id="winStop1" offset="1" stop-color="#FFE8B8"/>'
+             + '</linearGradient></defs>';
+  $('roomSvg').innerHTML = defs + buildRoom();
+}
+
+/* ---------------- Outdoor background scenery ---------------- */
+const SKY_BG = {
+  sunny:   { day:'linear-gradient(180deg,#8FCBEA 0%,#CDEAF7 55%,#FFE8B8 100%)', night:'linear-gradient(180deg,#0F1B3C 0%,#2B3A6B 60%,#5C4B7A 100%)' },
+  partly:  { day:'linear-gradient(180deg,#9FCBE0 0%,#DCE9EC 60%,#F3E9D2 100%)', night:'linear-gradient(180deg,#16203F 0%,#33406A 60%,#5A5178 100%)' },
+  cloudy:  { day:'linear-gradient(180deg,#B7C2C2 0%,#D6DAD3 60%,#E6E1D2 100%)', night:'linear-gradient(180deg,#232A33 0%,#3A414A 60%,#565049 100%)' },
+  foggy:   { day:'linear-gradient(180deg,#C9CFCB 0%,#DEDED6 60%,#EDE7DA 100%)', night:'linear-gradient(180deg,#2B3130 0%,#454B48 60%,#5A544A 100%)' },
+  rainy:   { day:'linear-gradient(180deg,#6E8CA0 0%,#93AAB2 60%,#B9C2B4 100%)', night:'linear-gradient(180deg,#141B2A 0%,#26344A 60%,#3C4A52 100%)' },
+  snowy:   { day:'linear-gradient(180deg,#C9DCE8 0%,#E7EEF1 60%,#F5F1E8 100%)', night:'linear-gradient(180deg,#1C2536 0%,#3A455A 60%,#57596A 100%)' },
+  thunder: { day:'linear-gradient(180deg,#4A5568 0%,#6B7686 60%,#8B8C7A 100%)', night:'linear-gradient(180deg,#0B0E1A 0%,#20263A 60%,#333243 100%)' }
+};
+const HILL_COLOR = {
+  sunny:'#8FB88A', partly:'#8FB88A', cloudy:'#7C9A80', foggy:'#95A398',
+  rainy:'#5F7B6C', snowy:'#EDF3F3', thunder:'#495A50'
+};
+function updateBackground(w){
+  const sky = SKY_BG[w.base] || SKY_BG.cloudy;
+  $('skyBg').style.background = w.isDay ? sky.day : sky.night;
+
+  const hill = HILL_COLOR[w.base] || HILL_COLOR.cloudy;
+  const hillBack = shade(hill, w.isDay ? 12 : -20);
+  const hillFront = shade(hill, w.isDay ? -6 : -34);
+
+  let sun = '';
+  if(w.base==='sunny' || w.base==='partly'){
+    sun = w.isDay
+      ? '<circle cx="345" cy="55" r="22" fill="#FFE9A8"/><circle cx="345" cy="55" r="34" fill="#FFE9A8" opacity="0.35"/>'
+      : '<circle cx="345" cy="55" r="16" fill="#F1EAFB"/><circle cx="345" cy="55" r="26" fill="#F1EAFB" opacity="0.25"/>';
+  }
+  let clouds = '';
+  if(w.base==='cloudy' || w.base==='partly' || w.base==='foggy'){
+    clouds = '<ellipse cx="330" cy="45" rx="28" ry="11" fill="#fff" opacity="0.55"/><ellipse cx="355" cy="52" rx="20" ry="9" fill="#fff" opacity="0.45"/>';
+  }
+
+  $('bgScene').innerHTML =
+    sun + clouds +
+    '<path d="M0 380 L0 300 Q100 250 200 300 T400 290 L400 380 Z" fill="'+hillBack+'"/>' +
+    '<path d="M0 380 L0 335 Q120 300 220 335 T400 325 L400 380 Z" fill="'+hillFront+'"/>';
+}
+
+/* ---------------- Particle system (rain/snow fall past the window) ---------------- */
+let particles = [];
+let particleMode = 'none';
+function resizeCanvas(){
+  particlesCanvas.width = stageEl.clientWidth * devicePixelRatio;
+  particlesCanvas.height = stageEl.clientHeight * devicePixelRatio;
+  particlesCanvas.style.width = stageEl.clientWidth+'px';
+  particlesCanvas.style.height = stageEl.clientHeight+'px';
+  if(WINDOW_VB){
+    const scaleX = stageEl.clientWidth/VB_W, scaleY = stageEl.clientHeight/VB_H;
+    WINDOW_PX = { x:WINDOW_VB.x*scaleX, y:WINDOW_VB.y*scaleY, w:WINDOW_VB.w*scaleX, h:WINDOW_VB.h*scaleY };
+    windowFogEl.style.left = WINDOW_PX.x+'px';
+    windowFogEl.style.top = WINDOW_PX.y+'px';
+    windowFogEl.style.width = WINDOW_PX.w+'px';
+    windowFogEl.style.height = WINDOW_PX.h+'px';
+  }
+  seedParticles(particleMode);
+}
+window.addEventListener('resize', resizeCanvas);
+
+function seedParticles(mode){
+  particleMode = mode;
+  const rect = WINDOW_PX || {x:0,y:0,w:stageEl.clientWidth,h:stageEl.clientHeight};
+  const count = mode==='rain' ? 26 : mode==='snow' ? 20 : 0;
+  particles = [];
+  for(let i=0;i<count;i++){
+    if(mode==='rain'){
+      particles.push({ x:rect.x+Math.random()*rect.w, y:rect.y+Math.random()*rect.h, len:7+Math.random()*8, speed:5+Math.random()*4, drift:-1 });
+    } else if(mode==='snow'){
+      particles.push({ x:rect.x+Math.random()*rect.w, y:rect.y+Math.random()*rect.h, r:1+Math.random()*1.6, speed:0.5+Math.random()*0.8, sway:Math.random()*Math.PI*2 });
+    }
+  }
+}
+function animateParticles(){
+  requestAnimationFrame(animateParticles);
+  const rect = WINDOW_PX;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  ctx.clearRect(0,0,stageEl.clientWidth,stageEl.clientHeight);
+  if(!rect || particleMode==='none') return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x,rect.y,rect.w,rect.h);
+  ctx.clip();
+  if(particleMode==='rain'){
+    ctx.strokeStyle='rgba(255,255,255,0.6)';
+    ctx.lineWidth=1.2;
+    particles.forEach(p=>{
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+p.drift, p.y+p.len); ctx.stroke();
+      p.y += p.speed;
+      if(p.y > rect.y+rect.h){ p.y=rect.y; p.x=rect.x+Math.random()*rect.w; }
+    });
+  } else if(particleMode==='snow'){
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    particles.forEach(p=>{
+      ctx.beginPath(); ctx.arc(p.x+Math.sin(p.sway)*4, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      p.y += p.speed; p.sway += 0.03;
+      if(p.y > rect.y+rect.h){ p.y=rect.y; p.x=rect.x+Math.random()*rect.w; }
+    });
+  }
+  ctx.restore();
+}
+animateParticles();
+
+/* ---------------- Character rendering (small SVG rig) ---------------- */
+function getCharacter(){ return CHARACTERS.find(c=>c.id===state.characterId) || CHARACTERS[0]; }
+function earPath(type, side){
+  const x = side*34;
+  switch(type){
+    case 'round': return '<circle cx="'+x+'" cy="-58" r="15" fill="var(--earfill)"/>';
+    case 'pointy': return '<polygon points="'+(x-12)+',-46 '+(x+2*side)+',-82 '+(x+14)+',-46" fill="var(--earfill)"/>';
+    case 'long': return '<ellipse cx="'+(x*0.7)+'" cy="-98" rx="9" ry="34" fill="var(--earfill)" transform="rotate('+(side*8)+' '+(x*0.7)+' -98)"/>';
+    case 'floppy': return '<ellipse cx="'+x+'" cy="-40" rx="11" ry="26" fill="var(--earfill)" transform="rotate('+(side*40)+' '+x+' -40)"/>';
+    default: return '';
+  }
+}
+function tailPath(type){
+  if(type==='fluffy') return '<circle cx="52" cy="30" r="20" fill="var(--body)"/>';
+  if(type==='straight') return '<ellipse cx="50" cy="32" rx="24" ry="9" fill="var(--body)" transform="rotate(20 50 32)"/>';
+  return '';
+}
+function facePaths(mood){
+  switch(mood){
+    case 'happy': return { eyes:'<path d="M-20 -6 q6 -10 12 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M8 -6 q6 -10 12 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>',
+                          mouth:'<path d="M-12 10 q12 14 24 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>' };
+    case 'cozy': return { eyes:'<path d="M-20 -4 q6 -8 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -4 q6 -8 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>',
+                         mouth:'<path d="M-8 11 q8 8 16 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>' };
+    case 'sad': return { eyes:'<circle cx="-14" cy="-4" r="3.2" fill="var(--ink)"/><circle cx="14" cy="-4" r="3.2" fill="var(--ink)"/>',
+                        mouth:'<path d="M-10 14 q10 -8 20 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>',
+                        brows:'<path d="M-20 -14 q6 4 10 8" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M20 -14 q-6 4 -10 8" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
+    default: return { eyes:'<circle cx="-14" cy="-4" r="3.4" fill="var(--ink)"/><circle cx="14" cy="-4" r="3.4" fill="var(--ink)"/>',
+                       mouth:'<line x1="-9" y1="12" x2="9" y2="12" stroke="var(--ink)" stroke-width="3.2" stroke-linecap="round"/>' };
+  }
+}
+function accessorySVG(base){
+  switch(base){
+    case 'sunny': return '<g transform="translate(0,-6)"><rect x="-24" y="-9" width="18" height="10" rx="4" fill="#3B3B3B" opacity="0.85"/><rect x="6" y="-9" width="18" height="10" rx="4" fill="#3B3B3B" opacity="0.85"/><rect x="-6" y="-6" width="12" height="3" fill="#3B3B3B" opacity="0.85"/></g>';
+    case 'rainy': case 'thunder': return '<g transform="translate(46,-70)"><path d="M-30 6 A30 30 0 0 1 30 6 Z" fill="var(--accent)"/><line x1="0" y1="6" x2="0" y2="50" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/></g>';
+    case 'snowy': return '<g><rect x="-24" y="18" width="48" height="12" rx="6" fill="var(--accent)"/><path d="M-26 -60 a30 20 0 0 1 60 0 z" fill="var(--accent)"/><rect x="-30" y="-46" width="64" height="10" rx="5" fill="var(--accent)"/></g>';
+    default: return '';
+  }
+}
+function moodFor(base){
+  if(base==='sunny' || base==='partly') return 'happy';
+  if(base==='snowy') return 'cozy';
+  if(base==='rainy' || base==='thunder') return 'sad';
+  return 'neutral';
+}
+function drawCharacter(){
+  const c = getCharacter();
+  const w = state.weather;
+  const base = w ? w.base : 'sunny';
+  const mood = moodFor(base);
+  const face = facePaths(mood);
+  const svg = '<svg viewBox="-90 -140 180 220" width="64" height="78" style="--body:'+c.palette.body+';--belly:'+c.palette.belly+';--ink:#4A3F35;--accent:'+c.palette.accent+';--earfill:'+c.palette.accent+'">'
+    + tailPath(c.tailType)
+    + earPath(c.earType,-1) + earPath(c.earType,1)
+    + '<ellipse cx="0" cy="18" rx="46" ry="58" fill="var(--body)"/>'
+    + '<ellipse cx="0" cy="34" rx="27" ry="34" fill="var(--belly)"/>'
+    + '<circle cx="-30" cy="6" r="8" fill="'+c.palette.cheek+'" opacity="0.85"/>'
+    + '<circle cx="30" cy="6" r="8" fill="'+c.palette.cheek+'" opacity="0.85"/>'
+    + '<g transform="translate(0,-14)">'+(face.brows||'')+face.eyes+face.mouth+'</g>'
+    + accessorySVG(base)
+    + '</svg>';
+  charEl.innerHTML = svg;
+}
+
+/* ---------------- Scene / weather rendering ---------------- */
+function renderScene(){
+  if(!state.weather) return;
+  const w = state.weather;
+  updateBackground(w);
+  const wp = WINDOW_SKY[w.base] || WINDOW_SKY.cloudy;
+  const stops = w.isDay ? wp.day : wp.night;
+  const s0 = $('winStop0'), s1 = $('winStop1');
+  if(s0) s0.setAttribute('stop-color', stops[0]);
+  if(s1) s1.setAttribute('stop-color', stops[1]);
+  windowFogEl.style.opacity = w.base==='foggy' ? 0.85 : 0;
+  stageEl.classList.toggle('windy', w.windy);
+
+  if(w.base==='rainy'){ seedParticles('rain'); }
+  else if(w.base==='thunder'){ seedParticles('rain'); flickerLightning(); }
+  else if(w.base==='snowy'){ seedParticles('snow'); }
+  else { seedParticles('none'); }
+
+  drawCharacter();
+
+  $('condVal').textContent = CONDITION_LABEL[w.base] + (w.windy ? ' · Breezy' : '');
+  $('feelVal').textContent = 'Feels like ' + Math.round(w.feels) + '°';
+  $('tempVal').innerHTML = Math.round(w.temp) + '<sup>°C</sup>';
+  $('windVal').textContent = Math.round(w.windKph) + ' km/h';
+  $('humVal').textContent = w.humidity + '%';
+  $('updVal').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+let lightningTimer = null;
+function flickerLightning(){
+  clearTimeout(lightningTimer);
+  const loop = () => {
+    if(state.weather && state.weather.base==='thunder'){
+      flashEl.style.transition='none';
+      flashEl.style.opacity = 0.35;
+      requestAnimationFrame(()=>{ flashEl.style.transition='opacity .5s ease'; flashEl.style.opacity = 0; });
+    }
+    lightningTimer = setTimeout(loop, 4000+Math.random()*5000);
+  };
+  loop();
+}
+
+/* ---------------- Weather fetching (Open-Meteo, no key needed) ---------------- */
+async function fetchWeather(lat, lon){
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day&timezone=auto';
+  const res = await fetch(url);
+  const data = await res.json();
+  const cur = data.current;
+  const cls = classify(cur.weather_code, cur.wind_speed_10m);
+  state.weather = {
+    temp: cur.temperature_2m, feels: cur.apparent_temperature, humidity: cur.relative_humidity_2m,
+    windKph: cur.wind_speed_10m, isDay: cur.is_day === 1, base: cls.base, windy: cls.windy
+  };
+  renderScene();
+}
+async function reverseGeocodeName(lat, lon){
+  state.locationName = 'Your location';
+  state.locationSub = lat.toFixed(2) + ', ' + lon.toFixed(2);
+  $('placeName').textContent = state.locationName;
+  $('placeSub').textContent = state.locationSub;
+}
+async function searchCity(query){
+  const url = 'https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(query)+'&count=5&language=en&format=json';
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.results || [];
+}
+function setLocationFromResult(r){
+  state.lat = r.latitude; state.lon = r.longitude;
+  state.locationName = r.name;
+  state.locationSub = [r.admin1, r.country].filter(Boolean).join(', ');
+  $('placeName').textContent = state.locationName;
+  $('placeSub').textContent = state.locationSub;
+  fetchWeather(state.lat, state.lon);
+  closeSheet();
+}
+
+/* ---------------- Geolocation bootstrap ---------------- */
+function locate(){
+  $('statusMsg').textContent = 'Finding your weather…';
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        state.lat = pos.coords.latitude; state.lon = pos.coords.longitude;
+        reverseGeocodeName(state.lat, state.lon);
+        fetchWeather(state.lat, state.lon).then(()=>{ $('statusMsg').textContent=''; });
+      },
+      err => {
+        $('statusMsg').textContent = 'Location off — search a city in Settings.';
+        $('placeName').textContent = 'Set a location';
+        $('placeSub').textContent = 'Tap ⚙︎ to search';
+      },
+      { timeout:8000 }
+    );
+  } else { $('statusMsg').textContent = 'Search a city in Settings.'; }
+}
+
+/* ---------------- Character switcher UI ---------------- */
+function renderSwitcher(){
+  const el = $('switcher');
+  el.innerHTML = '';
+  CHARACTERS.forEach(c=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (c.id===state.characterId ? ' active' : '');
+    chip.innerHTML = '<span class="dot" style="background:'+c.palette.body+'"></span>'+c.name;
+    chip.onclick = () => { state.characterId = c.id; renderSwitcher(); drawCharacter(); };
+    el.appendChild(chip);
+  });
+  const addChip = document.createElement('div');
+  addChip.className = 'chip add';
+  addChip.textContent = '+ New';
+  addChip.onclick = openSheet;
+  el.appendChild(addChip);
+}
+
+/* ---------------- Settings sheet ---------------- */
+function openSheet(){ $('sheet').classList.add('open'); $('sheetBackdrop').classList.add('open'); }
+function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBackdrop').classList.remove('open'); }
+$('settingsBtn').onclick = openSheet;
+$('closeSheetBtn').onclick = closeSheet;
+$('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon); };
+
+/* ---------------- Todo sheet ---------------- */
+function openTodoSheet(){
+  $('todoSheet').classList.add('open');
+  $('sheetBackdrop').classList.add('open');
+  moveCharacterToDesk();
+}
+function closeTodoSheet(){
+  const wasOpen = $('todoSheet').classList.contains('open');
+  $('todoSheet').classList.remove('open');
+  $('sheetBackdrop').classList.remove('open');
+  if(wasOpen) wander();
+}
+$('sheetBackdrop').onclick = () => {
+  closeSheet();
+  closeTodoSheet();
+};
+$('closeTodoBtn').onclick = closeTodoSheet;
+
+let searchDebounce;
+$('citySearch').addEventListener('input', e=>{
+  clearTimeout(searchDebounce);
+  const q = e.target.value.trim();
+  if(q.length < 2){ $('cityResults').innerHTML=''; return; }
+  searchDebounce = setTimeout(async ()=>{
+    const results = await searchCity(q);
+    $('cityResults').innerHTML = '';
+    results.forEach(r=>{
+      const div = document.createElement('div');
+      div.textContent = r.name + (r.admin1 ? ', '+r.admin1:'') + (r.country ? ', '+r.country:'');
+      div.onclick = () => setLocationFromResult(r);
+      $('cityResults').appendChild(div);
+    });
+  }, 350);
+});
+
+$('addCharBtn').onclick = () => {
+  const name = $('cName').value.trim() || 'Friend';
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + Date.now();
+  CHARACTERS.push({
+    id, name, earType: $('cEar').value, tailType: $('cTail').value,
+    palette:{ body:$('cBody').value, belly:$('cBelly').value, cheek:$('cCheek').value, accent:$('cAccent').value }
+  });
+  state.characterId = id;
+  renderSwitcher(); drawCharacter();
+  $('cName').value = '';
+  closeSheet();
+};
+
+/* ---------------- Character wandering (walks the open floor area) ---------------- */
+const WALK_GRID = { xMin:1.8, xMax:3.6, yMin:2.4, yMax:4.2 };
+const DESK_SPOT = { x:2.55, y:1.95 };
+let lastGX = 2.6;
+let wanderTimer = null;
+function placeCharAt(gx, gy){
+  const p = iso(gx, gy, 0);
+  charWrapEl.classList.toggle('facing-left', gx < lastGX);
+  charWrapEl.style.left = (p.x/VB_W*100) + '%';
+  charWrapEl.style.top = (p.y/VB_H*100) + '%';
+  lastGX = gx;
+}
+function wander(){
+  const nx = WALK_GRID.xMin + Math.random()*(WALK_GRID.xMax-WALK_GRID.xMin);
+  const ny = WALK_GRID.yMin + Math.random()*(WALK_GRID.yMax-WALK_GRID.yMin);
+  placeCharAt(nx, ny);
+  wanderTimer = setTimeout(wander, 2800 + Math.random()*2600);
+}
+function stopWander(){ clearTimeout(wanderTimer); }
+function moveCharacterToDesk(){ stopWander(); placeCharAt(DESK_SPOT.x, DESK_SPOT.y); }
+
+/* ---------------- To-dos ---------------- */
+state.todos = [];
+function fmtDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString([], { month:'short', day:'numeric' });
+}
+function renderTodos(){
+  const active = state.todos.filter(t=>!t.done).sort((a,b)=>{
+    if(!a.date && !b.date) return 0;
+    if(!a.date) return 1;
+    if(!b.date) return -1;
+    return a.date.localeCompare(b.date);
+  });
+  const done = state.todos.filter(t=>t.done).sort((a,b)=> (b.completedAt||'').localeCompare(a.completedAt||''));
+
+  const activeEl = $('todoActiveList');
+  activeEl.innerHTML = active.length ? active.map(t =>
+    '<div class="todo-row">'
+    + '<div class="todo-check" data-id="'+t.id+'">'+ '</div>'
+    + '<div class="todo-text">'+escapeHtml(t.text)+'</div>'
+    + (t.date ? '<div class="todo-date">'+fmtDate(t.date)+'</div>' : '')
+    + '<button class="todo-del" data-id="'+t.id+'">✕</button>'
+    + '</div>'
+  ).join('') : '<div class="todo-empty">Nothing on the list yet — add something above.</div>';
+
+  const histEl = $('todoHistoryList');
+  histEl.innerHTML = done.length ? done.map(t =>
+    '<div class="hist-row">'
+    + '<div class="todo-check checked" data-id="'+t.id+'">✓</div>'
+    + '<div class="todo-text">'+escapeHtml(t.text)+'</div>'
+    + '<div class="hist-when">'+(t.completedAt ? new Date(t.completedAt).toLocaleDateString([], {month:'short', day:'numeric'}) : '')+'</div>'
+    + '</div>'
+  ).join('') : '<div class="todo-empty">Completed tasks will show up here.</div>';
+
+  activeEl.querySelectorAll('.todo-check').forEach(el => el.onclick = () => toggleTodo(el.dataset.id));
+  activeEl.querySelectorAll('.todo-del').forEach(el => el.onclick = () => deleteTodo(el.dataset.id));
+  histEl.querySelectorAll('.todo-check').forEach(el => el.onclick = () => toggleTodo(el.dataset.id));
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toggleTodo(id){
+  const t = state.todos.find(x=>x.id===id);
+  if(!t) return;
+  t.done = !t.done;
+  t.completedAt = t.done ? new Date().toISOString() : null;
+  renderTodos();
+}
+function deleteTodo(id){
+  state.todos = state.todos.filter(x=>x.id!==id);
+  renderTodos();
+}
+$('addTodoBtn').onclick = () => {
+  const text = $('todoText').value.trim();
+  if(!text) return;
+  state.todos.push({ id:'t'+Date.now(), text, date: $('todoDate').value || null, done:false, completedAt:null });
+  $('todoText').value=''; $('todoDate').value='';
+  renderTodos();
+};
+$('historyToggle').onclick = () => {
+  const el = $('todoHistoryList');
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  $('historyCaret').textContent = open ? '▾' : '▴';
+};
+$('todoBtn').onclick = () => { openTodoSheet(); };
+
+/* ---------------- Boot ---------------- */
+initRoom();
+resizeCanvas();
+renderSwitcher();
+renderTodos();
+wander();
+locate();
+/* ---------------- Offline app shell ---------------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

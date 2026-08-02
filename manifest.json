@@ -1,0 +1,9 @@
+{
+  "name": "Nook",
+  "short_name": "Nook",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FBF3E7",
+  "theme_color": "#7C9A92",
+  "icons": []
+}
