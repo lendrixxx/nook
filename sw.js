@@ -1,5 +1,5 @@
 const CACHE_NAME = 'nook-shell-v2';
-const SHELL_FILES = ['./', './index.html', './manifest.json'];
+const SHELL_FILES = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-32.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
