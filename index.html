@@ -101,6 +101,8 @@
   }
   #stageChar .charInner{ animation:floaty 3.2s ease-in-out infinite; }
   #stageChar.facing-left .charInner{ animation:floatyFlip 3.2s ease-in-out infinite; }
+  #stageChar.sitting .charInner{ animation:none; transform:translateY(6px) scale(0.94); }
+  #stageChar.sitting .charShadow{ opacity:0.55; width:32px; }
   @keyframes floaty{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
   @keyframes floatyFlip{ 0%,100%{transform:scaleX(-1) translateY(0);} 50%{transform:scaleX(-1) translateY(-5px);} }
   .windy #stageChar .charInner{ animation:floaty 3.2s ease-in-out infinite, windTilt 1.6s ease-in-out infinite; }
@@ -711,8 +713,16 @@ async function fetchWeather(lat, lon){
   renderScene();
 }
 async function reverseGeocodeName(lat, lon){
-  state.locationName = 'Your location';
-  state.locationSub = lat.toFixed(2) + ', ' + lon.toFixed(2);
+  try{
+    const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en';
+    const res = await fetch(url);
+    const data = await res.json();
+    state.locationName = data.city || data.locality || data.principalSubdivision || 'Your location';
+    state.locationSub = [data.principalSubdivision, data.countryName].filter(Boolean).join(', ');
+  } catch(e){
+    state.locationName = 'Your location';
+    state.locationSub = lat.toFixed(2) + ', ' + lon.toFixed(2);
+  }
   $('placeName').textContent = state.locationName;
   $('placeSub').textContent = state.locationSub;
 }
@@ -827,7 +837,7 @@ $('addCharBtn').onclick = () => {
 
 /* ---------------- Character wandering (walks the open floor area) ---------------- */
 const WALK_GRID = { xMin:1.8, xMax:3.6, yMin:2.4, yMax:4.2 };
-const DESK_SPOT = { x:2.55, y:1.95 };
+const DESK_SPOT = { x:2.53, y:1.55 };
 let lastGX = 2.6;
 let wanderTimer = null;
 function placeCharAt(gx, gy){
@@ -838,16 +848,31 @@ function placeCharAt(gx, gy){
   lastGX = gx;
 }
 function wander(){
+  charWrapEl.classList.remove('sitting');
   const nx = WALK_GRID.xMin + Math.random()*(WALK_GRID.xMax-WALK_GRID.xMin);
   const ny = WALK_GRID.yMin + Math.random()*(WALK_GRID.yMax-WALK_GRID.yMin);
   placeCharAt(nx, ny);
   wanderTimer = setTimeout(wander, 2800 + Math.random()*2600);
 }
 function stopWander(){ clearTimeout(wanderTimer); }
-function moveCharacterToDesk(){ stopWander(); placeCharAt(DESK_SPOT.x, DESK_SPOT.y); }
+function moveCharacterToDesk(){
+  stopWander();
+  charWrapEl.classList.remove('facing-left');
+  placeCharAt(DESK_SPOT.x, DESK_SPOT.y);
+  charWrapEl.classList.add('sitting');
+}
 
 /* ---------------- To-dos ---------------- */
 state.todos = [];
+function loadTodos(){
+  try{
+    const raw = localStorage.getItem('nook_todos');
+    state.todos = raw ? JSON.parse(raw) : [];
+  } catch(e){ state.todos = []; }
+}
+function saveTodos(){
+  try{ localStorage.setItem('nook_todos', JSON.stringify(state.todos)); } catch(e){}
+}
 function fmtDate(iso){
   if(!iso) return '';
   const d = new Date(iso+'T00:00:00');
@@ -891,10 +916,12 @@ function toggleTodo(id){
   if(!t) return;
   t.done = !t.done;
   t.completedAt = t.done ? new Date().toISOString() : null;
+  saveTodos();
   renderTodos();
 }
 function deleteTodo(id){
   state.todos = state.todos.filter(x=>x.id!==id);
+  saveTodos();
   renderTodos();
 }
 $('addTodoBtn').onclick = () => {
@@ -902,6 +929,7 @@ $('addTodoBtn').onclick = () => {
   if(!text) return;
   state.todos.push({ id:'t'+Date.now(), text, date: $('todoDate').value || null, done:false, completedAt:null });
   $('todoText').value=''; $('todoDate').value='';
+  saveTodos();
   renderTodos();
 };
 $('historyToggle').onclick = () => {
@@ -916,6 +944,7 @@ $('todoBtn').onclick = () => { openTodoSheet(); };
 initRoom();
 resizeCanvas();
 renderSwitcher();
+loadTodos();
 renderTodos();
 wander();
 locate();
