@@ -1,0 +1,14 @@
+name = "nook-calendar-auth"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# Create this once (see README.md), then paste the id it gives you here.
+kv_namespaces = [
+  { binding = "NOOK_KV", id = "ad3f6c3da0404492aa896530a65b4b4e" }
+]
+
+[vars]
+# The exact origin (scheme + host, no trailing slash, no path) that's
+# allowed to call /calendar/events and /auth/logout. This should match
+# where Nook itself is hosted.
+ALLOWED_ORIGIN = "https://lendrixxx.github.io"
