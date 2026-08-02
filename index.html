@@ -109,6 +109,27 @@
     transition:left 3.2s cubic-bezier(.45,0,.55,1), top 3.2s cubic-bezier(.45,0,.55,1);
     z-index:5;
   }
+  .scene-btn{
+    position:absolute;
+    top:18px; right:18px;
+    width:52px; height:52px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,0.55);
+    backdrop-filter:blur(6px);
+    font-size:24px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    z-index:6;
+    transition:transform .15s ease;
+  }
+  .scene-btn:active{ transform:scale(0.9); }
+  .scene-btn.has-due{ animation:btnPulse 1.7s ease-in-out infinite; }
+  @keyframes btnPulse{
+    0%{ box-shadow:0 0 0 0 rgba(231,111,81,0.55); }
+    70%{ box-shadow:0 0 0 16px rgba(231,111,81,0); }
+    100%{ box-shadow:0 0 0 0 rgba(231,111,81,0); }
+  }
   #stageChar .charShadow{
     width:40px;height:9px; margin:0 auto;
     background:rgba(0,0,0,0.2); border-radius:50%; filter:blur(2px);
@@ -250,6 +271,21 @@
     <div id="skyBg"></div>
     <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
+	<button id="todoProp" class="scene-btn" title="To-dos">
+	  <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+	    <!-- notebook -->
+	    <rect x="6" y="5" width="18" height="22" rx="3" fill="#FFF3E0" stroke="#4A3F35" stroke-width="2"/>
+	    <line x1="10" y1="11" x2="20" y2="11" stroke="#7C9A92" stroke-width="2" stroke-linecap="round"/>
+	    <line x1="10" y1="16" x2="20" y2="16" stroke="#7C9A92" stroke-width="2" stroke-linecap="round"/>
+	    <line x1="10" y1="21" x2="17" y2="21" stroke="#7C9A92" stroke-width="2" stroke-linecap="round"/>
+	
+	    <!-- pencil -->
+	    <path d="M20 23L24.5 18.5L27 21L22.5 25.5L19 26Z"
+	          fill="#E76F51" stroke="#4A3F35" stroke-width="1.5"/>
+	    <path d="M24.5 18.5L25.8 17.2C26.4 16.6 27.3 16.6 27.9 17.2L28.8 18.1C29.4 18.7 29.4 19.6 28.8 20.2L27 21.8Z"
+	          fill="#F2C6A0" stroke="#4A3F35" stroke-width="1.5"/>
+	  </svg>
+	</button>
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -817,6 +853,7 @@ function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBackdrop').c
 $('settingsBtn').onclick = openSheet;
 $('closeSheetBtn').onclick = closeSheet;
 $('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon); };
+$('todoProp').onclick = openTodoSheet;
 
 /* ---------------- Todo sheet ---------------- */
 function openTodoSheet(){
@@ -974,8 +1011,6 @@ $('historyToggle').onclick = () => {
   el.style.display = open ? 'none' : 'block';
   $('historyCaret').textContent = open ? '▾' : '▴';
 };
-$('todoBtn').onclick = () => { openTodoSheet(); };
-
 /* ---------------- Due-date awareness ---------------- */
 /* iOS Safari does not support scheduled background push notifications for
    a plain static site like this (that needs a push server + native app).
@@ -990,7 +1025,7 @@ function todosDueOrOverdue(){
 }
 function updateTodoBadge(){
   const due = todosDueOrOverdue();
-  $('todoBtn').classList.toggle('has-badge', due.length > 0);
+  $('todoProp').classList.toggle('has-due', due.length > 0);
 }
 function notifyDueTodos(){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
