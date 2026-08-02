@@ -251,6 +251,8 @@
   .hist-row{ display:flex; align-items:center; gap:10px; padding:8px 4px; opacity:0.75; }
   .hist-row .todo-text{ text-decoration:line-through; font-weight:600; }
   .hist-when{ font-size:10px; color:var(--ink-soft); white-space:nowrap; }
+  .cal-now{ background:#E7F0EA; color:var(--sage-dark); }
+  .cal-soon{ background:#FBEAD8; color:#C1512D; }
 </style>
 </head>
 <body>
@@ -271,21 +273,8 @@
     <div id="skyBg"></div>
     <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
-	<button id="todoProp" class="scene-btn" title="To-dos">
-	  <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-	    <!-- notebook -->
-	    <rect x="6" y="5" width="18" height="22" rx="3" fill="#FFF3E0" stroke="#4A3F35" stroke-width="2"/>
-	    <line x1="10" y1="11" x2="20" y2="11" stroke="#7C9A92" stroke-width="2" stroke-linecap="round"/>
-	    <line x1="10" y1="16" x2="20" y2="16" stroke="#7C9A92" stroke-width="2" stroke-linecap="round"/>
-	    <line x1="10" y1="21" x2="17" y2="21" stroke="#7C9A92" stroke-width="2" stroke-linecap="round"/>
-	
-	    <!-- pencil -->
-	    <path d="M20 23L24.5 18.5L27 21L22.5 25.5L19 26Z"
-	          fill="#E76F51" stroke="#4A3F35" stroke-width="1.5"/>
-	    <path d="M24.5 18.5L25.8 17.2C26.4 16.6 27.3 16.6 27.9 17.2L28.8 18.1C29.4 18.7 29.4 19.6 28.8 20.2L27 21.8Z"
-	          fill="#F2C6A0" stroke="#4A3F35" stroke-width="1.5"/>
-	  </svg>
-	</button>
+    <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none; right:82px;">🗓️</button>
+    <button id="todoProp" class="scene-btn" title="To-dos">📓</button>
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -332,6 +321,27 @@
     <label>Reminders</label>
     <button class="btn secondary" id="notifyBtn" style="margin-top:0;">Enable reminders</button>
     <p class="hint">Turns on a gentle notification for anything due today or overdue — shown when you open the app. iOS doesn't allow web apps to send notifications while fully closed, so this can't wake your phone in the background.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Google Calendar</h2>
+  <div id="calDisconnected">
+    <p class="hint">Optional. If connected, Nook can show today's schedule and the character will head to the desk shortly before something starts. Nook only <b>reads</b> your calendar — it never creates, edits, or deletes events — and you can disconnect any time. The actual sign-in happens through your own small Cloudflare Worker, which is the only place your Google credentials are ever handled.</p>
+    <div class="field">
+      <label>Worker URL</label>
+      <input type="text" id="gcalWorkerUrl" placeholder="https://nook-calendar-auth.you.workers.dev">
+    </div>
+    <button class="btn" id="gcalConnectBtn">Connect Google Calendar</button>
+    <p class="hint" id="gcalError" style="color:#C1512D;"></p>
+  </div>
+  <div id="calConnected" style="display:none;">
+    <p class="hint">Connected — Nook is reading your primary calendar (read-only).</p>
+    <div class="row2">
+      <button class="btn secondary" id="gcalRefreshBtn" style="margin-top:0;">Refresh now</button>
+      <button class="btn secondary" id="gcalDisconnectBtn" style="margin-top:0;">Disconnect</button>
+    </div>
+    <p class="hint" id="gcalUpdatedHint"></p>
   </div>
 
   <div class="divider"></div>
@@ -414,6 +424,14 @@
   <div id="todoHistoryList" style="display:none;"></div>
 
   <button class="btn secondary" id="closeTodoBtn">Close</button>
+</div>
+
+<div class="sheet" id="calSheet">
+  <div class="sheet-handle"></div>
+  <h2>📅 Today</h2>
+  <div id="calList"></div>
+  <p class="hint" id="calUpdatedInSheet">&nbsp;</p>
+  <button class="btn secondary" id="closeCalBtn">Close</button>
 </div>
 
 <script>
@@ -859,17 +877,18 @@ $('todoProp').onclick = openTodoSheet;
 function openTodoSheet(){
   $('todoSheet').classList.add('open');
   $('sheetBackdrop').classList.add('open');
-  moveCharacterToDesk();
+  goToDesk('todo');
 }
 function closeTodoSheet(){
   const wasOpen = $('todoSheet').classList.contains('open');
   $('todoSheet').classList.remove('open');
   $('sheetBackdrop').classList.remove('open');
-  if(wasOpen) wander();
+  if(wasOpen){ leaveDesk('todo'); evaluateCalendarBusy(); }
 }
 $('sheetBackdrop').onclick = () => {
   closeSheet();
   closeTodoSheet();
+  closeCalSheet();
 };
 $('closeTodoBtn').onclick = closeTodoSheet;
 
@@ -903,11 +922,203 @@ $('addCharBtn').onclick = () => {
   closeSheet();
 };
 
+/* =========================================================================
+   GOOGLE CALENDAR (optional — Nook works exactly as before without it)
+
+   Auth approach: a real Authorization Code flow, but the code exchange
+   (which needs a client_secret) happens in a small Cloudflare Worker you
+   deploy yourself — see /worker in the repo. Nook never sees a Google
+   client_secret, access_token, or refresh_token. It only ever holds an
+   opaque "session id" the Worker hands back after sign-in, which is
+   meaningless outside that Worker's KV store. This is what makes staying
+   signed in actually work, unlike the earlier in-page popup flow: the
+   Worker holds a real refresh_token and mints fresh access tokens on
+   Nook's behalf whenever asked.
+   ========================================================================= */
+let gcal = { connected:false, workerUrl:null, sessionId:null, events:[], lastUpdated:null };
+
+/* ---- state ---- */
+function loadGcalState(){
+  try{
+    const raw = localStorage.getItem('nook_gcal');
+    if(raw) gcal = Object.assign(gcal, JSON.parse(raw));
+  } catch(e){}
+}
+function saveGcalState(){
+  try{
+    localStorage.setItem('nook_gcal', JSON.stringify({
+      connected: gcal.connected, workerUrl: gcal.workerUrl, sessionId: gcal.sessionId,
+      events: gcal.events, lastUpdated: gcal.lastUpdated
+    }));
+  } catch(e){}
+}
+function gcalShowError(msg){ const el=$('gcalError'); if(el) el.textContent = msg; }
+
+/* ---- UI toggling (hides all calendar UI when disconnected, per spec) ---- */
+function initGcalUI(){
+  $('calDisconnected').style.display = gcal.connected ? 'none' : 'block';
+  $('calConnected').style.display = gcal.connected ? 'block' : 'none';
+  $('calProp').style.display = gcal.connected ? 'flex' : 'none';
+  if(gcal.workerUrl) $('gcalWorkerUrl').value = gcal.workerUrl;
+  $('gcalUpdatedHint').textContent = gcal.lastUpdated
+    ? 'Last updated ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+    : '';
+}
+
+/* ---- auth: redirect to the Worker, which redirects to Google, which
+   redirects back to the Worker, which redirects back here with either
+   ?nook_session=... (success) or ?gcal_error=... (failure) ---- */
+function gcalConnect(){
+  const workerUrl = $('gcalWorkerUrl').value.trim().replace(/\/$/, '');
+  if(!workerUrl){ gcalShowError('Paste your Worker URL first.'); return; }
+  gcal.workerUrl = workerUrl;
+  saveGcalState();
+  const returnTo = window.location.origin + window.location.pathname;
+  window.location.href = workerUrl + '/auth/start?return_to=' + encodeURIComponent(returnTo);
+}
+function gcalDisconnect(){
+  if(gcal.workerUrl && gcal.sessionId){
+    fetch(gcal.workerUrl + '/auth/logout?session=' + encodeURIComponent(gcal.sessionId)).catch(()=>{});
+  }
+  gcal = { connected:false, workerUrl:gcal.workerUrl, sessionId:null, events:[], lastUpdated:null };
+  saveGcalState();
+  initGcalUI();
+  renderCalendarList();
+  evaluateCalendarBusy();
+}
+
+/* Check the URL for a session id or error coming back from the Worker.
+   Runs once on boot, before anything else touches the calendar UI. */
+function consumeGcalRedirectParams(){
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('nook_session');
+  const errorParam = params.get('gcal_error');
+  if(!sessionId && !errorParam) return;
+
+  history.replaceState({}, '', window.location.pathname);
+
+  if(errorParam === 'access_denied'){
+    gcalShowError('Calendar permission was not granted.');
+  } else if(errorParam === 'no_refresh_token'){
+    gcalShowError('Google didn\'t return a refresh token — try disconnecting Nook\'s access in your Google Account settings, then connect again.');
+  } else if(errorParam){
+    gcalShowError('Connection failed (' + errorParam + '). Double check the Worker URL and its Google redirect URI.');
+  }
+  if(sessionId){
+    gcal.connected = true;
+    gcal.sessionId = sessionId;
+    saveGcalState();
+  }
+}
+
+/* ---- fetching ---- */
+async function fetchCalendarEvents(){
+  if(!gcal.connected || !gcal.sessionId || !gcal.workerUrl) return;
+  const now = new Date();
+  const startOfDay = new Date(now); startOfDay.setHours(0,0,0,0);
+  const endOfDay = new Date(now); endOfDay.setHours(23,59,59,999);
+  const url = gcal.workerUrl + '/calendar/events'
+    + '?session=' + encodeURIComponent(gcal.sessionId)
+    + '&timeMin=' + encodeURIComponent(startOfDay.toISOString())
+    + '&timeMax=' + encodeURIComponent(endOfDay.toISOString());
+  try{
+    const res = await fetch(url);
+    if(res.status === 401){
+      // Session gone or the Google refresh_token was revoked/invalidated.
+      gcal.connected = false; gcal.sessionId = null;
+      saveGcalState(); initGcalUI();
+      gcalShowError('Your calendar connection expired or was revoked. Reconnect to keep seeing your schedule.');
+      return;
+    }
+    if(!res.ok) throw new Error('Worker error ' + res.status);
+    const data = await res.json();
+    gcal.events = (data.items||[]).map(ev => ({
+      id: ev.id,
+      title: ev.summary || '(untitled event)',
+      start: ev.start && (ev.start.dateTime || ev.start.date),
+      end: ev.end && (ev.end.dateTime || ev.end.date),
+      allDay: !(ev.start && ev.start.dateTime)
+    }));
+    gcal.lastUpdated = Date.now();
+    saveGcalState();
+    initGcalUI();
+    renderCalendarList();
+    evaluateCalendarBusy();
+  } catch(e){
+    // Offline, or the Worker/API is unreachable — fall back to whatever
+    // was last cached, and say so.
+    $('gcalUpdatedHint').textContent = gcal.lastUpdated
+      ? 'Offline — showing schedule from ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+      : 'Could not reach your calendar Worker right now.';
+    renderCalendarList();
+  }
+}
+
+/* ---- rendering ---- */
+function fmtEventTime(iso){
+  if(!iso) return '';
+  return new Date(iso).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function renderCalendarList(){
+  const el = $('calList');
+  if(!el) return;
+  if(!gcal.events || gcal.events.length === 0){
+    el.innerHTML = '<div class="todo-empty">Nothing on your calendar today ☕</div>';
+  } else {
+    const now = Date.now();
+    el.innerHTML = gcal.events.map(ev => {
+      const startMs = ev.start ? new Date(ev.start).getTime() : null;
+      const endMs = ev.end ? new Date(ev.end).getTime() : null;
+      const isNow = !ev.allDay && startMs!=null && endMs!=null && now>=startMs && now<endMs;
+      const isSoon = !ev.allDay && !isNow && startMs!=null && (startMs-now) > 0 && (startMs-now) <= 30*60000;
+      const badge = isNow ? '<div class="todo-date cal-now">now</div>' : isSoon ? '<div class="todo-date cal-soon">soon</div>' : '';
+      const timeLabel = ev.allDay ? 'All day' : (fmtEventTime(ev.start) + (ev.end ? ' – ' + fmtEventTime(ev.end) : ''));
+      return '<div class="todo-row">'
+        + '<div class="todo-date">'+timeLabel+'</div>'
+        + '<div class="todo-text">'+escapeHtml(ev.title)+'</div>'
+        + badge
+        + '</div>';
+    }).join('');
+  }
+  $('calUpdatedInSheet').textContent = gcal.lastUpdated
+    ? 'Last updated ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+    : '';
+}
+
+/* ---- character interaction: head to the desk ~30 min before something starts ---- */
+function evaluateCalendarBusy(){
+  if(!gcal.connected || !gcal.events || gcal.events.length === 0){
+    leaveDesk('calendar');
+    return;
+  }
+  const now = Date.now();
+  const soon = gcal.events.some(ev => {
+    if(!ev.start || ev.allDay) return false;
+    const startMs = new Date(ev.start).getTime();
+    const endMs = ev.end ? new Date(ev.end).getTime() : startMs;
+    return (startMs - now) <= 30*60000 && now < endMs;
+  });
+  if(soon){ if(busyReason !== 'todo') goToDesk('calendar'); }
+  else leaveDesk('calendar');
+}
+
+/* ---- sheet open/close ---- */
+function openCalSheet(){ $('calSheet').classList.add('open'); $('sheetBackdrop').classList.add('open'); renderCalendarList(); }
+function closeCalSheet(){ $('calSheet').classList.remove('open'); $('sheetBackdrop').classList.remove('open'); }
+
+/* ---- wiring ---- */
+$('gcalConnectBtn').onclick = gcalConnect;
+$('gcalDisconnectBtn').onclick = gcalDisconnect;
+$('gcalRefreshBtn').onclick = fetchCalendarEvents;
+$('calProp').onclick = openCalSheet;
+$('closeCalBtn').onclick = closeCalSheet;
+
 /* ---------------- Character wandering (walks the open floor area) ---------------- */
 const WALK_GRID = { xMin:1.8, xMax:3.6, yMin:2.4, yMax:4.2 };
 const DESK_SPOT = { x:2.53, y:1.55 };
 let lastGX = 2.6;
 let wanderTimer = null;
+let busyReason = null; // null | 'todo' | 'calendar' — whoever "claims" the desk
 function placeCharAt(gx, gy){
   const p = iso(gx, gy, 0);
   charWrapEl.classList.toggle('facing-left', gx < lastGX);
@@ -920,6 +1131,7 @@ charWrapEl.addEventListener('transitionend', (e) => {
   if(e.propertyName === 'left'){ charWrapEl.classList.remove('walking'); }
 });
 function wander(){
+  if(busyReason) return;
   charWrapEl.classList.remove('sitting');
   const nx = WALK_GRID.xMin + Math.random()*(WALK_GRID.xMax-WALK_GRID.xMin);
   const ny = WALK_GRID.yMin + Math.random()*(WALK_GRID.yMax-WALK_GRID.yMin);
@@ -927,11 +1139,18 @@ function wander(){
   wanderTimer = setTimeout(wander, 2800 + Math.random()*2600);
 }
 function stopWander(){ clearTimeout(wanderTimer); }
-function moveCharacterToDesk(){
+function goToDesk(reason){
+  busyReason = reason;
   stopWander();
   charWrapEl.classList.remove('facing-left');
   placeCharAt(DESK_SPOT.x, DESK_SPOT.y);
   charWrapEl.classList.add('sitting');
+}
+function leaveDesk(reason){
+  if(busyReason !== reason) return;
+  busyReason = null;
+  charWrapEl.classList.remove('sitting');
+  wander();
 }
 
 /* ---------------- To-dos ---------------- */
@@ -1050,6 +1269,14 @@ renderSwitcher();
 loadTodos();
 renderTodos();
 notifyDueTodos();
+loadGcalState();
+consumeGcalRedirectParams();
+initGcalUI();
+renderCalendarList();
+evaluateCalendarBusy();
+if(gcal.connected) fetchCalendarEvents();
+setInterval(evaluateCalendarBusy, 60000);
+setInterval(() => { if(gcal.connected) fetchCalendarEvents(); }, 15*60000);
 wander();
 locate();
 /* ---------------- Offline app shell ---------------- */
