@@ -335,11 +335,7 @@
 
   <h2>Google Calendar</h2>
   <div id="calDisconnected">
-    <p class="hint">Optional. If connected, Nook can show today's schedule and the character will head to the desk shortly before something starts. Nook only <b>reads</b> your calendar — it never creates, edits, or deletes events — and you can disconnect any time. The actual sign-in happens through your own small Cloudflare Worker, which is the only place your Google credentials are ever handled.</p>
-    <div class="field">
-      <label>Worker URL</label>
-      <input type="text" id="gcalWorkerUrl" placeholder="https://nook-calendar-auth.you.workers.dev">
-    </div>
+    <p class="hint">Optional. If connected, Nook can show today's schedule and the character will head to the desk shortly before something starts. Nook only <b>reads</b> your calendar — it never creates, edits, or deletes events — and you can disconnect any time.</p>
     <button class="btn" id="gcalConnectBtn">Connect Google Calendar</button>
     <p class="hint" id="gcalError" style="color:#C1512D;"></p>
   </div>
@@ -947,7 +943,7 @@ $('addCharBtn').onclick = () => {
    Worker holds a real refresh_token and mints fresh access tokens on
    Nook's behalf whenever asked.
    ========================================================================= */
-let gcal = { connected:false, workerUrl:null, sessionId:null, calendars:[], selectedIds:['primary'], events:[], lastUpdated:null };
+let gcal = { connected:false, workerUrl:'https://nook-calendar-auth.lendrixlim.workers.dev', sessionId:null, calendars:[], selectedIds:['primary'], events:[], lastUpdated:null };
 
 /* ---- state ---- */
 function loadGcalState(){
@@ -959,7 +955,7 @@ function loadGcalState(){
 function saveGcalState(){
   try{
     localStorage.setItem('nook_gcal', JSON.stringify({
-      connected: gcal.connected, workerUrl: gcal.workerUrl, sessionId: gcal.sessionId,
+      connected: gcal.connected, sessionId: gcal.sessionId,
       calendars: gcal.calendars, selectedIds: gcal.selectedIds,
       events: gcal.events, lastUpdated: gcal.lastUpdated
     }));
@@ -972,7 +968,6 @@ function initGcalUI(){
   $('calDisconnected').style.display = gcal.connected ? 'none' : 'block';
   $('calConnected').style.display = gcal.connected ? 'block' : 'none';
   $('calProp').style.display = gcal.connected ? 'flex' : 'none';
-  if(gcal.workerUrl) $('gcalWorkerUrl').value = gcal.workerUrl;
   $('gcalUpdatedHint').textContent = gcal.lastUpdated
     ? 'Last updated ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
     : '';
@@ -983,12 +978,8 @@ function initGcalUI(){
    redirects back to the Worker, which redirects back here with either
    ?nook_session=... (success) or ?gcal_error=... (failure) ---- */
 function gcalConnect(){
-  const workerUrl = $('gcalWorkerUrl').value.trim().replace(/\/$/, '');
-  if(!workerUrl){ gcalShowError('Paste your Worker URL first.'); return; }
-  gcal.workerUrl = workerUrl;
-  saveGcalState();
   const returnTo = window.location.origin + window.location.pathname;
-  window.location.href = workerUrl + '/auth/start?return_to=' + encodeURIComponent(returnTo);
+  window.location.href = gcal.workerUrl + '/auth/start?return_to=' + encodeURIComponent(returnTo);
 }
 function gcalDisconnect(){
   if(gcal.workerUrl && gcal.sessionId){
