@@ -178,16 +178,31 @@
   .stat-refresh:active{ transform:scale(0.88) rotate(90deg); }
   .forecast-row{
     display:flex; justify-content:space-between; gap:4px;
-    margin-top:14px; padding-top:12px; border-top:1px solid var(--line);
+    margin-top:10px; padding-top:0;
   }
+  .forecast-row.hourly-mode{
+    justify-content:flex-start; overflow-x:auto; gap:14px;
+    scrollbar-width:none; padding-bottom:2px;
+  }
+  .forecast-row.hourly-mode::-webkit-scrollbar{ display:none; }
+  .forecast-row.hourly-mode .forecast-day{ flex:0 0 auto; min-width:38px; }
   .forecast-day{
     display:flex; flex-direction:column; align-items:center; gap:3px;
     flex:1; min-width:0;
   }
+  .forecast-day.fd-now .fd-name{ color:var(--sage-dark); }
   .forecast-day .fd-name{ font-size:10.5px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; }
   .forecast-day .fd-icon{ font-size:18px; }
   .forecast-day .fd-max{ font-size:12.5px; font-weight:800; }
   .forecast-day .fd-min{ font-size:11px; color:var(--ink-soft); font-weight:700; }
+  .forecast-header{
+    display:flex; gap:14px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
+  }
+  .forecast-toggle{
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--ink-soft); cursor:pointer; padding-bottom:2px;
+  }
+  .forecast-toggle.active{ color:var(--sage-dark); border-bottom:2px solid var(--sage); }
 
   /* ---------- Character switcher ---------- */
   .switcher{ display:flex; gap:10px; padding:0 14px 14px; overflow-x:auto; scrollbar-width:none; }
@@ -333,6 +348,10 @@
       <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
       <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
       <button class="stat-refresh" id="refreshBtn" title="Refresh">↻</button>
+    </div>
+    <div class="forecast-header">
+      <span class="forecast-toggle" data-mode="hourly">Hourly</span>
+      <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
     </div>
     <div class="forecast-row" id="forecastRow"></div>
   </div>
@@ -749,8 +768,8 @@ function facePaths(mood){
     case 'cozy': return { eyes:'<path d="M-20 -4 q6 -8 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -4 q6 -8 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>',
                          mouth:'<path d="M-8 11 q8 8 16 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>' };
     case 'sad': return { eyes:'<circle cx="-14" cy="-4" r="3.2" fill="var(--ink)"/><circle cx="14" cy="-4" r="3.2" fill="var(--ink)"/>',
-                        mouth:'<path d="M-10 14 q10 -8 20 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>',
-                        brows:'<path d="M-20 -14 q6 4 10 8" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M20 -14 q-6 4 -10 8" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
+                        mouth:'<path d="M-10 13 q10 8 20 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>',
+                        brows:'<path d="M-20 -6 q6 -6 10 -10" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M20 -6 q-6 -6 -10 -10" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
     case 'asleep': return { eyes:'<path d="M-20 -4 q6 6 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -4 q6 6 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>',
                            mouth:'<path d="M-6 12 q6 4 12 0" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
     default: return { eyes:'<circle cx="-14" cy="-4" r="3.4" fill="var(--ink)"/><circle cx="14" cy="-4" r="3.4" fill="var(--ink)"/>',
@@ -800,18 +819,39 @@ function drawCharacter(){
 }
 
 const FORECAST_GLYPH = { sunny:'☀️', partly:'🌤️', cloudy:'☁️', foggy:'🌫️', rainy:'🌧️', snowy:'❄️', thunder:'⛈️' };
+let forecastMode = (localStorage.getItem('nook_forecast_mode') || 'weekly');
 function renderForecast(){
   const el = $('forecastRow');
-  if(!el || !state.forecast) return;
+  if(!el) return;
+  el.classList.toggle('hourly-mode', forecastMode === 'hourly');
+  if(forecastMode === 'hourly') renderHourlyForecast(el);
+  else renderWeeklyForecast(el);
+}
+function renderWeeklyForecast(el){
+  if(!state.forecast) return;
   const todayKey = localDateKey(new Date());
   el.innerHTML = state.forecast.map(d => {
     const isToday = d.date === todayKey;
     const label = isToday ? 'Today' : new Date(d.date+'T00:00:00').toLocaleDateString([], { weekday:'short' });
-    return '<div class="forecast-day">'
+    return '<div class="forecast-day'+(isToday?' fd-now':'')+'">'
       + '<span class="fd-name">'+label+'</span>'
       + '<span class="fd-icon">'+(FORECAST_GLYPH[d.base]||'☁️')+'</span>'
       + '<span class="fd-max">'+Math.round(d.max)+'°</span>'
       + '<span class="fd-min">'+Math.round(d.min)+'°</span>'
+      + '</div>';
+  }).join('');
+}
+function renderHourlyForecast(el){
+  if(!state.hourly || state.hourly.length === 0){ el.innerHTML = '<div class="todo-empty">Hourly data unavailable</div>'; return; }
+  const nowHour = new Date().getHours();
+  el.innerHTML = state.hourly.map(h => {
+    const hr = new Date(h.time).getHours();
+    const isNow = hr === nowHour;
+    const label = isNow ? 'Now' : new Date(h.time).toLocaleTimeString([], { hour:'numeric' });
+    return '<div class="forecast-day'+(isNow?' fd-now':'')+'">'
+      + '<span class="fd-name">'+label+'</span>'
+      + '<span class="fd-icon">'+(FORECAST_GLYPH[h.base]||'☁️')+'</span>'
+      + '<span class="fd-max">'+Math.round(h.temp)+'°</span>'
       + '</div>';
   }).join('');
 }
@@ -865,7 +905,8 @@ function flickerLightning(){
 async function fetchWeather(lat, lon){
   const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon
     + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day'
-    + '&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=6&timezone=auto';
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=6'
+    + '&hourly=temperature_2m,weather_code&timezone=auto';
   const res = await fetch(url);
   const data = await res.json();
   const cur = data.current;
@@ -881,6 +922,12 @@ async function fetchWeather(lat, lon){
       max: data.daily.temperature_2m_max[i],
       min: data.daily.temperature_2m_min[i]
     }));
+  }
+  if(data.hourly){
+    const todayKey = localDateKey(new Date());
+    state.hourly = data.hourly.time
+      .map((t,i) => ({ time:t, base: classify(data.hourly.weather_code[i], 0).base, temp: data.hourly.temperature_2m[i] }))
+      .filter(h => localDateKey(new Date(h.time)) === todayKey);
   }
   renderScene();
 }
@@ -958,6 +1005,14 @@ function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBackdrop').c
 $('settingsBtn').onclick = openSheet;
 $('closeSheetBtn').onclick = closeSheet;
 $('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon); };
+document.querySelectorAll('.forecast-toggle').forEach(t => {
+  t.onclick = () => {
+    forecastMode = t.dataset.mode;
+    try{ localStorage.setItem('nook_forecast_mode', forecastMode); } catch(e){}
+    document.querySelectorAll('.forecast-toggle').forEach(x => x.classList.toggle('active', x===t));
+    renderForecast();
+  };
+});
 $('todoProp').onclick = openTodoSheet;
 
 /* ---------------- Todo sheet ---------------- */
@@ -1497,6 +1552,7 @@ function enableSwipeToClose(sheetEl, closeFn){
 }
 
 /* ---------------- Boot ---------------- */
+document.querySelectorAll('.forecast-toggle').forEach(x => x.classList.toggle('active', x.dataset.mode===forecastMode));
 enableSwipeToClose($('sheet'), closeSheet);
 enableSwipeToClose($('todoSheet'), closeTodoSheet);
 enableSwipeToClose($('calSheet'), closeCalSheet);
