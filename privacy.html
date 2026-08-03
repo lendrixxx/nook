@@ -1,41 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Nook Privacy Policy</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nook — Privacy Policy</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{
+    margin:0; padding:40px 20px 60px;
+    font-family:'Nunito',sans-serif;
+    background:#FBF3E7;
+    color:#4A3F35;
+  }
+  .wrap{ max-width:620px; margin:0 auto; }
+  h1{ font-family:'Fredoka',sans-serif; font-size:28px; margin:0 0 4px; }
+  p.updated{ color:#8A7C6D; font-weight:700; font-size:13px; margin:0 0 28px; }
+  h2{ font-family:'Fredoka',sans-serif; font-size:18px; margin:28px 0 8px; }
+  p, li{ line-height:1.65; font-size:15px; }
+  ul{ padding-left:20px; }
+  a{ color:#5F7B73; font-weight:700; }
+</style>
 </head>
 <body>
-<h1>Nook Privacy Policy</h1>
+  <div class="wrap">
+    <h1>Nook — Privacy Policy</h1>
+    <p class="updated">Last updated: 2026</p>
 
-<p>
-Nook helps users manage their personal schedules and tasks.
-</p>
+    <p>Nook is a personal, single-developer weather and to-do companion app. This page explains what data it touches and why.</p>
 
-<h2>Google Calendar Access</h2>
+    <h2>What Nook stores, and where</h2>
+    <ul>
+      <li><b>On your device only</b> (browser local storage, never sent anywhere): your to-do list, your chosen character, and your app preferences.</li>
+      <li><b>Weather data</b>: your location is sent to the Open-Meteo weather API to fetch current conditions. It is not stored by Nook beyond the current session.</li>
+    </ul>
 
-<p>
-If you choose to connect Google Calendar, Nook requests read-only access
-to your Google Calendar data to display your calendar events inside the app.
-</p>
+    <h2>Google Calendar (optional)</h2>
+    <p>If you choose to connect Google Calendar, Nook requests <b>read-only</b> access
+      (<code>calendar.readonly</code>) — it cannot create, edit, or delete anything in your calendar.</p>
+    <p>The connection works through a small server component ("the Worker") that Nook's developer operates:</p>
+    <ul>
+      <li>Google issues a refresh token after you consent. This is stored server-side, associated only with a random session id — never with your name or email.</li>
+      <li>Your browser only ever holds that random session id, not any Google token.</li>
+      <li>Calendar event data (titles, times) is fetched on request to display today's schedule in the app, and cached locally on your device for offline viewing.</li>
+      <li>No calendar data is shared with any third party, sold, or used for advertising.</li>
+    </ul>
+    <p>You can disconnect at any time from Nook's Settings, which revokes access with Google and deletes the stored session.</p>
 
-<p>
-Nook does not sell, share, or transfer your Google Calendar data to third parties.
-Calendar data is only used to provide calendar integration features.
-</p>
-
-<h2>Data Storage</h2>
-
-<p>
-Authentication information and calendar data are used only for providing
-the requested features. You may disconnect Google Calendar access at any time
-through your Google Account settings.
-</p>
-
-<h2>Contact</h2>
-
-<p>
-For questions about this privacy policy, contact the developer through the
-Nook project repository.
-</p>
-
+    <h2>Contact</h2>
+    <p>Questions about this policy can be raised via the GitHub repository this app is published from.</p>
+  </div>
 </body>
 </html>
