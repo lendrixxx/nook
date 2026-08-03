@@ -136,9 +136,6 @@
   }
   #stageChar .charInner{ animation:floaty 3.2s ease-in-out infinite; }
   #stageChar.facing-left .charInner{ animation:floatyFlip 3.2s ease-in-out infinite; }
-  #stageChar.sitting .charInner{ animation:none; transform:translateY(6px) scale(0.94); }
-  #stageChar.sitting .charShadow{ opacity:0.55; width:32px; }
-  #stageChar.sitting .legs{ opacity:0; }
   .leg{ transform-box:fill-box; transform-origin:50% 0%; }
   #stageChar.walking .leg-left{ animation:legSwingA 0.42s ease-in-out infinite; }
   #stageChar.walking .leg-right{ animation:legSwingB 0.42s ease-in-out infinite; }
@@ -1191,7 +1188,6 @@ charWrapEl.addEventListener('transitionend', (e) => {
 });
 function wander(){
   if(busyReason) return;
-  charWrapEl.classList.remove('sitting');
   const nx = WALK_GRID.xMin + Math.random()*(WALK_GRID.xMax-WALK_GRID.xMin);
   const ny = WALK_GRID.yMin + Math.random()*(WALK_GRID.yMax-WALK_GRID.yMin);
   placeCharAt(nx, ny);
@@ -1203,12 +1199,10 @@ function goToDesk(reason){
   stopWander();
   charWrapEl.classList.remove('facing-left');
   placeCharAt(DESK_SPOT.x, DESK_SPOT.y);
-  charWrapEl.classList.add('sitting');
 }
 function leaveDesk(reason){
   if(busyReason !== reason) return;
   busyReason = null;
-  charWrapEl.classList.remove('sitting');
   wander();
 }
 
@@ -1321,7 +1315,43 @@ function requestNotifyPermission(){
 }
 $('notifyBtn')?.addEventListener('click', requestNotifyPermission);
 
+/* ---------------- Swipe-down-to-close for bottom sheets ---------------- */
+function enableSwipeToClose(sheetEl, closeFn){
+  let startY = null, currentY = 0, dragging = false;
+  const threshold = 90; // px of downward drag before it counts as "close"
+
+  sheetEl.addEventListener('touchstart', (e) => {
+    if(!sheetEl.classList.contains('open')) return;
+    // Only start the gesture from the top of the sheet (handle + header
+    // area), so scrolling a long list inside the sheet still works normally.
+    if(e.touches[0].clientY - sheetEl.getBoundingClientRect().top > 90) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+    sheetEl.style.transition = 'none';
+  }, { passive:true });
+
+  sheetEl.addEventListener('touchmove', (e) => {
+    if(!dragging || startY === null) return;
+    currentY = e.touches[0].clientY - startY;
+    if(currentY < 0) currentY = 0;
+    sheetEl.style.transform = `translateY(${currentY}px)`;
+  }, { passive:true });
+
+  sheetEl.addEventListener('touchend', () => {
+    if(!dragging) return;
+    dragging = false;
+    sheetEl.style.transition = '';
+    sheetEl.style.transform = '';
+    if(currentY > threshold) closeFn();
+    currentY = 0;
+    startY = null;
+  });
+}
+
 /* ---------------- Boot ---------------- */
+enableSwipeToClose($('sheet'), closeSheet);
+enableSwipeToClose($('todoSheet'), closeTodoSheet);
+enableSwipeToClose($('calSheet'), closeCalSheet);
 initRoom();
 resizeCanvas();
 renderSwitcher();
