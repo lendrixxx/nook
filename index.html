@@ -403,7 +403,7 @@
 
   <div class="divider"></div>
 
-  <h2>New character</h2>
+  <h2>Customize character</h2>
   <div class="field">
     <label>Name</label>
     <input type="text" id="cName" placeholder="e.g. Pip">
@@ -448,7 +448,7 @@
       <div class="colorfield"><input type="color" id="cAccent" value="#8D6E63"></div>
     </div>
   </div>
-  <button class="btn" id="addCharBtn">Add character</button>
+  <button class="btn" id="customizeCharBtn">Save changes</button>
   <p class="hint">This creates an original character from these shape and color choices — it won't copy an existing cartoon, but you can tune it until it feels like "yours."</p>
 
   <button class="btn secondary" id="closeSheetBtn">Close</button>
@@ -510,6 +510,13 @@ const CHARACTERS = [
   { id:'bramble', name:'Bramble', earType:'round', tailType:'none',
     palette:{ body:'#A9C6A2', belly:'#F4EFDF', cheek:'#F6A9A0', accent:'#5F7B57' } }
 ];
+
+try {
+  const saved = JSON.parse(localStorage.getItem('nook_character'));
+  if(saved){
+    CHARACTERS[0] = saved;
+  }
+} catch(e){}
 
 let state = { lat:null, lon:null, locationName:'—', locationSub:'', weather:null, characterId: CHARACTERS[0].id };
 
@@ -746,6 +753,14 @@ animateParticles();
 
 /* ---------------- Character rendering (small SVG rig) ---------------- */
 function getCharacter(){ return CHARACTERS.find(c=>c.id===state.characterId) || CHARACTERS[0]; }
+function saveCharacter(){
+  try{
+    localStorage.setItem(
+      'nook_character',
+      JSON.stringify(getCharacter())
+    );
+  } catch(e){}
+}
 function earPath(type, side){
   const x = side*34;
   switch(type){
@@ -997,18 +1012,15 @@ function locate(){
 function renderSwitcher(){
   const el = $('switcher');
   el.innerHTML = '';
-  CHARACTERS.forEach(c=>{
-    const chip = document.createElement('div');
-    chip.className = 'chip' + (c.id===state.characterId ? ' active' : '');
-    chip.innerHTML = '<span class="dot" style="background:'+c.palette.body+'"></span>'+c.name;
-    chip.onclick = () => { state.characterId = c.id; renderSwitcher(); drawCharacter(); };
-    el.appendChild(chip);
-  });
-  const addChip = document.createElement('div');
-  addChip.className = 'chip add';
-  addChip.textContent = '+ New';
-  addChip.onclick = openSheet;
-  el.appendChild(addChip);
+
+  const c = getCharacter();
+
+  const chip = document.createElement('div');
+  chip.className = 'chip active';
+  chip.innerHTML =
+    '<span class="dot" style="background:'+c.palette.body+'"></span>'+c.name;
+
+  el.appendChild(chip);
 }
 
 /* ---------------- Settings sheet ---------------- */
@@ -1063,15 +1075,22 @@ $('citySearch').addEventListener('input', e=>{
   }, 350);
 });
 
-$('addCharBtn').onclick = () => {
-  const name = $('cName').value.trim() || 'Friend';
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + Date.now();
-  CHARACTERS.push({
-    id, name, earType: $('cEar').value, tailType: $('cTail').value,
-    palette:{ body:$('cBody').value, belly:$('cBelly').value, cheek:$('cCheek').value, accent:$('cAccent').value }
-  });
-  state.characterId = id;
-  renderSwitcher(); drawCharacter();
+$('customizeCharBtn').onclick = () => {
+  const c = getCharacter();
+
+  c.name = $('cName').value.trim() || c.name;
+  c.earType = $('cEar').value;
+  c.tailType = $('cTail').value;
+  c.palette.body = $('cBody').value;
+  c.palette.belly = $('cBelly').value;
+  c.palette.cheek = $('cCheek').value;
+  c.palette.accent = $('cAccent').value;
+  
+  saveCharacter();
+
+  renderSwitcher();
+  drawCharacter();
+
   $('cName').value = '';
   closeSheet();
 };
