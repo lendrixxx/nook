@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-31.0 -10.0 66.5 38.7">
+  <!-- Nook room decoration asset: desk
+       Front-and-center writing desk (world anchor used by default room: 1.85, 0.55, 0)
+       Authored at local grid origin (0,0,0); the runtime positions this
+       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
+       room design tokens (see index.html :root) so themes can recolor
+       every decoration without editing this file. -->
+  <polygon points="-21.0,10.5 25.5,33.8 25.5,18.7 -21.0,-4.6" fill="var(--room-wood-lo)" stroke="var(--room-outline)" stroke-width="2.5" stroke-linejoin="round"/><polygon points="46.5,23.3 25.5,33.8 25.5,18.7 46.5,8.2" fill="var(--room-wood)" stroke="var(--room-outline)" stroke-width="2.5" stroke-linejoin="round"/><polygon points="0.0,-15.1 46.5,8.2 25.5,18.7 -21.0,-4.6" fill="var(--room-wood-hi)" stroke="var(--room-outline)" stroke-width="2.5" stroke-linejoin="round"/><line x1="-21" y1="-4.579999999999998" x2="25.500000000000004" y2="18.67" stroke="var(--room-wood-lo)" stroke-width="1.5" opacity="0.5"/>
+</svg>

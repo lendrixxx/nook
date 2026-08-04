@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10.0 -10.0 23.6 26.4">
+  <!-- Nook room decoration asset: book
+       Small closed book accent (default anchor: 3.85, 0.05, 3.17)
+       Authored at local grid origin (0,0,0); the runtime positions this
+       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
+       room design tokens (see index.html :root) so themes can recolor
+       every decoration without editing this file. -->
+  <polygon points="-7.2,3.6 3.6,9.0 3.6,6.4 -7.2,1.0" fill="var(--room-mug-lo)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="10.8,5.4 3.6,9.0 3.6,6.4 10.8,2.8" fill="var(--room-mug)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="0.0,-2.6 10.8,2.8 3.6,6.4 -7.2,1.0" fill="var(--room-mug-hi)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10.0 -10.0 55.4 44.2">
+  <!-- Nook room decoration asset: shelf
+       Floating wall shelf (default room anchor: 3.7, 0, 3.05)
+       Authored at local grid origin (0,0,0); the runtime positions this
+       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
+       room design tokens (see index.html :root) so themes can recolor
+       every decoration without editing this file. -->
+  <polygon points="-9.6,4.8 35.4,27.3 35.4,24.2 -9.6,1.7" fill="var(--room-wood-lo)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="45.0,22.5 35.4,27.3 35.4,24.2 45.0,19.4" fill="var(--room-wood)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="0.0,-3.1 45.0,19.4 35.4,24.2 -9.6,1.7" fill="var(--room-wood-hi)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/>
+</svg>

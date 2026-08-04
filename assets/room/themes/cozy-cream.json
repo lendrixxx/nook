@@ -1,0 +1,51 @@
+{
+  "id": "cozy-cream",
+  "name": "Cozy Cream",
+  "description": "The default theme, matching the app icon: warm cream walls, honey wood furniture, sage and terracotta accents.",
+  "tokens": {
+    "--cream": "#FBF1DE",
+    "--ink": "#4A3826",
+    "--ink-soft": "#93805F",
+    "--sage": "#7E9B7E",
+    "--sage-dark": "#5C7A5C",
+    "--clay": "#C97B4A",
+    "--clay-dark": "#A85C34",
+    "--card": "#FFFDF8",
+    "--line": "#EEE0C4",
+
+    "--room-wall-a": "#F3E6C9",
+    "--room-wall-b": "#E7D2A2",
+    "--room-floor": "#D8AE79",
+    "--room-floor-dark": "#C79861",
+    "--room-rug": "#BFD9C6",
+    "--room-rug-line": "#9FC2A9",
+    "--room-wood": "#8C6239",
+    "--room-wood-hi": "#AB8158",
+    "--room-wood-lo": "#633910",
+    "--room-wood-dark": "#6E4A28",
+    "--room-outline": "#5A3F26",
+    "--room-lamp": "#7E9B7E",
+    "--room-lamp-dark": "#5C7A5C",
+    "--room-mug": "#C97B4A",
+    "--room-mug-hi": "#F2A473",
+    "--room-mug-lo": "#A05221",
+    "--room-leaf-a": "#8FB88A",
+    "--room-leaf-b": "#9DC79A",
+    "--room-leaf-dull-a": "#C2A66B",
+    "--room-leaf-dull-b": "#D4BC85",
+
+    "--char-body": "#F6E9D3",
+    "--char-belly": "#FFFBF2",
+    "--char-cheek": "#F4A9A0",
+    "--char-accent": "#C99A6E"
+  },
+  "roomLayout": [
+    { "asset": "shelf",     "at": [3.7, 0, 3.05] },
+    { "asset": "plant-pot", "at": [4.45, 0.06, 3.17] },
+    { "asset": "book",      "at": [3.85, 0.05, 3.17] },
+    { "asset": "desk",      "at": [1.85, 0.55, 0] },
+    { "asset": "lamp",      "at": [2.13, 0.69, 0.58] },
+    { "asset": "mug",       "at": [3.02, 0.93, 0.58] },
+    { "asset": "stool",     "at": [2.4, 1.47, 0] }
+  ]
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -150 200 240" width="66" height="82">
+  <!-- Nook accessory asset: umbrella (worn on rainy/thunder weather) -->
+  <g transform="translate(50,-74)">
+    <path d="M-28 6 A28 26 0 0 1 28 6 Z" fill="var(--accent)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+    <line x1="0" y1="6" x2="0" y2="48" stroke="var(--accent)" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+</svg>

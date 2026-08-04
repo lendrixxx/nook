@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nook">
-<meta name="theme-color" content="#7C9A92">
+<meta name="theme-color" content="#FBF1DE">
 <link rel="apple-touch-icon" href="icon-180-v3.png">
 <link rel="icon" href="icon-32-v3.png">
 <link rel="manifest" href="manifest.json">
@@ -15,14 +15,51 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --cream:#FBF3E7;
-    --ink:#4A3F35;
-    --ink-soft:#8A7C6D;
-    --sage:#7C9A92;
-    --sage-dark:#5F7B73;
-    --card:#FFFFFF;
-    --line:#EEE3D3;
-    --radius:26px;
+    /* ---- Core palette (Cozy Cream — matches the app icon) ---- */
+    --cream:#FBF1DE;
+    --ink:#4A3826;
+    --ink-soft:#93805F;
+    --sage:#7E9B7E;
+    --sage-dark:#5C7A5C;
+    --clay:#C97B4A;
+    --clay-dark:#A85C34;
+    --card:#FFFDF8;
+    --line:#EEE0C4;
+
+    /* ---- Room / furniture tokens (read by JS room + character builders) ---- */
+    --room-wall-a:#F3E6C9;
+    --room-wall-b:#E7D2A2;
+    --room-floor:#D8AE79;
+    --room-floor-dark:#C79861;
+    --room-rug:#BFD9C6;
+    --room-rug-line:#9FC2A9;
+    --room-wood:#8C6239;
+    --room-wood-hi:#AB8158;
+    --room-wood-lo:#633910;
+    --room-wood-dark:#6E4A28;
+    --room-outline:#5A3F26;
+    --room-lamp:#7E9B7E;
+    --room-lamp-dark:#5C7A5C;
+    --room-mug:#C97B4A;
+    --room-mug-hi:#F2A473;
+    --room-mug-lo:#A05221;
+    --room-leaf-a:#8FB88A;
+    --room-leaf-b:#9DC79A;
+    --room-leaf-dull-a:#C2A66B;
+    --room-leaf-dull-b:#D4BC85;
+
+    /* ---- Companion default palette ---- */
+    --char-body:#F6E9D3;
+    --char-belly:#FFFBF2;
+    --char-cheek:#F4A9A0;
+    --char-accent:#C99A6E;
+
+    /* ---- Shape language ---- */
+    --radius:28px;
+    --radius-sm:16px;
+    --radius-pill:999px;
+    --shadow-soft:0 14px 30px -16px rgba(74,56,38,0.28);
+    --shadow-lift:0 20px 44px -20px rgba(74,56,38,0.38);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -34,6 +71,9 @@
     overflow:hidden;
     -webkit-font-smoothing:antialiased;
   }
+  .icon{ width:1em; height:1em; display:inline-block; vertical-align:-0.125em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .icon.filled{ fill:currentColor; stroke:none; }
+  .icon .filled{ fill:currentColor; stroke:none; }
   #app{
     height:100dvh;
     display:flex;
@@ -48,20 +88,22 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 10px;
+    padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 12px;
     z-index:20;
     position:relative;
   }
-  .place{ display:flex; flex-direction:column; line-height:1.15; }
-  .place .name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:17px; color:var(--ink); }
-  .place .sub{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+  .place{ display:flex; flex-direction:column; line-height:1.2; gap:1px; }
+  .place .name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:19px; color:var(--ink); letter-spacing:-0.2px; }
+  .place .sub{ font-size:12.5px; color:var(--ink-soft); font-weight:700; }
   .iconbtn{
-    width:42px;height:42px; border-radius:50%; border:none;
-    background:rgba(255,255,255,0.6); backdrop-filter:blur(6px);
+    width:44px;height:44px; border-radius:50%; border:none;
+    background:rgba(255,253,248,0.75); backdrop-filter:blur(8px);
+    box-shadow:0 6px 16px -8px rgba(74,56,38,0.25);
     display:flex;align-items:center;justify-content:center;
     cursor:pointer; color:var(--ink); transition:transform .15s ease;
-    font-size:20px;
+    font-size:19px;
   }
+  .iconbtn .icon{ width:20px; height:20px; }
   .iconbtn:active{transform:scale(0.9);}
   .header-actions{display:flex;gap:8px;}
   #todoProp{ cursor:pointer; }
@@ -85,8 +127,9 @@
     border-radius:var(--radius);
     overflow:hidden;
     isolation:isolate;
-    box-shadow:0 18px 40px -18px rgba(74,63,53,0.35);
+    box-shadow:var(--shadow-lift);
     background:#CDEAF7;
+    border:3px solid rgba(255,253,248,0.5);
   }
   #skyBg{ position:absolute; inset:0; z-index:0; transition:background 1.4s ease; }
   #bgScene{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; }
@@ -104,26 +147,31 @@
 
   #stageChar{
     position:absolute;
-    left:50%; top:62%;
-    width:64px;
-    margin-left:-32px;
+    left:50%; top:60%;
+    width:66px; height:82px;
+    margin-left:-33px;
     transition:left 3.2s cubic-bezier(.45,0,.55,1), top 3.2s cubic-bezier(.45,0,.55,1);
     z-index:5;
   }
+  #stageChar .eyes{ transform-box:fill-box; transform-origin:center; animation:blinkEyes 5.4s ease-in-out infinite; }
+  @keyframes blinkEyes{ 0%,92%,100%{ transform:scaleY(1); } 95%{ transform:scaleY(0.12); } }
   .scene-btn{
     position:absolute;
-    bottom:18px;
-    width:52px; height:52px;
+    bottom:18px; right:18px;
+    width:50px; height:50px;
     border-radius:50%;
     border:none;
-    background:rgba(255,255,255,0.55);
-    backdrop-filter:blur(6px);
-    font-size:24px;
+    background:rgba(255,253,248,0.7);
+    backdrop-filter:blur(8px);
+    box-shadow:0 8px 18px -8px rgba(74,56,38,0.3);
+    font-size:22px;
+    color:var(--ink);
     display:flex; align-items:center; justify-content:center;
     cursor:pointer;
     z-index:6;
     transition:transform .15s ease;
   }
+  .scene-btn .icon{ width:22px; height:22px; }
   .scene-btn:active{ transform:scale(0.9); }
   .scene-btn.has-due{ animation:btnPulse 1.7s ease-in-out infinite; }
   @keyframes btnPulse{
@@ -132,10 +180,11 @@
     100%{ box-shadow:0 0 0 0 rgba(231,111,81,0); }
   }
   #stageChar .charShadow{
-    width:40px;height:9px; margin:0 auto;
-    background:rgba(0,0,0,0.2); border-radius:50%; filter:blur(2px);
+    position:absolute; left:50%; bottom:-3px;
+    width:38px;height:9px; margin-left:-19px;
+    background:rgba(0,0,0,0.22); border-radius:50%; filter:blur(2px);
   }
-  #stageChar .charInner{ animation:floaty 3.2s ease-in-out infinite; }
+  #stageChar .charInner{ position:absolute; inset:0; animation:floaty 3.2s ease-in-out infinite; }
   #stageChar.facing-left .charInner{ animation:floatyFlip 3.2s ease-in-out infinite; }
   .leg{ transform-box:fill-box; transform-origin:50% 0%; }
   #stageChar.walking .leg-left{ animation:legSwingA 0.42s ease-in-out infinite; }
@@ -149,32 +198,34 @@
   @keyframes windTilt{ 0%,100%{ rotate:0deg; } 30%{ rotate:-6deg; } 60%{ rotate:3deg; } }
   #stageChar.asleep .charInner{ animation:breathe 3.6s ease-in-out infinite; transform:rotate(-14deg); transform-origin:center; }
   #stageChar.asleep .legs{ opacity:0; }
-  #stageChar.asleep .charShadow{ opacity:0.5; width:34px; }
+  #stageChar.asleep .charShadow{ opacity:0.5; width:34px; margin-left:-17px; }
   @keyframes breathe{ 0%,100%{ transform:rotate(-14deg) translateY(0); } 50%{ transform:rotate(-14deg) translateY(-2px); } }
 
   /* ---------- Bottom info card ---------- */
   .infocard{
-    margin:14px; background:var(--card); border-radius:22px;
-    padding:18px 20px 14px; box-shadow:0 10px 26px -14px rgba(74,63,53,0.3);
+    margin:14px; background:var(--card); border-radius:24px;
+    padding:20px 22px 16px; box-shadow:var(--shadow-soft);
+    border:1px solid rgba(238,224,196,0.7);
   }
   .temp-row{ display:flex; align-items:flex-end; justify-content:space-between; }
-  .temp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:52px; line-height:1; letter-spacing:-1px; }
+  .temp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:54px; line-height:1; letter-spacing:-1px; color:var(--ink); }
   .temp sup{ font-size:22px; font-weight:600; }
   .condition{ text-align:right; }
   .condition .cond{ font-weight:800; font-size:15px; text-transform:capitalize; }
   .condition .feel{ font-size:12px; color:var(--ink-soft); font-weight:600; }
-  .stat-row{ display:flex; gap:18px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .stat-row{ display:flex; gap:18px; margin-top:14px; padding-top:14px; border-top:1.5px solid var(--line); align-items:center; }
   .stat{ display:flex; flex-direction:column; gap:2px; }
   .stat .k{ font-size:10px; letter-spacing:.06em; color:var(--ink-soft); font-weight:700; text-transform:uppercase; }
   .stat .v{ font-size:13px; font-weight:700; }
   .stat-refresh{
     margin-left:auto;
-    width:28px; height:28px; border-radius:50%;
-    border:none; background:#F1F6F2; color:var(--sage-dark);
-    font-size:15px; display:flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:50%;
+    border:none; background:#F1F6EE; color:var(--sage-dark);
+    display:flex; align-items:center; justify-content:center;
     cursor:pointer; transition:transform .15s ease;
     align-self:center;
   }
+  .stat-refresh .icon{ width:15px; height:15px; }
   .stat-refresh:active{ transform:scale(0.88) rotate(90deg); }
   .forecast-row{
     display:flex; justify-content:space-between; gap:4px;
@@ -192,7 +243,7 @@
   }
   .forecast-day.fd-now .fd-name{ color:var(--sage-dark); }
   .forecast-day .fd-name{ font-size:10.5px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; }
-  .forecast-day .fd-icon{ font-size:18px; }
+  .forecast-day .fd-icon{ width:22px; height:22px; color:var(--sage-dark); }
   .forecast-day .fd-max{ font-size:12.5px; font-weight:800; }
   .forecast-day .fd-min{ font-size:11px; color:var(--ink-soft); font-weight:700; }
   .forecast-header{
@@ -226,7 +277,7 @@
     border-color:var(--sage);
     background:#F1F6F2;
   }
-
+    
   /* ---------- Settings sheet ---------- */
   .sheet-backdrop{
     position:fixed;inset:0; background:rgba(74,63,53,0.35);
@@ -235,34 +286,39 @@
   .sheet-backdrop.open{ opacity:1; pointer-events:auto; }
   .sheet{
     position:fixed; left:0;right:0;bottom:0; max-width:480px;margin:0 auto;
-    background:var(--cream); border-radius:24px 24px 0 0;
-    padding:18px 20px calc(env(safe-area-inset-bottom,0px) + 24px);
+    background:var(--cream); border-radius:28px 28px 0 0;
+    padding:14px 20px calc(env(safe-area-inset-bottom,0px) + 24px);
     transform:translateY(100%); transition:transform .3s ease; z-index:41;
     max-height:82vh; overflow-y:auto;
+    box-shadow:0 -20px 50px -20px rgba(74,56,38,0.35);
   }
   .sheet.open{ transform:translateY(0); }
-  .sheet h2{ font-family:'Fredoka',sans-serif; font-size:19px; margin:6px 0 14px; }
-  .sheet-handle{ width:36px;height:4px;border-radius:2px; background:var(--line); margin:0 auto 12px; }
+  .sheet h2{ font-family:'Fredoka',sans-serif; font-size:19px; margin:6px 0 14px; display:flex; align-items:center; gap:8px; }
+  .sheet h2 .icon{ width:19px; height:19px; color:var(--sage-dark); }
+  .sheet-handle{ width:36px;height:4px;border-radius:2px; background:var(--line); margin:0 auto 14px; }
   .field label{
     display:block; font-size:11px; font-weight:800; text-transform:uppercase;
     letter-spacing:.05em; color:var(--ink-soft); margin:12px 0 6px;
   }
   .field input, .field select{
-    width:100%; padding:11px 13px; border-radius:12px; border:1.5px solid var(--line);
+    width:100%; padding:12px 14px; border-radius:14px; border:1.5px solid var(--line);
     background:#fff; font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; color:var(--ink);
   }
   .row2{ display:flex; gap:10px; }
   .row2 .field{ flex:1; }
   .colorfield{ display:flex; align-items:center; gap:8px; }
-  .colorfield input[type=color]{ width:44px; height:38px; padding:2px; border-radius:10px; }
+  .colorfield input[type=color]{ width:44px; height:40px; padding:2px; border-radius:12px; }
   .btn{
-    margin-top:16px; width:100%; padding:13px; border-radius:14px; border:none;
+    margin-top:16px; width:100%; padding:14px; border-radius:16px; border:none;
     background:var(--sage); color:#fff; font-weight:800; font-size:14px; cursor:pointer;
+    box-shadow:0 10px 22px -12px rgba(92,122,92,0.6);
+    transition:transform .12s ease;
   }
-  .btn.secondary{ background:transparent; color:var(--sage-dark); border:2px solid var(--line); margin-top:8px; }
+  .btn:active{ transform:scale(0.98); }
+  .btn.secondary{ background:transparent; color:var(--sage-dark); border:2px solid var(--line); margin-top:8px; box-shadow:none; }
   .searchresults{ margin-top:8px; }
   .searchresults div{
-    padding:10px 12px; background:#fff; border-radius:10px; margin-top:6px;
+    padding:11px 13px; background:#fff; border-radius:12px; margin-top:6px;
     font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--line);
   }
   .divider{ height:1px; background:var(--line); margin:18px 0; }
@@ -276,11 +332,14 @@
   }
   .todo-row:last-child{ border-bottom:none; }
   .todo-check{
-    width:24px;height:24px; border-radius:50%; border:2px solid var(--sage);
+    width:25px;height:25px; border-radius:50%; border:2px solid var(--sage);
     flex:0 0 auto; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    background:#fff; font-size:13px; color:#fff;
+    background:#fff; color:#fff; transition:transform .12s ease;
   }
+  .todo-check .icon{ width:13px; height:13px; opacity:0; transition:opacity .12s ease; }
   .todo-check.checked{ background:var(--sage); }
+  .todo-check.checked .icon{ opacity:1; }
+  .todo-check:active{ transform:scale(0.88); }
   .todo-text{ flex:1; font-size:14px; font-weight:700; line-height:1.3; }
   .todo-text.done{ text-decoration:line-through; color:var(--ink-soft); font-weight:600; }
   .todo-date{
@@ -288,15 +347,20 @@
     background:#EAF2ED; padding:3px 8px; border-radius:999px; white-space:nowrap;
   }
   .todo-del{
-    width:22px;height:22px; border-radius:50%; border:none; background:transparent;
-    color:var(--ink-soft); font-size:15px; cursor:pointer; flex:0 0 auto;
+    width:24px;height:24px; border-radius:50%; border:none; background:transparent;
+    color:var(--ink-soft); cursor:pointer; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
   }
+  .todo-del .icon{ width:13px; height:13px; }
   .todo-empty{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:10px 0; }
   .hist-toggle{
     display:flex; align-items:center; justify-content:space-between;
     font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
     color:var(--ink-soft); cursor:pointer; padding:4px 2px;
   }
+  #historyCaret{ display:flex; }
+  #historyCaret .icon{ width:14px; height:14px; transition:transform .2s ease; }
+  #historyCaret.open .icon{ transform:rotate(180deg); }
   .hist-row{ display:flex; align-items:center; gap:10px; padding:8px 4px; opacity:0.75; }
   .hist-row .todo-text{ text-decoration:line-through; font-weight:600; }
   .hist-when{ font-size:10px; color:var(--ink-soft); white-space:nowrap; }
@@ -319,6 +383,27 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.2v2.1M12 18.7v2.1M20.8 12h-2.1M5.3 12H3.2M18 6l-1.5 1.5M7.5 16.5L6 18M18 18l-1.5-1.5M7.5 7.5L6 6"/></symbol>
+  <symbol id="icon-notebook" viewBox="0 0 24 24"><rect x="4" y="3" width="15" height="18" rx="3.5"/><path d="M9 3v18M4 8h1.2M4 13h1.2"/></symbol>
+  <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 9.5h17M8 3v3.6M16 3v3.6"/><circle cx="8" cy="14" r="1.1" class="filled"/><circle cx="12" cy="14" r="1.1" class="filled"/><circle cx="16" cy="14" r="1.1" class="filled"/></symbol>
+  <symbol id="icon-mirror" viewBox="0 0 24 24"><path d="M12 3C8.1 3 5 6.8 5 11.5S8.1 20 12 20s7-3.8 7-8.5S15.9 3 12 3Z"/><path d="M9 21h6"/><path d="M12 6.5c1.8 0 3.2 1.8 3.2 4"/></symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.6-5.7M20 12a8 8 0 0 1-13.6 5.7"/><path d="M17.2 3.6v3.4h-3.4M6.8 20.4V17h3.4"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
+  <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V4.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7M7 7l1 12.2a2 2 0 0 0 2 1.8h4a2 2 0 0 0 2-1.8L17 7"/></symbol>
+  <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="M5.5 9l6.5 6.5L18.5 9"/></symbol>
+  <symbol id="icon-paw" viewBox="0 0 24 24"><circle cx="12" cy="15.7" r="4.3" class="filled"/><circle cx="5.8" cy="10.4" r="2.2" class="filled"/><circle cx="10.6" cy="6.3" r="2.1" class="filled"/><circle cx="16.4" cy="7.4" r="2.1" class="filled"/></symbol>
+  <symbol id="icon-mug" viewBox="0 0 24 24"><path d="M5 6h11v9a4.5 4.5 0 0 1-4.5 4.5H9.5A4.5 4.5 0 0 1 5 15V6z"/><path d="M16 8.5h1.5a3 3 0 0 1 0 6H16"/><path d="M8 3.2c-.6.7-.6 1.3 0 2M11.5 3.2c-.6.7-.6 1.3 0 2"/></symbol>
+  <symbol id="icon-w-sunny" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" class="filled"/><path d="M12 2.6v2.3M12 19.1v2.3M21.4 12h-2.3M4.9 12H2.6M18.1 5.9l-1.6 1.6M7.5 16.5l-1.6 1.6M18.1 18.1l-1.6-1.6M7.5 7.5L5.9 5.9"/></symbol>
+  <symbol id="icon-w-partly" viewBox="0 0 24 24"><circle cx="8.3" cy="8.3" r="3.6" class="filled"/><path d="M8.3 2.2v1.7M14.4 8.3h-1.7M4.2 8.3H2.5M12.4 4.3l-1.2 1.2M4.2 12.4l1.2-1.2"/><path d="M9.5 20.2h7a3.7 3.7 0 0 0 .6-7.35A5 5 0 0 0 7.6 15.1a3.4 3.4 0 0 0 1.9 5.1z" class="filled"/></symbol>
+  <symbol id="icon-w-cloudy" viewBox="0 0 24 24"><path d="M7 19h10.3a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 6.9 12.9 3.7 3.7 0 0 0 7 19z" class="filled"/></symbol>
+  <symbol id="icon-w-foggy" viewBox="0 0 24 24"><path d="M4 8.5h11M4 12h16M4 15.5h13M4 19h9"/></symbol>
+  <symbol id="icon-w-rainy" viewBox="0 0 24 24"><path d="M6.5 15h10.3a3.7 3.7 0 0 0 .4-7.38A5 5 0 0 0 6.4 8.9 3.4 3.4 0 0 0 6.5 15z" class="filled"/><path d="M8 18.3l-1 2.2M12 18.3l-1 2.2M16 18.3l-1 2.2"/></symbol>
+  <symbol id="icon-w-snowy" viewBox="0 0 24 24"><path d="M6.5 13h10.3a3.7 3.7 0 0 0 .4-7.38A5 5 0 0 0 6.4 6.9 3.4 3.4 0 0 0 6.5 13z" class="filled"/><path d="M8 16.6v5M5.7 18.1l4.6 2M10.3 18.1l-4.6 2M16 16.6v5M13.7 18.1l4.6 2M18.3 18.1l-4.6 2"/></symbol>
+  <symbol id="icon-w-thunder" viewBox="0 0 24 24"><path d="M6.5 12h10.3a3.7 3.7 0 0 0 .3-7.38A5 5 0 0 0 6.4 5.9 3.4 3.4 0 0 0 6.5 12z" class="filled"/><path d="M13 12.5l-3.4 5H12l-1.6 4.3 4.8-5.8h-2.6z" class="filled"/></symbol>
+</defs>
+</svg>
 <div id="app">
 
   <header>
@@ -327,7 +412,7 @@
       <span class="sub" id="placeSub">&nbsp;</span>
     </div>
     <div class="header-actions">
-      <button class="iconbtn" id="settingsBtn" title="Settings">⚙︎</button>
+      <button class="iconbtn" id="settingsBtn" title="Settings"><svg class="icon"><use href="#icon-gear"/></svg></button>
     </div>
   </header>
 
@@ -335,9 +420,15 @@
     <div id="skyBg"></div>
     <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
-    <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none; right:130px;">🗓️</button>
-    <button id="todoProp" class="scene-btn" title="To-dos" style="right:75px;">📓</button>
-    <button id="customizeProp" class="scene-btn" title="Customize" style="right:20px;">🪞</button>
+    <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none; right:128px; bottom:18px;">
+      <svg class="icon"><use href="#icon-calendar"/></svg>
+    </button>
+    <button id="customizeProp" class="scene-btn" title="Customize" style="right:74px; bottom:18px;">
+      <svg class="icon"><use href="#icon-mirror"/></svg>
+    </button>
+    <button id="todoProp" class="scene-btn" title="To-dos" style="right:18px; bottom:18px;">
+      <svg class="icon"><use href="#icon-notebook"/></svg>
+    </button>
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -359,7 +450,7 @@
       <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
       <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
       <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
-      <button class="stat-refresh" id="refreshBtn" title="Refresh">↻</button>
+      <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon"><use href="#icon-refresh"/></svg></button>
     </div>
     <div class="forecast-header">
       <span class="forecast-toggle" data-mode="hourly">Hourly</span>
@@ -368,13 +459,15 @@
     <div class="forecast-row" id="forecastRow"></div>
   </div>
 
+  <div class="switcher" id="switcher"></div>
+
   <div id="statusMsg">&nbsp;</div>
 </div>
 
 <div class="sheet-backdrop" id="sheetBackdrop"></div>
 <div class="sheet" id="sheet">
   <div class="sheet-handle"></div>
-  <h2>Settings</h2>
+  <h2><svg class="icon"><use href="#icon-gear"/></svg>Settings</h2>
 
   <div class="field">
     <label>Search a city</label>
@@ -392,7 +485,7 @@
 
   <div class="divider"></div>
 
-  <h2>Google Calendar</h2>
+  <h2><svg class="icon"><use href="#icon-calendar"/></svg>Google Calendar</h2>
   <div id="calDisconnected">
     <p class="hint">Optional. If connected, Nook can show today's schedule and the character will head to the desk shortly before something starts. Nook only <b>reads</b> your calendar — it never creates, edits, or deletes events — and you can disconnect any time.</p>
     <button class="btn" id="gcalConnectBtn">Connect Google Calendar</button>
@@ -412,11 +505,13 @@
   </div>
 
   <div class="divider"></div>
+  
+  <button class="btn secondary" id="closeSheetBtn">Close</button>
 </div>
 
 <div class="sheet" id="todoSheet">
   <div class="sheet-handle"></div>
-  <h2>To-dos</h2>
+  <h2><svg class="icon"><use href="#icon-notebook"/></svg>To-dos</h2>
 
   <div class="row2">
     <div class="field" style="flex:2">
@@ -436,7 +531,7 @@
   <div class="divider"></div>
   <div class="hist-toggle" id="historyToggle">
     <span>Completed history</span>
-    <span id="historyCaret">▾</span>
+    <span id="historyCaret"><svg class="icon"><use href="#icon-chevron"/></svg></span>
   </div>
   <div id="todoHistoryList" style="display:none;"></div>
 
@@ -445,7 +540,7 @@
 
 <div class="sheet" id="calSheet">
   <div class="sheet-handle"></div>
-  <h2 id="calSheetTitle">📅 Today</h2>
+  <h2 id="calSheetTitle"><svg class="icon"><use href="#icon-calendar"/></svg>Today</h2>
   <div class="cal-switcher" id="calRangePicker" style="padding:0 0 12px;">
     <div class="cal-chip range-chip active" data-days="1">Today</div>
     <div class="cal-chip range-chip" data-days="3">3 days</div>
@@ -466,28 +561,6 @@
     <div class="field">
       <label>Name</label>
       <input type="text" id="cName" placeholder="e.g. Pip">
-    </div>
-
-    <div class="row2">
-      <div class="field">
-        <label>Ear style</label>
-        <select id="cEar">
-          <option value="round">Round (bear)</option>
-          <option value="pointy">Pointy (fox/cat)</option>
-          <option value="long">Long (bunny)</option>
-          <option value="floppy">Floppy (dog)</option>
-          <option value="none">None (blob)</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Tail</label>
-        <select id="cTail">
-          <option value="none">None</option>
-          <option value="fluffy">Fluffy</option>
-          <option value="straight">Straight</option>
-        </select>
-      </div>
     </div>
 
     <div class="row2">
@@ -521,8 +594,10 @@
         </div>
       </div>
     </div>
-    
-    <button class="btn" id="customizeCharBtn">Save changes</button>
+
+    <button class="btn" id="customizeCharBtn">
+      Save changes
+    </button>
 
     <button class="btn secondary" id="characterSheetCloseBtn">
       Close
@@ -536,18 +611,26 @@
 window.onerror = function(msg, url, line) {
   alert("ERROR:\n" + msg + "\nLine: " + line);
 };
+  
 /* =========================================================================
    NOOK — a cozy weather companion, living in a small isometric room.
    Single file, no build step. Add to Home Screen on iPhone to use as an app.
    ========================================================================= */
 
+/* Each character picks a species (assets/companions/<species>/) plus a
+   palette applied as CSS custom properties at render time — see
+   applyCompanionPalette(). Adding a character = adding an id/name/
+   species/palette entry here; adding a whole new LOOK = adding a new
+   species folder of assets (see ASSETS.md). */
 const CHARACTERS = [
-  { id:'mochi', name:'Mochi', earType:'long', tailType:'none',
-    palette:{ body:'#FBD8C4', belly:'#FFF6EC', cheek:'#FF9E80', accent:'#B08968' } },
-  { id:'ember', name:'Ember', earType:'pointy', tailType:'fluffy',
+  { id:'mochi', name:'Mochi', species:'cat',
+    palette:{ body:'#F6E9D3', belly:'#FFFBF2', cheek:'#F4A9A0', accent:'#C99A6E' } },
+  { id:'ember', name:'Ember', species:'cat',
     palette:{ body:'#F2A65A', belly:'#FFF3E0', cheek:'#FF7A59', accent:'#8D5A2B' } },
-  { id:'bramble', name:'Bramble', earType:'round', tailType:'none',
-    palette:{ body:'#A9C6A2', belly:'#F4EFDF', cheek:'#F6A9A0', accent:'#5F7B57' } }
+  { id:'bramble', name:'Bramble', species:'bear',
+    palette:{ body:'#A9C6A2', belly:'#F4EFDF', cheek:'#F6A9A0', accent:'#5F7B57' } },
+  { id:'clover', name:'Clover', species:'bunny',
+    palette:{ body:'#EDE6F5', belly:'#FFFFFF', cheek:'#F6A9A0', accent:'#B9A7D1' } }
 ];
 
 try {
@@ -603,6 +686,14 @@ const ctx = particlesCanvas.getContext('2d');
    A simple 2:1 grid projection. Everything (walls, floor, furniture, the
    window, and the character's walk path) is placed in "grid units" via
    iso(gx,gy,gz) and converted to the SVG's 400x380 viewBox.
+
+   Room objects are still generated procedurally (not yet separate SVG
+   files) but every color now comes from the CSS design tokens via
+   roomPalette(), and iso(), TILE, ORIGIN etc. are unchanged — so this
+   stays a drop-in replacement for tap-to-move, particle clipping, and
+   the plant/window elements the rest of the app already updates live.
+   Swapping a theme = swapping the --room-* tokens + calling initRoom()
+   again; furniture position/layout is untouched by theme changes.
    ========================================================================= */
 const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, ROOM_W=6, ROOM_D=6, WALL_H=5, VB_W=400, VB_H=380;
 function iso(gx,gy,gz){ return { x: ORIGIN_X+(gx-gy)*TILE, y: ORIGIN_Y+(gx+gy)*(TILE/2)-gz*ZSTEP }; }
@@ -615,77 +706,160 @@ function shade(hex, percent){
   r=Math.min(255,Math.max(0,r)); g=Math.min(255,Math.max(0,g)); b=Math.min(255,Math.max(0,b));
   return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
 }
-function isoBox(gx,gy,gz,w,d,h, baseColor){
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function roomPalette(){
+  return {
+    wallA: cssVar('--room-wall-a'), wallB: cssVar('--room-wall-b'),
+    floor: cssVar('--room-floor'), floorDark: cssVar('--room-floor-dark'),
+    rug: cssVar('--room-rug'), rugLine: cssVar('--room-rug-line'),
+    wood: cssVar('--room-wood'), woodDark: cssVar('--room-wood-dark'),
+    outline: cssVar('--room-outline'),
+    lamp: cssVar('--room-lamp'), lampDark: cssVar('--room-lamp-dark'),
+    mug: cssVar('--room-mug'),
+    leafA: cssVar('--room-leaf-a'), leafB: cssVar('--room-leaf-b')
+  };
+}
+/* A rounded box in grid-space, drawn with a soft outline so furniture reads
+   as chunky/hand-drawn rather than sharp-edged and technical. */
+function isoBox(gx,gy,gz,w,d,h, baseColor, outline, strokeW){
   const top   = [iso(gx,gy,gz+h), iso(gx+w,gy,gz+h), iso(gx+w,gy+d,gz+h), iso(gx,gy+d,gz+h)];
   const right = [iso(gx+w,gy,gz), iso(gx+w,gy+d,gz), iso(gx+w,gy+d,gz+h), iso(gx+w,gy,gz+h)];
   const front = [iso(gx,gy+d,gz), iso(gx+w,gy+d,gz), iso(gx+w,gy+d,gz+h), iso(gx,gy+d,gz+h)];
-  return '<polygon points="'+pts(front)+'" fill="'+shade(baseColor,-18)+'"/>'
-       + '<polygon points="'+pts(right)+'" fill="'+shade(baseColor,-8)+'"/>'
-       + '<polygon points="'+pts(top)+'" fill="'+shade(baseColor,10)+'"/>';
+  const so = outline ? ' stroke="'+outline+'" stroke-width="'+(strokeW||2.5)+'" stroke-linejoin="round"' : '';
+  return '<polygon points="'+pts(front)+'" fill="'+shade(baseColor,-16)+'"'+so+'/>'
+       + '<polygon points="'+pts(right)+'" fill="'+shade(baseColor,-7)+'"'+so+'/>'
+       + '<polygon points="'+pts(top)+'" fill="'+shade(baseColor,12)+'"'+so+'/>';
 }
 function boundingBox(quad){
   const xs=quad.map(p=>p.x), ys=quad.map(p=>p.y);
   return { x:Math.min.apply(null,xs), y:Math.min.apply(null,ys), w:Math.max.apply(null,xs)-Math.min.apply(null,xs), h:Math.max.apply(null,ys)-Math.min.apply(null,ys) };
 }
+/* Circles/ellipses in grid-space stay smooth ellipses once projected
+   (the iso transform is affine), which is what gives the rug, pots and
+   mugs their soft rounded silhouette instead of diamond-hard corners. */
+function isoEllipsePts(cx,cy,z,rx,ry,segments){
+  const n = segments||28, out=[];
+  for(let i=0;i<n;i++){
+    const a = (i/n)*Math.PI*2;
+    out.push(iso(cx+Math.cos(a)*rx, cy+Math.sin(a)*ry, z));
+  }
+  return out;
+}
+function isoEllipse(cx,cy,z,rx,ry,fill,extra,segments){
+  return '<polygon points="'+pts(isoEllipsePts(cx,cy,z,rx,ry,segments))+'" fill="'+fill+'"'+(extra||'')+'/>';
+}
 
 let WINDOW_VB = null, WINDOW_PX = null;
 
-function buildRoom(){
+/* Structural room geometry (walls, floor, rug, window) stays procedural —
+   it's load-bearing layout the app itself reasons about (tap-to-move
+   bounds, particle clipping against the window, live weather-driven
+   gradients) rather than replaceable art. Props on top of it are real
+   asset files — see assets/room/decorations/ and loadRoomDecorations(). */
+function buildRoomStructure(){
+  const P = roomPalette();
   const rightWall = [iso(0,0,0), iso(ROOM_W,0,0), iso(ROOM_W,0,WALL_H), iso(0,0,WALL_H)];
   const leftWall  = [iso(0,0,0), iso(0,ROOM_D,0), iso(0,ROOM_D,WALL_H), iso(0,0,WALL_H)];
   const floor     = [iso(0,0,0), iso(ROOM_W,0,0), iso(ROOM_W,ROOM_D,0), iso(0,ROOM_D,0)];
 
-  const winY0=1.0, winY1=3.4, winZ0=1.6, winZ1=3.6;
+  // Window sits high on the left wall, like the icon — a view outside
+  // rather than a wall of storage, keeping the room feeling airy.
+  const winY0=0.85, winY1=3.35, winZ0=1.75, winZ1=4.0;
   const windowQuad = [iso(0,winY0,winZ0), iso(0,winY1,winZ0), iso(0,winY1,winZ1), iso(0,winY0,winZ1)];
   WINDOW_VB = boundingBox(windowQuad);
 
-  const rugPts = [iso(1.6,1.2,0.02), iso(4.6,1.2,0.02), iso(4.6,4.2,0.02), iso(1.6,4.2,0.02)];
-  const rugInnerPts = [iso(2.0,1.6,0.03), iso(4.2,1.6,0.03), iso(4.2,3.8,0.03), iso(2.0,3.8,0.03)];
-
   let svg = '';
-  svg += '<polygon points="'+pts(rightWall)+'" fill="#E7D3A6"/>';
-  svg += '<polygon points="'+pts(leftWall)+'" fill="#F2E4C4"/>';
-  svg += '<polygon points="'+pts(floor)+'" fill="#D9B384"/>';
+  svg += '<polygon points="'+pts(rightWall)+'" fill="'+P.wallB+'"/>';
+  svg += '<polygon points="'+pts(leftWall)+'" fill="'+P.wallA+'"/>';
+  svg += '<polygon points="'+pts(floor)+'" fill="'+P.floor+'"/>';
+  svg += '<polygon points="'+pts(floor)+'" fill="none" stroke="'+shade(P.floor,-20)+'" stroke-width="1.5" opacity="0.5"/>';
 
-  svg += '<polygon points="'+pts(rugPts)+'" fill="#E7B7A3"/>';
-  svg += '<polygon points="'+pts(rugInnerPts)+'" fill="none" stroke="#D89A82" stroke-width="2"/>';
+  // Soft round rug, centered under where the character spends most time
+  svg += isoEllipse(3.05,2.55,0.02, 1.55,1.35, P.rug, ' stroke="'+shade(P.rug,-14)+'" stroke-width="2"');
+  svg += isoEllipse(3.05,2.55,0.03, 1.05,0.9, 'none', ' stroke="'+P.rugLine+'" stroke-width="2.5" opacity="0.75"');
 
-  svg += isoBox(0.3,0.4,0, 1.1,2.6,0.75, '#9CBBA8');
-  svg += isoBox(0.3,0.4,0.75, 1.1,0.35,1.15, '#7FA491');
-  svg += isoBox(0.45,0.55,0.75, 0.8,0.55,0.32, '#FFF3E0');
+  svg += '<g id="roomDecorations"></g>'; // asset-driven props render here, see loadRoomDecorations()
 
-  svg += isoBox(3.4,0,2.6, 2.0,0.28,0.2, '#8D6A4B');
-  svg += isoBox(3.6,0.02,2.8, 0.2,0.2,0.3, '#E76F51');
-  svg += isoBox(3.85,0.02,2.8, 0.2,0.2,0.28, '#457B9D');
-  svg += isoBox(4.1,0.02,2.8, 0.28,0.2,0.2, '#2A9D8F');
-
-  svg += isoBox(0.55,4.5,0, 0.42,0.42,0.32, '#B5835A');
-  const leafA = iso(0.76,4.71,0.72), leafB = iso(0.62,4.58,0.6);
-  svg += '<circle id="plantLeafA" cx="'+leafA.x+'" cy="'+leafA.y+'" r="19" fill="#8FB88A"/>';
-  svg += '<circle id="plantLeafB" cx="'+leafB.x+'" cy="'+leafB.y+'" r="13" fill="#9DC79A"/>';
-
-  // small writing desk + stool (this is where the character goes to manage to-dos)
-  svg += isoBox(2.0,0.55,0, 1.0,0.55,0.55, '#8D6A4B');
-  svg += isoBox(2.15,0.68,0.55, 0.28,0.2,0.1, '#F6EEDC');
-  svg += isoBox(2.55,0.68,0.55, 0.14,0.14,0.14, '#E76F51');
-  svg += isoBox(2.35,1.35,0, 0.36,0.36,0.4, '#B08968');
-
+  // Window frame + glass (the sky/night gradient is swapped live by weather)
   svg += '<polygon id="windowPane" points="'+pts(windowQuad)+'" fill="url(#windowSkyGrad)"/>';
-  svg += '<polygon points="'+pts(windowQuad)+'" fill="none" stroke="#8D6A4B" stroke-width="6" stroke-linejoin="round"/>';
+  svg += '<polygon points="'+pts(windowQuad)+'" fill="none" stroke="'+P.outline+'" stroke-width="7" stroke-linejoin="round"/>';
   const midY=(winY0+winY1)/2, midZ=(winZ0+winZ1)/2;
   const mv0=iso(0,midY,winZ0), mv1=iso(0,midY,winZ1), mh0=iso(0,winY0,midZ), mh1=iso(0,winY1,midZ);
-  svg += '<line x1="'+mv0.x+'" y1="'+mv0.y+'" x2="'+mv1.x+'" y2="'+mv1.y+'" stroke="#8D6A4B" stroke-width="3"/>';
-  svg += '<line x1="'+mh0.x+'" y1="'+mh0.y+'" x2="'+mh1.x+'" y2="'+mh1.y+'" stroke="#8D6A4B" stroke-width="3"/>';
+  svg += '<line x1="'+mv0.x+'" y1="'+mv0.y+'" x2="'+mv1.x+'" y2="'+mv1.y+'" stroke="'+P.outline+'" stroke-width="3.5" stroke-linecap="round"/>';
+  svg += '<line x1="'+mh0.x+'" y1="'+mh0.y+'" x2="'+mh1.x+'" y2="'+mh1.y+'" stroke="'+P.outline+'" stroke-width="3.5" stroke-linecap="round"/>';
 
   return svg;
 }
 
-function initRoom(){
+/* Default prop placement for the current room theme. Overwritten by
+   loadTheme() if the theme file defines its own roomLayout. Each entry
+   is a world grid position; the runtime places the fetched,
+   position-agnostic SVG with a single translate (see
+   assets/room/decorations/*.svg headers). Swapping the room later =
+   editing this list or loading a different theme, not touching art or
+   draw code. */
+let ROOM_LAYOUT = [
+  { asset:'shelf',     at:[3.7, 0, 3.05] },
+  { asset:'plant-pot', at:[4.45, 0.06, 3.17] },
+  { asset:'book',      at:[3.85, 0.05, 3.17] },
+  { asset:'desk',      at:[1.85, 0.55, 0] },
+  { asset:'lamp',      at:[2.13, 0.69, 0.58] },
+  { asset:'mug',       at:[3.02, 0.93, 0.58] },
+  { asset:'stool',     at:[2.4, 1.47, 0] }
+];
+const assetCache = {};
+async function fetchAsset(url){
+  if(assetCache[url]) return assetCache[url];
+  const p = fetch(url).then(r => r.text());
+  assetCache[url] = p;
+  return p;
+}
+async function loadRoomDecorations(){
+  const host = $('roomDecorations');
+  if(!host) return;
+  const placed = await Promise.all(ROOM_LAYOUT.map(async item => {
+    let svgText;
+    try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
+    catch(e){ return ''; } // missing asset — skip it rather than break the room
+    const p = iso(item.at[0], item.at[1], item.at[2]);
+    // pull just the inner content of the fetched <svg> so we can wrap our
+    // own positioned <g>, keeping data-role attributes (e.g. plant leaves) intact
+    const inner = svgText.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+    return '<g class="deco" data-asset="'+item.asset+'" transform="translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+')">'+inner+'</g>';
+  }));
+  host.innerHTML = placed.join('');
+  updatePlantMood(); // re-apply leaf color now that the plant asset is in the DOM
+}
+
+async function initRoom(){
   const defs = '<defs><linearGradient id="windowSkyGrad" x1="0" y1="0" x2="0" y2="1">'
              + '<stop id="winStop0" offset="0" stop-color="#8FCBEA"/>'
              + '<stop id="winStop1" offset="1" stop-color="#FFE8B8"/>'
              + '</linearGradient></defs>';
-  $('roomSvg').innerHTML = defs + buildRoom();
+  $('roomSvg').innerHTML = defs + buildRoomStructure();
+  await loadRoomDecorations();
+}
+
+/* Theme = a JSON file of design-token overrides + a room layout, nothing
+   more. The CSS :root defaults already match "Cozy Cream" so the app
+   looks right even if this fetch fails (offline, first paint before the
+   network settles) — this only needs to succeed to enable OTHER themes.
+   Switching themes later is just: loadTheme('ocean-breeze'). */
+let currentThemeId = 'cozy-cream';
+async function loadTheme(themeId){
+  try{
+    const res = await fetch('assets/room/themes/'+themeId+'.json');
+    const theme = await res.json();
+    Object.entries(theme.tokens || {}).forEach(([k,v]) => {
+      document.documentElement.style.setProperty(k, v);
+    });
+    if(Array.isArray(theme.roomLayout)) ROOM_LAYOUT = theme.roomLayout;
+    currentThemeId = themeId;
+  } catch(e){
+    console.warn('Theme "'+themeId+'" failed to load; using built-in defaults.', e);
+  }
+  await initRoom();
+  drawCharacter();
 }
 
 /* ---------------- Outdoor background scenery ---------------- */
@@ -790,7 +964,16 @@ function animateParticles(){
 }
 animateParticles();
 
-/* ---------------- Character rendering (small SVG rig) ---------------- */
+/* ---------------- Companion rendering (asset-driven state engine) ----
+   The companion is no longer drawn in JS. Each species/state pair is a
+   pre-authored SVG file at assets/companions/<species>/<state>.svg (see
+   ASSETS.md for the coordinate/palette convention and a ready-to-use
+   prompt for generating new ones with another AI model). JS's job here
+   is just: pick the right state, fetch it (cached), composite an
+   accessory on top if the weather calls for one, and apply the
+   character's palette as CSS custom properties on the wrapper element.
+   That wrapper never gets replaced, so the palette persists across
+   state swaps automatically. */
 function getCharacter(){ return CHARACTERS.find(c=>c.id===state.characterId) || CHARACTERS[0]; }
 function saveCharacter(){
   try{
@@ -800,44 +983,6 @@ function saveCharacter(){
     );
   } catch(e){}
 }
-function earPath(type, side){
-  const x = side*34;
-  switch(type){
-    case 'round': return '<circle cx="'+x+'" cy="-58" r="15" fill="var(--earfill)"/>';
-    case 'pointy': return '<polygon points="'+(x-12)+',-46 '+(x+2*side)+',-82 '+(x+14)+',-46" fill="var(--earfill)"/>';
-    case 'long': return '<ellipse cx="'+(x*0.7)+'" cy="-98" rx="9" ry="34" fill="var(--earfill)" transform="rotate('+(side*8)+' '+(x*0.7)+' -98)"/>';
-    case 'floppy': return '<ellipse cx="'+x+'" cy="-40" rx="11" ry="26" fill="var(--earfill)" transform="rotate('+(side*40)+' '+x+' -40)"/>';
-    default: return '';
-  }
-}
-function tailPath(type){
-  if(type==='fluffy') return '<circle cx="52" cy="30" r="20" fill="var(--body)"/>';
-  if(type==='straight') return '<ellipse cx="50" cy="32" rx="24" ry="9" fill="var(--body)" transform="rotate(20 50 32)"/>';
-  return '';
-}
-function facePaths(mood){
-  switch(mood){
-    case 'happy': return { eyes:'<path d="M-20 -6 q6 -10 12 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M8 -6 q6 -10 12 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>',
-                          mouth:'<path d="M-12 10 q12 14 24 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>' };
-    case 'cozy': return { eyes:'<path d="M-20 -4 q6 -8 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -4 q6 -8 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>',
-                         mouth:'<path d="M-8 11 q8 8 16 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>' };
-    case 'sad': return { eyes:'<circle cx="-14" cy="-4" r="3.2" fill="var(--ink)"/><circle cx="14" cy="-4" r="3.2" fill="var(--ink)"/>',
-                        mouth:'<path d="M-10 13 q10 8 20 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>',
-                        brows:'<path d="M-20 -6 q6 -6 10 -10" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M20 -6 q-6 -6 -10 -10" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
-    case 'asleep': return { eyes:'<path d="M-20 -4 q6 6 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -4 q6 6 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>',
-                           mouth:'<path d="M-6 12 q6 4 12 0" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
-    default: return { eyes:'<circle cx="-14" cy="-4" r="3.4" fill="var(--ink)"/><circle cx="14" cy="-4" r="3.4" fill="var(--ink)"/>',
-                       mouth:'<line x1="-9" y1="12" x2="9" y2="12" stroke="var(--ink)" stroke-width="3.2" stroke-linecap="round"/>' };
-  }
-}
-function accessorySVG(base){
-  switch(base){
-    case 'sunny': return '<g transform="translate(0,-6)"><rect x="-24" y="-9" width="18" height="10" rx="4" fill="#3B3B3B" opacity="0.85"/><rect x="6" y="-9" width="18" height="10" rx="4" fill="#3B3B3B" opacity="0.85"/><rect x="-6" y="-6" width="12" height="3" fill="#3B3B3B" opacity="0.85"/></g>';
-    case 'rainy': case 'thunder': return '<g transform="translate(46,-70)"><path d="M-30 6 A30 30 0 0 1 30 6 Z" fill="var(--accent)"/><line x1="0" y1="6" x2="0" y2="50" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/></g>';
-    case 'snowy': return '<g><rect x="-24" y="18" width="48" height="12" rx="6" fill="var(--accent)"/><path d="M-26 -60 a30 20 0 0 1 60 0 z" fill="var(--accent)"/><rect x="-30" y="-46" width="64" height="10" rx="5" fill="var(--accent)"/></g>';
-    default: return '';
-  }
-}
 function moodFor(base, todoLoad){
   if(todoLoad >= 3) return 'sad'; // things are piling up, regardless of weather
   if(base==='sunny' || base==='partly') return 'happy';
@@ -845,34 +990,65 @@ function moodFor(base, todoLoad){
   if(base==='rainy' || base==='thunder') return 'sad';
   return 'neutral';
 }
+function accessoryFor(base){
+  if(base==='sunny') return 'sunglasses';
+  if(base==='rainy' || base==='thunder') return 'umbrella';
+  if(base==='snowy') return 'scarf-hat';
+  return null;
+}
+function applyCompanionPalette(character){
+  const p = character.palette;
+  charWrapEl.style.setProperty('--body', p.body);
+  charWrapEl.style.setProperty('--belly', p.belly);
+  charWrapEl.style.setProperty('--cheek', p.cheek);
+  charWrapEl.style.setProperty('--accent', p.accent);
+  charWrapEl.style.setProperty('--earfill', p.accent);
+  charWrapEl.style.setProperty('--ink', cssVar('--ink'));
+}
 let charAsleep = false;
-function drawCharacter(){
+let companionRenderToken = 0; // guards against a slow fetch clobbering a newer state
+async function drawCharacter(){
+  const myToken = ++companionRenderToken;
   const c = getCharacter();
+  applyCompanionPalette(c);
   const w = state.weather;
   const base = w ? w.base : 'sunny';
   const todoLoad = todosDueOrOverdue().length;
-  const mood = charAsleep ? 'asleep' : moodFor(base, todoLoad);
-  const face = facePaths(mood);
-  const sleepZ = charAsleep ? '<text x="34" y="-72" font-size="22" fill="var(--ink)" opacity="0.55" font-family="Fredoka,sans-serif" font-weight="700">z</text>' : '';
-  const svg = '<svg viewBox="-90 -140 180 220" width="64" height="78" style="--body:'+c.palette.body+';--belly:'+c.palette.belly+';--ink:#4A3F35;--accent:'+c.palette.accent+';--earfill:'+c.palette.accent+'">'
-    + tailPath(c.tailType)
-    + earPath(c.earType,-1) + earPath(c.earType,1)
-    + '<g class="legs">'
-    + '<ellipse class="leg leg-left" cx="-16" cy="72" rx="10" ry="17" fill="var(--body)"/>'
-    + '<ellipse class="leg leg-right" cx="16" cy="72" rx="10" ry="17" fill="var(--body)"/>'
-    + '</g>'
-    + '<ellipse cx="0" cy="18" rx="46" ry="58" fill="var(--body)"/>'
-    + '<ellipse cx="0" cy="34" rx="27" ry="34" fill="var(--belly)"/>'
-    + '<circle cx="-30" cy="6" r="8" fill="'+c.palette.cheek+'" opacity="0.85"/>'
-    + '<circle cx="30" cy="6" r="8" fill="'+c.palette.cheek+'" opacity="0.85"/>'
-    + '<g transform="translate(0,-14)">'+(face.brows||'')+face.eyes+face.mouth+'</g>'
-    + (charAsleep ? '' : accessorySVG(base))
-    + sleepZ
+  const poseState = charAsleep ? 'asleep' : moodFor(base, todoLoad);
+  const accessory = charAsleep ? null : accessoryFor(base);
+
+  let baseSVG, accSVG = '';
+  try{
+    baseSVG = await fetchAsset('assets/companions/'+c.species+'/'+poseState+'.svg');
+    if(accessory) accSVG = await fetchAsset('assets/companions/_accessories/'+accessory+'.svg');
+  } catch(e){
+    return; // asset missing/offline — leave the last rendered pose in place
+  }
+  if(myToken !== companionRenderToken) return; // a newer render started; drop this one
+
+  const innerOf = svgText => svgText.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+  charEl.innerHTML = '<svg viewBox="-100 -150 200 240" width="66" height="82">'
+    + innerOf(baseSVG)
+    + (accSVG ? innerOf(accSVG) : '')
     + '</svg>';
-  charEl.innerHTML = svg;
+}
+async function setCompanionState(poseState){
+  // Small helper for one-off poses driven by user actions (e.g. celebrate
+  // on completing a to-do) that aren't purely a function of weather/mood.
+  const c = getCharacter();
+  applyCompanionPalette(c);
+  const myToken = ++companionRenderToken;
+  let svgText;
+  try{ svgText = await fetchAsset('assets/companions/'+c.species+'/'+poseState+'.svg'); }
+  catch(e){ return; }
+  if(myToken !== companionRenderToken) return;
+  const innerOf = t => t.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+  charEl.innerHTML = '<svg viewBox="-100 -150 200 240" width="66" height="82">'+innerOf(svgText)+'</svg>';
 }
 
-const FORECAST_GLYPH = { sunny:'☀️', partly:'🌤️', cloudy:'☁️', foggy:'🌫️', rainy:'🌧️', snowy:'❄️', thunder:'⛈️' };
+
+const FORECAST_GLYPH = { sunny:'icon-w-sunny', partly:'icon-w-partly', cloudy:'icon-w-cloudy', foggy:'icon-w-foggy', rainy:'icon-w-rainy', snowy:'icon-w-snowy', thunder:'icon-w-thunder' };
+function weatherIconSVG(base, cls){ return '<svg class="'+(cls||'fd-icon')+'"><use href="#'+(FORECAST_GLYPH[base]||'icon-w-cloudy')+'"/></svg>'; }
 let forecastMode = (localStorage.getItem('nook_forecast_mode') || 'weekly');
 function renderForecast(){
   const el = $('forecastRow');
@@ -889,7 +1065,7 @@ function renderWeeklyForecast(el){
     const label = isToday ? 'Today' : new Date(d.date+'T00:00:00').toLocaleDateString([], { weekday:'short' });
     return '<div class="forecast-day'+(isToday?' fd-now':'')+'">'
       + '<span class="fd-name">'+label+'</span>'
-      + '<span class="fd-icon">'+(FORECAST_GLYPH[d.base]||'☁️')+'</span>'
+      + weatherIconSVG(d.base)
       + '<span class="fd-max">'+Math.round(d.max)+'°</span>'
       + '<span class="fd-min">'+Math.round(d.min)+'°</span>'
       + '</div>';
@@ -902,24 +1078,12 @@ function renderHourlyForecast(el){
     const hr = new Date(h.time).getHours();
     const isNow = hr === nowHour;
     const label = isNow ? 'Now' : new Date(h.time).toLocaleTimeString([], { hour:'numeric' });
-    return '<div id="hour-'+hr+'" class="forecast-day'+(isNow?' fd-now':'')+'">'
+    return '<div class="forecast-day'+(isNow?' fd-now':'')+'">'
       + '<span class="fd-name">'+label+'</span>'
-      + '<span class="fd-icon">'+(FORECAST_GLYPH[h.base]||'☁️')+'</span>'
+      + weatherIconSVG(h.base)
       + '<span class="fd-max">'+Math.round(h.temp)+'°</span>'
       + '</div>';
   }).join('');
-  requestAnimationFrame(() => {
-    const current = document.getElementById('hour-' + nowHour);
-    if (current) {
-      const containerRect = el.getBoundingClientRect();
-      const itemRect = current.getBoundingClientRect();
-  
-      el.scrollTo({
-        left: el.scrollLeft + (itemRect.left - containerRect.left),
-        behavior: 'auto'
-      });
-    }
-  });
 }
 
 /* ---------------- Scene / weather rendering ---------------- */
@@ -1040,7 +1204,7 @@ function locate(){
       err => {
         $('statusMsg').textContent = 'Location off — search a city in Settings.';
         $('placeName').textContent = 'Set a location';
-        $('placeSub').textContent = 'Tap ⚙︎ to search';
+        $('placeSub').textContent = 'Tap settings to search';
       },
       { timeout:8000 }
     );
@@ -1051,7 +1215,7 @@ function locate(){
 function openSheet(){ $('sheet').classList.add('open'); $('sheetBackdrop').classList.add('open'); }
 function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBackdrop').classList.remove('open'); }
 $('settingsBtn').onclick = openSheet;
-$('characterSheetCloseBtn').onclick = closeCharacterSheet;
+$('closeSheetBtn').onclick = closeSheet;
 $('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon); };
 document.querySelectorAll('.forecast-toggle').forEach(t => {
   t.onclick = () => {
@@ -1074,26 +1238,25 @@ function closeTodoSheet(){
   $('sheetBackdrop').classList.remove('open');
   if(wasOpen){ leaveDesk('todo'); evaluateCalendarBusy(); }
 }
+$('todoProp').onclick = () => {
+  openTodoSheet();
+};
 $('sheetBackdrop').onclick = () => {
   closeSheet();
   closeTodoSheet();
   closeCalSheet();
   closeCharacterSheet();
 };
-$('todoProp').onclick = openTodoSheet;
 $('closeTodoBtn').onclick = closeTodoSheet;
 
 /* ---------------- Character sheet ---------------- */
 function openCharacterSheet(){
-  const sheet = $('characterSheet');
-  sheet.classList.add('open');
+  $('characterSheet').classList.add('open');
   $('sheetBackdrop').classList.add('open');
 
   const c = getCharacter();
 
   $('cName').value = c.name;
-  $('cEar').value = c.earType;
-  $('cTail').value = c.tailType;
   $('cBody').value = c.palette.body;
   $('cBelly').value = c.palette.belly;
   $('cCheek').value = c.palette.cheek;
@@ -1101,11 +1264,28 @@ function openCharacterSheet(){
 }
 
 function closeCharacterSheet(){
-  $('characterSheet').classList.remove('open');
+  $('characterSheet').classList.remove('open');  $('characterSheet').classList.remove('open');
   $('sheetBackdrop').classList.remove('open');
 }
 
 $('customizeProp').onclick = openCharacterSheet;
+$('customizeCharBtn').onclick = () => {
+  const c = getCharacter();
+
+  c.name = $('cName').value.trim() || c.name;
+  c.palette.body = $('cBody').value;
+  c.palette.belly = $('cBelly').value;
+  c.palette.cheek = $('cCheek').value;
+  c.palette.accent = $('cAccent').value;
+  
+  saveCharacter();
+
+  drawCharacter();
+
+  $('cName').value = '';
+  closeCharacterSheet();
+};
+$('characterSheetCloseBtn').onclick = closeCharacterSheet;
 
 let searchDebounce;
 $('citySearch').addEventListener('input', e=>{
@@ -1123,25 +1303,6 @@ $('citySearch').addEventListener('input', e=>{
     });
   }, 350);
 });
-
-$('customizeCharBtn').onclick = () => {
-  const c = getCharacter();
-
-  c.name = $('cName').value.trim() || c.name;
-  c.earType = $('cEar').value;
-  c.tailType = $('cTail').value;
-  c.palette.body = $('cBody').value;
-  c.palette.belly = $('cBelly').value;
-  c.palette.cheek = $('cCheek').value;
-  c.palette.accent = $('cAccent').value;
-  
-  saveCharacter();
-
-  drawCharacter();
-
-  $('cName').value = '';
-  closeCharacterSheet();
-};
 
 /* =========================================================================
    GOOGLE CALENDAR (optional — Nook works exactly as before without it)
@@ -1188,7 +1349,7 @@ function initGcalUI(){
   $('calRangePicker').querySelectorAll('.range-chip').forEach(c => {
     c.classList.toggle('active', parseInt(c.dataset.days,10) === gcal.rangeDays);
   });
-  $('calSheetTitle').textContent = gcal.rangeDays === 1 ? '📅 Today' : gcal.rangeDays === 3 ? '📅 Next 3 days' : '📅 Next 7 days';
+  $('calSheetTitle').innerHTML = '<svg class="icon"><use href="#icon-calendar"/></svg>' + (gcal.rangeDays === 1 ? 'Today' : gcal.rangeDays === 3 ? 'Next 3 days' : 'Next 7 days');
 }
 
 /* ---- auth: redirect to the Worker, which redirects to Google, which
@@ -1256,7 +1417,7 @@ function renderCalendarPicker(){
     const checked = gcal.selectedIds.includes(c.id) ? 'checked' : '';
     return '<label class="cal-pick-row">'
       + '<input type="checkbox" data-cal-id="'+escapeHtml(c.id)+'" '+checked+'>'
-      + '<span class="cal-pick-dot" style="background:'+(c.backgroundColor||'#7C9A92')+'"></span>'
+      + '<span class="cal-pick-dot" style="background:'+(c.backgroundColor||'#7E9B7E')+'"></span>'
       + '<span>'+escapeHtml(c.summary || c.id)+(c.primary ? ' (primary)' : '')+'</span>'
       + '</label>';
   }).join('');
@@ -1301,7 +1462,7 @@ async function fetchCalendarEvents(){
         start: ev.start && (ev.start.dateTime || ev.start.date),
         end: ev.end && (ev.end.dateTime || ev.end.date),
         allDay: !(ev.start && ev.start.dateTime),
-        color: calMeta ? calMeta.backgroundColor : '#7C9A92'
+        color: calMeta ? calMeta.backgroundColor : '#7E9B7E'
       }));
     }));
 
@@ -1337,8 +1498,7 @@ function fmtEventTime(iso){
   return new Date(iso).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }
 function dayLabel(dateKey){
-  if (dateKey.startsWith('Ongoing')) return dateKey;
-  
+  if(dateKey.startsWith('Ongoing')) return dateKey;
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
   const d = new Date(dateKey + 'T00:00:00');
@@ -1355,51 +1515,40 @@ function eventRowHtml(ev, now){
   const timeLabel = ev.allDay ? 'All day' : (fmtEventTime(ev.start) + (ev.end ? ' – ' + fmtEventTime(ev.end) : ''));
   return '<div class="todo-row">'
     + '<div class="todo-date">'+timeLabel+'</div>'
-    + '<span class="cal-pick-dot" style="background:'+(ev.color||'#7C9A92')+'"></span>'
+    + '<span class="cal-pick-dot" style="background:'+(ev.color||'#7E9B7E')+'"></span>'
     + '<div class="todo-text">'+escapeHtml(ev.title)+'</div>'
     + badge
     + '</div>';
 }
-
 function renderCalendarList(){
   const el = $('calList');
   if(!el) return;
-
   if(!gcal.events || gcal.events.length === 0){
-    el.innerHTML = '<div class="todo-empty">Nothing on your calendar ☕</div>';
+    el.innerHTML = '<div class="todo-empty" style="display:flex;align-items:center;justify-content:center;gap:6px;">Nothing on your calendar <svg class="icon" style="width:14px;height:14px;"><use href="#icon-mug"/></svg></div>';
   } else if(gcal.rangeDays <= 1){
     const now = Date.now();
     el.innerHTML = gcal.events.map(ev => eventRowHtml(ev, now)).join('');
   } else {
     const now = Date.now();
     const today = localDateKey(new Date());
-
     const groups = {};
     const ongoingEvents = [];
-
     gcal.events.forEach(ev => {
       const startDate = ev.start ? new Date(ev.start) : null;
       const endDate = ev.end ? new Date(ev.end) : null;
-
       if(!startDate) return;
-
       const startKey = localDateKey(startDate);
-
       // Google all-day end date is exclusive, so subtract 1 day
       const actualEndDate = endDate
         ? new Date(endDate.getTime() - 86400000)
         : startDate;
-
       const endKey = localDateKey(actualEndDate);
-
       const isMultiDayAllDay = ev.allDay && startKey !== endKey;
-
       // Only show as ongoing if today is inside the event range
       const isCurrentlyOngoing =
         isMultiDayAllDay &&
         today >= startKey &&
         today <= endKey;
-
       if(isCurrentlyOngoing){
         ongoingEvents.push(ev);
       } else {
@@ -1408,28 +1557,23 @@ function renderCalendarList(){
     });
 
     let html = '';
-
     // Ongoing events always appear first
     if(ongoingEvents.length > 0){
       ongoingEvents.forEach(ev => {
         const startDate = new Date(ev.start);
         const endDate = new Date(ev.end);
         endDate.setDate(endDate.getDate() - 1);
-    
         html += '<div class="cal-day-header">'
           + 'Ongoing, '
           + startDate.toLocaleDateString([], {day:'2-digit', month:'short'})
           + ' - '
           + endDate.toLocaleDateString([], {day:'2-digit', month:'short'})
           + '</div>';
-    
         html += eventRowHtml(ev, now);
       });
     }
-
     // Normal events grouped by start date
     const sortedKeys = Object.keys(groups).sort();
-
     html += sortedKeys.map(key =>
       '<div class="cal-day-header">' + dayLabel(key) + '</div>' +
       groups[key].map(ev => eventRowHtml(ev, now)).join('')
@@ -1437,7 +1581,6 @@ function renderCalendarList(){
 
     el.innerHTML = html;
   }
-
   $('calUpdatedInSheet').textContent = gcal.lastUpdated
     ? 'Last updated ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
     : '';
@@ -1475,15 +1618,30 @@ $('calRangePicker').querySelectorAll('.range-chip').forEach(chip => {
     gcal.rangeDays = parseInt(chip.dataset.days, 10);
     saveGcalState();
     $('calRangePicker').querySelectorAll('.range-chip').forEach(c => c.classList.toggle('active', c===chip));
-    $('calSheetTitle').textContent = gcal.rangeDays === 1 ? '📅 Today' : gcal.rangeDays === 3 ? '📅 Next 3 days' : '📅 Next 7 days';
+    $('calSheetTitle').innerHTML = '<svg class="icon"><use href="#icon-calendar"/></svg>' + (gcal.rangeDays === 1 ? 'Today' : gcal.rangeDays === 3 ? 'Next 3 days' : 'Next 7 days');
     fetchCalendarEvents();
   };
 });
 
 /* ---------------- Character wandering (walks the open floor area) ---------------- */
+/* =========================================================================
+   FURNITURE REGISTRY
+   The single source of truth for "where does the character go to do X."
+   This is deliberately separate from buildRoom()'s actual SVG drawing —
+   buildRoom() decides what furniture looks like; this decides what it
+   *means* (where to stand, what activities it offers). When the room's
+   art gets redesigned later, only the numbers here (and the matching
+   draw calls in buildRoom) need updating — none of the interaction code
+   below (goToDesk, resolveIdleState, tap-to-move, future furniture taps)
+   has to change, since it all reads from this registry rather than
+   hardcoded spots of its own.
+   ========================================================================= */
+const FURNITURE = {
+  desk:  { standSpot:{ x:2.53, y:1.55 }, activities:['todo','calendar'] },
+  bed:   { standSpot:{ x:0.78, y:1.55 }, activities:['sleep'] },
+  plant: { standSpot:{ x:1.05, y:4.35 }, activities:['water'] } // not wired up yet — reserved for later
+};
 const WALK_GRID = { xMin:1.8, xMax:3.6, yMin:2.4, yMax:4.2 };
-const DESK_SPOT = { x:2.53, y:1.55 };
-const BED_SPOT = { x:0.78, y:1.55 };
 let lastGX = 2.6;
 let wanderTimer = null;
 let busyReason = null; // null | 'todo' | 'calendar' | 'night' — whoever "claims" the character
@@ -1492,7 +1650,7 @@ function placeCharAt(gx, gy){
   charWrapEl.classList.toggle('facing-left', gx < lastGX);
   charWrapEl.classList.add('walking');
   charWrapEl.style.left = (p.x/VB_W*100) + '%';
-  charWrapEl.style.top = (p.y/VB_H*100) + '%';
+  charWrapEl.style.top = Math.min(p.y/VB_H*100, 78) + '%'; // never past the room's visible floor edge
   lastGX = gx;
 }
 charWrapEl.addEventListener('transitionend', (e) => {
@@ -1511,7 +1669,7 @@ function goToDesk(reason){
   stopWander();
   if(charAsleep){ charAsleep = false; drawCharacter(); }
   charWrapEl.classList.remove('facing-left', 'asleep');
-  placeCharAt(DESK_SPOT.x, DESK_SPOT.y);
+  placeCharAt(FURNITURE.desk.standSpot.x, FURNITURE.desk.standSpot.y);
 }
 /* Whatever the character should default to when nothing else has a claim
    on it — asleep in the daybed at night, wandering the floor by day. */
@@ -1522,7 +1680,7 @@ function resolveIdleState(){
     stopWander();
     busyReason = 'night';
     charWrapEl.classList.remove('facing-left');
-    placeCharAt(BED_SPOT.x, BED_SPOT.y);
+    placeCharAt(FURNITURE.bed.standSpot.x, FURNITURE.bed.standSpot.y);
     charWrapEl.classList.add('asleep');
     if(!charAsleep){ charAsleep = true; drawCharacter(); }
   } else {
@@ -1565,17 +1723,17 @@ function renderTodos(){
   const activeEl = $('todoActiveList');
   activeEl.innerHTML = active.length ? active.map(t =>
     '<div class="todo-row">'
-    + '<div class="todo-check" data-id="'+t.id+'">'+ '</div>'
+    + '<div class="todo-check" data-id="'+t.id+'"><svg class="icon"><use href="#icon-check"/></svg></div>'
     + '<div class="todo-text">'+escapeHtml(t.text)+'</div>'
     + (t.date ? '<div class="todo-date">'+fmtDate(t.date)+'</div>' : '')
-    + '<button class="todo-del" data-id="'+t.id+'">✕</button>'
+    + '<button class="todo-del" data-id="'+t.id+'"><svg class="icon"><use href="#icon-trash"/></svg></button>'
     + '</div>'
   ).join('') : '<div class="todo-empty">Nothing on the list yet — add something above.</div>';
 
   const histEl = $('todoHistoryList');
   histEl.innerHTML = done.length ? done.map(t =>
     '<div class="hist-row">'
-    + '<div class="todo-check checked" data-id="'+t.id+'">✓</div>'
+    + '<div class="todo-check checked" data-id="'+t.id+'"><svg class="icon"><use href="#icon-check"/></svg></div>'
     + '<div class="todo-text">'+escapeHtml(t.text)+'</div>'
     + '<div class="hist-when">'+(t.completedAt ? new Date(t.completedAt).toLocaleDateString([], {month:'short', day:'numeric'}) : '')+'</div>'
     + '</div>'
@@ -1596,6 +1754,10 @@ function toggleTodo(id){
   t.completedAt = t.done ? new Date().toISOString() : null;
   saveTodos();
   renderTodos();
+  if(t.done && !charAsleep){
+    setCompanionState('celebrate');
+    setTimeout(() => { if(!charAsleep) drawCharacter(); }, 1600);
+  }
 }
 function deleteTodo(id){
   state.todos = state.todos.filter(x=>x.id!==id);
@@ -1614,7 +1776,7 @@ $('historyToggle').onclick = () => {
   const el = $('todoHistoryList');
   const open = el.style.display !== 'none';
   el.style.display = open ? 'none' : 'block';
-  $('historyCaret').textContent = open ? '▾' : '▴';
+  $('historyCaret').classList.toggle('open', !open);
 };
 /* ---------------- Due-date awareness ---------------- */
 /* iOS Safari does not support scheduled background push notifications for
@@ -1638,9 +1800,10 @@ function updateTodoBadge(){
 function updatePlantMood(){
   const overdue = todosDueOrOverdue().length;
   const healthy = overdue === 0;
-  const a = $('plantLeafA'), b = $('plantLeafB');
-  if(a) a.setAttribute('fill', healthy ? '#8FB88A' : '#C2A66B');
-  if(b) b.setAttribute('fill', healthy ? '#9DC79A' : '#D4BC85');
+  const a = document.querySelector('#roomDecorations [data-asset="plant-pot"] [data-role="leaf-a"]');
+  const b = document.querySelector('#roomDecorations [data-asset="plant-pot"] [data-role="leaf-b"]');
+  if(a) a.setAttribute('fill', healthy ? cssVar('--room-leaf-a') : cssVar('--room-leaf-dull-a'));
+  if(b) b.setAttribute('fill', healthy ? cssVar('--room-leaf-b') : cssVar('--room-leaf-dull-b'));
 }
 function notifyDueTodos(){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -1653,7 +1816,7 @@ function notifyDueTodos(){
 function requestNotifyPermission(){
   if(!('Notification' in window)){ alert('Notifications are not supported in this browser.'); return; }
   Notification.requestPermission().then(p => {
-    $('notifyBtn').textContent = p === 'granted' ? 'Reminders on ✓' : 'Enable reminders';
+    $('notifyBtn').textContent = p === 'granted' ? 'Reminders on' : 'Enable reminders';
   });
 }
 $('notifyBtn')?.addEventListener('click', requestNotifyPermission);
@@ -1691,13 +1854,53 @@ function enableSwipeToClose(sheetEl, closeFn){
   });
 }
 
+/* ---------------- Tap to move ---------------- */
+/* Inverts iso(gx,gy,0) to recover grid coordinates from a screen tap.
+   Rejects taps that clearly landed outside the room (e.g. on the sky
+   background), and clamps anything close to the edges so the character
+   can never be walked into a wall or off the visible floor. */
+function screenToGrid(clientX, clientY){
+  const rect = stageEl.getBoundingClientRect();
+  const px = clientX - rect.left, py = clientY - rect.top;
+  const X = px / rect.width * VB_W, Y = py / rect.height * VB_H;
+  const dx = X - ORIGIN_X, dy = Y - ORIGIN_Y;
+  const gx = (dx + 2*dy) / (2*TILE);
+  const gy = (2*dy - dx) / (2*TILE);
+  return { gx, gy };
+}
+let tapIdleTimer = null;
+function moveCharacterToTap(gx, gy){
+  clearTimeout(tapIdleTimer);
+  busyReason = 'tapped';
+  stopWander();
+  if(charAsleep){ charAsleep = false; drawCharacter(); }
+  charWrapEl.classList.remove('asleep');
+  placeCharAt(gx, gy);
+  // After a little while with nothing else claiming it, the character
+  // goes back to living its normal life (wandering, or asleep at night).
+  tapIdleTimer = setTimeout(() => {
+    if(busyReason === 'tapped'){ busyReason = null; resolveIdleState(); }
+  }, 8000);
+}
+stageEl.addEventListener('click', (e) => {
+  if(document.querySelector('.sheet.open')) return; // don't fight with an open sheet
+  if(e.target.closest('.scene-btn')) return; // the calendar/todo buttons handle their own taps
+  const { gx, gy } = screenToGrid(e.clientX, e.clientY);
+  const margin = 0.5;
+  if(gx < -margin || gx > ROOM_W+margin || gy < -margin || gy > ROOM_D+margin) return; // tapped outside the room entirely
+  const inset = 0.35;
+  const clampedX = Math.min(Math.max(gx, inset), ROOM_W - inset);
+  const clampedY = Math.min(Math.max(gy, inset), ROOM_D - inset);
+  moveCharacterToTap(clampedX, clampedY);
+});
+
 /* ---------------- Boot ---------------- */
 document.querySelectorAll('.forecast-toggle').forEach(x => x.classList.toggle('active', x.dataset.mode===forecastMode));
 enableSwipeToClose($('sheet'), closeSheet);
 enableSwipeToClose($('todoSheet'), closeTodoSheet);
 enableSwipeToClose($('calSheet'), closeCalSheet);
 enableSwipeToClose($('characterSheet'), closeCharacterSheet);
-initRoom();
+loadTheme(currentThemeId);
 resizeCanvas();
 loadTodos();
 renderTodos();

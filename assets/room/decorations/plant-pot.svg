@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-17.2 -30.4 34.4 41.0">
+  <!-- Nook room decoration asset: plant-pot
+       Small potted plant, e.g. resting on the shelf (default anchor: 4.45, 0.06, 3.17). Leaves carry data-role="leaf-a"/"leaf-b" — the app recolors them live based on to-do load.
+       Authored at local grid origin (0,0,0); the runtime positions this
+       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
+       room design tokens (see index.html :root) so themes can recolor
+       every decoration without editing this file. -->
+  <polygon points="6.6,-4.5 5.2,-3.9 3.5,-3.6 1.6,-3.4 -0.3,-3.5 -2.3,-3.8 -4.1,-4.3 -5.7,-4.9 -7.0,-5.8 -8.0,-6.7 -8.6,-7.6 -8.7,-8.6 -8.4,-9.5 -7.7,-10.4 -6.6,-11.1 -5.2,-11.7 -3.5,-12.0 -1.6,-12.2 0.3,-12.1 2.3,-11.8 4.1,-11.3 5.7,-10.7 7.0,-9.8 8.0,-8.9 8.6,-8.0 8.7,-7.0 8.4,-6.1 7.7,-5.2" fill="var(--room-mug)" stroke="var(--room-outline)" stroke-width="2"/><polygon points="-10.8,-0.6 1.2,5.4 1.2,-2.4 -10.8,-8.4" fill="var(--room-mug-lo)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="10.8,0.6 1.2,5.4 1.2,-2.4 10.8,-7.2" fill="var(--room-mug)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="-1.2,-13.2 10.8,-7.2 1.2,-2.4 -10.8,-8.4" fill="var(--room-mug-hi)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><circle data-role="leaf-a" cx="-6" cy="-16.92" r="12" fill="var(--room-leaf-a)" stroke="var(--room-outline)" stroke-width="2"/><circle data-role="leaf-b" cx="7" cy="-13.92" r="9" fill="var(--room-leaf-b)" stroke="var(--room-outline)" stroke-width="2"/>
+</svg>

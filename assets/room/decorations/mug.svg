@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-28.0 -16.0 56.0 45.0">
+  <!-- Nook room decoration asset: mug
+       Desk mug, drawn in flat screen-space (not grid-projected — small enough that iso skew is not needed). Default anchor: desk top, front-right corner.
+       Authored at local grid origin (0,0,0); the runtime positions this
+       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
+       room design tokens (see index.html :root) so themes can recolor
+       every decoration without editing this file. -->
+  <path d="M-9 -3 q-1 15 9 15 q10 0 9 -15 Z" fill="var(--room-mug)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><ellipse cx="0" cy="-3" rx="9" ry="3" fill="var(--room-mug-hi)" stroke="var(--room-outline)" stroke-width="1.5"/><path d="M8 1 q7 1 5 8 q-2 6 -8 4" fill="none" stroke="var(--room-outline)" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
