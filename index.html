@@ -174,6 +174,20 @@
   .scene-btn .icon{ width:22px; height:22px; }
   .scene-btn:active{ transform:scale(0.9); }
   .scene-btn.has-due{ animation:btnPulse 1.7s ease-in-out infinite; }
+  .scene-actions{
+    position:absolute;
+    right:18px;
+    bottom:18px;
+    display:flex;
+    gap:12px;
+    z-index:6;
+  }
+  
+  .scene-actions .scene-btn{
+    position:relative;
+    bottom:auto;
+    right:auto;
+  }
   @keyframes btnPulse{
     0%{ box-shadow:0 0 0 0 rgba(231,111,81,0.55); }
     70%{ box-shadow:0 0 0 16px rgba(231,111,81,0); }
@@ -277,7 +291,7 @@
     border-color:var(--sage);
     background:#F1F6F2;
   }
-    
+  
   /* ---------- Settings sheet ---------- */
   .sheet-backdrop{
     position:fixed;inset:0; background:rgba(74,63,53,0.35);
@@ -285,11 +299,20 @@
   }
   .sheet-backdrop.open{ opacity:1; pointer-events:auto; }
   .sheet{
-    position:fixed; left:0;right:0;bottom:0; max-width:480px;margin:0 auto;
-    background:var(--cream); border-radius:28px 28px 0 0;
+    position:fixed;
+    left:0;right:0;bottom:0;
+    max-width:480px;
+    margin:0 auto;
+    background:var(--cream);
+    border-radius:28px 28px 0 0;
     padding:14px 20px calc(env(safe-area-inset-bottom,0px) + 24px);
-    transform:translateY(100%); transition:transform .3s ease; z-index:41;
-    max-height:82vh; overflow-y:auto;
+    transform:translateY(100%);
+    transition:transform .3s ease;
+    z-index:41;
+    max-height:82vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    box-sizing:border-box;
     box-shadow:0 -20px 50px -20px rgba(74,56,38,0.35);
   }
   .sheet.open{ transform:translateY(0); }
@@ -327,8 +350,14 @@
 
   /* ---------- Todos ---------- */
   .todo-row{
-    display:flex; align-items:center; gap:10px;
-    padding:10px 4px; border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 4px;
+    border-bottom:1px solid var(--line);
+    width:100%;
+    min-width:0;
+    overflow:hidden;
   }
   .todo-row:last-child{ border-bottom:none; }
   .todo-check{
@@ -340,11 +369,29 @@
   .todo-check.checked{ background:var(--sage); }
   .todo-check.checked .icon{ opacity:1; }
   .todo-check:active{ transform:scale(0.88); }
-  .todo-text{ flex:1; font-size:14px; font-weight:700; line-height:1.3; }
+  .todo-text{
+    flex:1;
+    min-width:0;
+    font-size:14px;
+    font-weight:700;
+    line-height:1.3;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
   .todo-text.done{ text-decoration:line-through; color:var(--ink-soft); font-weight:600; }
   .todo-date{
-    font-size:10.5px; font-weight:800; color:var(--sage-dark);
-    background:#EAF2ED; padding:3px 8px; border-radius:999px; white-space:nowrap;
+    flex:0 1 auto;
+    max-width:90px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:10.5px;
+    font-weight:800;
+    color:var(--sage-dark);
+    background:#EAF2ED;
+    padding:3px 8px;
+    border-radius:999px;
+    white-space:nowrap;
   }
   .todo-del{
     width:24px;height:24px; border-radius:50%; border:none; background:transparent;
@@ -483,15 +530,19 @@
     <div id="skyBg"></div>
     <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
-    <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none; right:128px; bottom:18px;">
-      <svg class="icon"><use href="#icon-calendar"/></svg>
-    </button>
-    <button id="customizeProp" class="scene-btn" title="Customize" style="right:74px; bottom:18px;">
-      <svg class="icon"><use href="#icon-mirror"/></svg>
-    </button>
-    <button id="todoProp" class="scene-btn" title="To-dos" style="right:18px; bottom:18px;">
-      <svg class="icon"><use href="#icon-notebook"/></svg>
-    </button>
+    <div class="scene-actions">
+      <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none;">
+        <svg class="icon"><use href="#icon-calendar"/></svg>
+      </button>
+    
+      <button id="customizeProp" class="scene-btn" title="Customize">
+        <svg class="icon"><use href="#icon-mirror"/></svg>
+      </button>
+    
+      <button id="todoProp" class="scene-btn" title="To-dos">
+        <svg class="icon"><use href="#icon-notebook"/></svg>
+      </button>
+    </div>
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
