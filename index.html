@@ -204,17 +204,28 @@
   }
   .forecast-toggle.active{ color:var(--sage-dark); border-bottom:2px solid var(--sage); }
 
-  /* ---------- Character switcher ---------- */
-  .switcher{ display:flex; gap:10px; padding:0 14px 14px; overflow-x:auto; scrollbar-width:none; }
-  .switcher::-webkit-scrollbar{display:none;}
-  .chip{
-    flex:0 0 auto; display:flex; align-items:center; gap:8px;
-    padding:7px 14px 7px 7px; border-radius:999px; background:var(--card);
-    border:2px solid transparent; cursor:pointer; font-weight:700; font-size:13px; color:var(--ink);
+  /* ---------- Calendar switcher ---------- */
+  .cal-switcher{
+    display:flex;
+    gap:10px;
+    align-items:center;
   }
-  .chip.active{ border-color:var(--sage); background:#F1F6F2; }
-  .chip .dot{ width:22px;height:22px;border-radius:50%; }
-  .chip.add{ color:var(--sage-dark); background:transparent; border:2px dashed var(--line); }
+  
+  .cal-chip{
+    flex:0 0 auto;
+    padding:7px 16px;
+    border-radius:999px;
+    background:var(--card);
+    border:2px solid transparent;
+    cursor:pointer;
+    font-weight:700;
+    font-size:13px;
+  }
+  
+  .cal-chip.active{
+    border-color:var(--sage);
+    background:#F1F6F2;
+  }
 
   /* ---------- Settings sheet ---------- */
   .sheet-backdrop{
@@ -357,8 +368,6 @@
     <div class="forecast-row" id="forecastRow"></div>
   </div>
 
-  <div class="switcher" id="switcher"></div>
-
   <div id="statusMsg">&nbsp;</div>
 </div>
 
@@ -437,10 +446,10 @@
 <div class="sheet" id="calSheet">
   <div class="sheet-handle"></div>
   <h2 id="calSheetTitle">📅 Today</h2>
-  <div class="switcher" id="calRangePicker" style="padding:0 0 12px;">
-    <div class="chip range-chip active" data-days="1">Today</div>
-    <div class="chip range-chip" data-days="3">3 days</div>
-    <div class="chip range-chip" data-days="7">7 days</div>
+  <div class="cal-switcher" id="calRangePicker" style="padding:0 0 12px;">
+    <div class="cal-chip range-chip active" data-days="1">Today</div>
+    <div class="cal-chip range-chip" data-days="3">3 days</div>
+    <div class="cal-chip range-chip" data-days="7">7 days</div>
   </div>
   <div id="calList"></div>
   <p class="hint" id="calUpdatedInSheet">&nbsp;</p>
@@ -1038,21 +1047,6 @@ function locate(){
   } else { $('statusMsg').textContent = 'Search a city in Settings.'; }
 }
 
-/* ---------------- Character switcher UI ---------------- */
-function renderSwitcher(){
-  const el = $('switcher');
-  el.innerHTML = '';
-
-  const c = getCharacter();
-
-  const chip = document.createElement('div');
-  chip.className = 'chip active';
-  chip.innerHTML =
-    '<span class="dot" style="background:'+c.palette.body+'"></span>'+c.name;
-
-  el.appendChild(chip);
-}
-
 /* ---------------- Settings sheet ---------------- */
 function openSheet(){ $('sheet').classList.add('open'); $('sheetBackdrop').classList.add('open'); }
 function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBackdrop').classList.remove('open'); }
@@ -1143,7 +1137,6 @@ $('customizeCharBtn').onclick = () => {
   
   saveCharacter();
 
-  renderSwitcher();
   drawCharacter();
 
   $('cName').value = '';
@@ -1706,7 +1699,6 @@ enableSwipeToClose($('calSheet'), closeCalSheet);
 enableSwipeToClose($('characterSheet'), closeCharacterSheet);
 initRoom();
 resizeCanvas();
-renderSwitcher();
 loadTodos();
 renderTodos();
 notifyDueTodos();
