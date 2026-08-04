@@ -848,12 +848,24 @@ function renderHourlyForecast(el){
     const hr = new Date(h.time).getHours();
     const isNow = hr === nowHour;
     const label = isNow ? 'Now' : new Date(h.time).toLocaleTimeString([], { hour:'numeric' });
-    return '<div class="forecast-day'+(isNow?' fd-now':'')+'">'
+    return '<div id="hour-'+hr+'" class="forecast-day'+(isNow?' fd-now':'')+'">'
       + '<span class="fd-name">'+label+'</span>'
       + '<span class="fd-icon">'+(FORECAST_GLYPH[h.base]||'☁️')+'</span>'
       + '<span class="fd-max">'+Math.round(h.temp)+'°</span>'
       + '</div>';
   }).join('');
+  requestAnimationFrame(() => {
+    const current = document.getElementById('hour-' + nowHour);
+    if (current) {
+      const containerRect = el.getBoundingClientRect();
+      const itemRect = current.getBoundingClientRect();
+  
+      el.scrollTo({
+        left: el.scrollLeft + (itemRect.left - containerRect.left),
+        behavior: 'auto'
+      });
+    }
+  });
 }
 
 /* ---------------- Scene / weather rendering ---------------- */
@@ -905,7 +917,7 @@ function flickerLightning(){
 async function fetchWeather(lat, lon){
   const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon
     + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day'
-    + '&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=6'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=7'
     + '&hourly=temperature_2m,weather_code&timezone=auto';
   const res = await fetch(url);
   const data = await res.json();
