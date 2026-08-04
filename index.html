@@ -388,6 +388,15 @@
   <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.2v2.1M12 18.7v2.1M20.8 12h-2.1M5.3 12H3.2M18 6l-1.5 1.5M7.5 16.5L6 18M18 18l-1.5-1.5M7.5 7.5L6 6"/></symbol>
   <symbol id="icon-notebook" viewBox="0 0 24 24"><rect x="4" y="3" width="15" height="18" rx="3.5"/><path d="M9 3v18M4 8h1.2M4 13h1.2"/></symbol>
   <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 9.5h17M8 3v3.6M16 3v3.6"/><circle cx="8" cy="14" r="1.1" class="filled"/><circle cx="12" cy="14" r="1.1" class="filled"/><circle cx="16" cy="14" r="1.1" class="filled"/></symbol>
+  <symbol id="icon-sun" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="4.2"/>
+    <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2"/>
+    <path d="M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M19.1 4.9l-1.6 1.6M6.5 17.5l-1.6 1.6"/>
+  </symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24">
+    <path d="M18 9.5a6 6 0 0 0-12 0c0 7-2.2 7-2.2 8.5h16.4C20.2 16.5 18 16.5 18 9.5Z"/>
+    <path d="M9.5 20a2.8 2.8 0 0 0 5 0"/>
+  </symbol>
   <symbol id="icon-mirror" viewBox="0 0 24 24"><path d="M12 3C8.1 3 5 6.8 5 11.5S8.1 20 12 20s7-3.8 7-8.5S15.9 3 12 3Z"/><path d="M9 21h6"/><path d="M12 6.5c1.8 0 3.2 1.8 3.2 4"/></symbol>
   <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.6-5.7M20 12a8 8 0 0 1-13.6 5.7"/><path d="M17.2 3.6v3.4h-3.4M6.8 20.4V17h3.4"/></symbol>
   <symbol id="icon-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
@@ -467,7 +476,8 @@
 <div class="sheet-backdrop" id="sheetBackdrop"></div>
 <div class="sheet" id="sheet">
   <div class="sheet-handle"></div>
-  <h2><svg class="icon"><use href="#icon-gear"/></svg>Settings</h2>
+
+  <h2><svg class="icon"><use href="#icon-sun"/></svg>Weather</h2>
 
   <div class="field">
     <label>Search a city</label>
@@ -477,27 +487,51 @@
 
   <div class="divider"></div>
 
+  <h2><svg class="icon"><use href="#icon-bell"/></svg>Reminders</h2>
+
   <div class="field">
-    <label>Reminders</label>
-    <button class="btn secondary" id="notifyBtn" style="margin-top:0;">Enable reminders</button>
-    <p class="hint">Turns on a gentle notification for anything due today or overdue — shown when you open the app. iOS doesn't allow web apps to send notifications while fully closed, so this can't wake your phone in the background.</p>
+    <button class="btn secondary" id="notifyBtn" style="margin-top:0;">
+      Enable reminders
+    </button>
+    <p class="hint">
+      Turns on a gentle notification for anything due today or overdue — shown when you open the app. 
+      iOS doesn't allow web apps to send notifications while fully closed, so this can't wake your phone in the background.
+    </p>
   </div>
 
   <div class="divider"></div>
 
   <h2><svg class="icon"><use href="#icon-calendar"/></svg>Google Calendar</h2>
+
   <div id="calDisconnected">
-    <p class="hint">Optional. If connected, Nook can show today's schedule and the character will head to the desk shortly before something starts. Nook only <b>reads</b> your calendar — it never creates, edits, or deletes events — and you can disconnect any time.</p>
-    <button class="btn" id="gcalConnectBtn">Connect Google Calendar</button>
+    <p class="hint">
+      Optional. If connected, Nook can show today's schedule and the character will head to the desk shortly before something starts. 
+      Nook only <b>reads</b> your calendar — it never creates, edits, or deletes events — and you can disconnect any time.
+    </p>
+
+    <button class="btn" id="gcalConnectBtn">
+      Connect Google Calendar
+    </button>
+
     <p class="hint" id="gcalError" style="color:#C1512D;"></p>
   </div>
+
   <div id="calConnected" style="display:none;">
-    <p class="hint">Connected — Nook is reading your calendars (read-only).</p>
+    <p class="hint">
+      Connected — Nook is reading your calendars (read-only).
+    </p>
+
     <div class="row2">
-      <button class="btn secondary" id="gcalRefreshBtn" style="margin-top:0;">Refresh now</button>
-      <button class="btn secondary" id="gcalDisconnectBtn" style="margin-top:0;">Disconnect</button>
+      <button class="btn secondary" id="gcalRefreshBtn" style="margin-top:0;">
+        Refresh now
+      </button>
+      <button class="btn secondary" id="gcalDisconnectBtn" style="margin-top:0;">
+        Disconnect
+      </button>
     </div>
+
     <p class="hint" id="gcalUpdatedHint"></p>
+
     <div class="field">
       <label>Calendars to show</label>
       <div id="gcalCalendarPicker"></div>
@@ -505,7 +539,7 @@
   </div>
 
   <div class="divider"></div>
-  
+
   <button class="btn secondary" id="closeSheetBtn">Close</button>
 </div>
 
