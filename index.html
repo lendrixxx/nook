@@ -112,7 +112,7 @@
   }
   .scene-btn{
     position:absolute;
-    top:18px; right:18px;
+    bottom:18px;
     width:52px; height:52px;
     border-radius:50%;
     border:none;
@@ -324,8 +324,9 @@
     <div id="skyBg"></div>
     <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
-    <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none; right:82px;">🗓️</button>
-    <button id="todoProp" class="scene-btn" title="To-dos">📓</button>
+    <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none; right:130px;">🗓️</button>
+    <button id="todoProp" class="scene-btn" title="To-dos" style="right:75px;">📓</button>
+    <button id="customizeProp" class="scene-btn" title="Customize" style="right:20px;">🪞</button>
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -402,56 +403,6 @@
   </div>
 
   <div class="divider"></div>
-
-  <h2>Customize character</h2>
-  <div class="field">
-    <label>Name</label>
-    <input type="text" id="cName" placeholder="e.g. Pip">
-  </div>
-  <div class="row2">
-    <div class="field">
-      <label>Ear style</label>
-      <select id="cEar">
-        <option value="round">Round (bear)</option>
-        <option value="pointy">Pointy (fox/cat)</option>
-        <option value="long">Long (bunny)</option>
-        <option value="floppy">Floppy (dog)</option>
-        <option value="none">None (blob)</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Tail</label>
-      <select id="cTail">
-        <option value="none">None</option>
-        <option value="fluffy">Fluffy</option>
-        <option value="straight">Straight</option>
-      </select>
-    </div>
-  </div>
-  <div class="row2">
-    <div class="field">
-      <label>Body</label>
-      <div class="colorfield"><input type="color" id="cBody" value="#F2A65A"></div>
-    </div>
-    <div class="field">
-      <label>Belly</label>
-      <div class="colorfield"><input type="color" id="cBelly" value="#FFF3E0"></div>
-    </div>
-  </div>
-  <div class="row2">
-    <div class="field">
-      <label>Cheeks</label>
-      <div class="colorfield"><input type="color" id="cCheek" value="#FF9E80"></div>
-    </div>
-    <div class="field">
-      <label>Accent</label>
-      <div class="colorfield"><input type="color" id="cAccent" value="#8D6E63"></div>
-    </div>
-  </div>
-  <button class="btn" id="customizeCharBtn">Save changes</button>
-  <p class="hint">This creates an original character from these shape and color choices — it won't copy an existing cartoon, but you can tune it until it feels like "yours."</p>
-
-  <button class="btn secondary" id="closeSheetBtn">Close</button>
 </div>
 
 <div class="sheet" id="todoSheet">
@@ -496,7 +447,86 @@
   <button class="btn secondary" id="closeCalBtn">Close</button>
 </div>
 
+<div class="sheet" id="characterSheet">
+  <div class="sheet-card">
+
+    <div class="sheet-handle"></div>
+
+    <h2>Customize</h2>
+
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="cName" placeholder="e.g. Pip">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Ear style</label>
+        <select id="cEar">
+          <option value="round">Round (bear)</option>
+          <option value="pointy">Pointy (fox/cat)</option>
+          <option value="long">Long (bunny)</option>
+          <option value="floppy">Floppy (dog)</option>
+          <option value="none">None (blob)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Tail</label>
+        <select id="cTail">
+          <option value="none">None</option>
+          <option value="fluffy">Fluffy</option>
+          <option value="straight">Straight</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Body</label>
+        <div class="colorfield">
+          <input type="color" id="cBody" value="#F2A65A">
+        </div>
+      </div>
+    
+      <div class="field">
+        <label>Belly</label>
+        <div class="colorfield">
+          <input type="color" id="cBelly" value="#FFF3E0">
+        </div>
+      </div>
+    </div>
+    
+    <div class="row2">
+      <div class="field">
+        <label>Cheeks</label>
+        <div class="colorfield">
+          <input type="color" id="cCheek" value="#FF9E80">
+        </div>
+      </div>
+    
+      <div class="field">
+        <label>Accent</label>
+        <div class="colorfield">
+          <input type="color" id="cAccent" value="#8D6E63">
+        </div>
+      </div>
+    </div>
+    
+    <button class="btn" id="customizeCharBtn">Save changes</button>
+
+    <button class="btn secondary" id="characterSheetCloseBtn">
+      Close
+    </button>
+
+  </div>
+</div>
+
 <script>
+// For debugging errors on mobile
+window.onerror = function(msg, url, line) {
+  alert("ERROR:\n" + msg + "\nLine: " + line);
+};
 /* =========================================================================
    NOOK — a cozy weather companion, living in a small isometric room.
    Single file, no build step. Add to Home Screen on iPhone to use as an app.
@@ -1027,7 +1057,7 @@ function renderSwitcher(){
 function openSheet(){ $('sheet').classList.add('open'); $('sheetBackdrop').classList.add('open'); }
 function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBackdrop').classList.remove('open'); }
 $('settingsBtn').onclick = openSheet;
-$('closeSheetBtn').onclick = closeSheet;
+$('characterSheetCloseBtn').onclick = closeCharacterSheet;
 $('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon); };
 document.querySelectorAll('.forecast-toggle').forEach(t => {
   t.onclick = () => {
@@ -1037,7 +1067,6 @@ document.querySelectorAll('.forecast-toggle').forEach(t => {
     renderForecast();
   };
 });
-$('todoProp').onclick = openTodoSheet;
 
 /* ---------------- Todo sheet ---------------- */
 function openTodoSheet(){
@@ -1055,8 +1084,34 @@ $('sheetBackdrop').onclick = () => {
   closeSheet();
   closeTodoSheet();
   closeCalSheet();
+  closeCharacterSheet();
 };
+$('todoProp').onclick = openTodoSheet;
 $('closeTodoBtn').onclick = closeTodoSheet;
+
+/* ---------------- Character sheet ---------------- */
+function openCharacterSheet(){
+  const sheet = $('characterSheet');
+  sheet.classList.add('open');
+  $('sheetBackdrop').classList.add('open');
+
+  const c = getCharacter();
+
+  $('cName').value = c.name;
+  $('cEar').value = c.earType;
+  $('cTail').value = c.tailType;
+  $('cBody').value = c.palette.body;
+  $('cBelly').value = c.palette.belly;
+  $('cCheek').value = c.palette.cheek;
+  $('cAccent').value = c.palette.accent;
+}
+
+function closeCharacterSheet(){
+  $('characterSheet').classList.remove('open');
+  $('sheetBackdrop').classList.remove('open');
+}
+
+$('customizeProp').onclick = openCharacterSheet;
 
 let searchDebounce;
 $('citySearch').addEventListener('input', e=>{
@@ -1092,7 +1147,7 @@ $('customizeCharBtn').onclick = () => {
   drawCharacter();
 
   $('cName').value = '';
-  closeSheet();
+  closeCharacterSheet();
 };
 
 /* =========================================================================
@@ -1648,6 +1703,7 @@ document.querySelectorAll('.forecast-toggle').forEach(x => x.classList.toggle('a
 enableSwipeToClose($('sheet'), closeSheet);
 enableSwipeToClose($('todoSheet'), closeTodoSheet);
 enableSwipeToClose($('calSheet'), closeCalSheet);
+enableSwipeToClose($('characterSheet'), closeCharacterSheet);
 initRoom();
 resizeCanvas();
 renderSwitcher();
