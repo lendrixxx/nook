@@ -1258,6 +1258,8 @@ function fmtEventTime(iso){
   return new Date(iso).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }
 function dayLabel(dateKey){
+  if (dateKey.startsWith('Ongoing')) return dateKey;
+  
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
   const d = new Date(dateKey + 'T00:00:00');
@@ -1279,9 +1281,11 @@ function eventRowHtml(ev, now){
     + badge
     + '</div>';
 }
+
 function renderCalendarList(){
   const el = $('calList');
   if(!el) return;
+
   if(!gcal.events || gcal.events.length === 0){
     el.innerHTML = '<div class="todo-empty">Nothing on your calendar ☕</div>';
   } else if(gcal.rangeDays <= 1){
@@ -1289,15 +1293,72 @@ function renderCalendarList(){
     el.innerHTML = gcal.events.map(ev => eventRowHtml(ev, now)).join('');
   } else {
     const now = Date.now();
+    const today = localDateKey(new Date());
+
     const groups = {};
+    const ongoingEvents = [];
+
     gcal.events.forEach(ev => {
-      const key = ev.start ? localDateKey(new Date(ev.start)) : 'unknown';
-      (groups[key] = groups[key] || []).push(ev);
+      const startDate = ev.start ? new Date(ev.start) : null;
+      const endDate = ev.end ? new Date(ev.end) : null;
+
+      if(!startDate) return;
+
+      const startKey = localDateKey(startDate);
+
+      // Google all-day end date is exclusive, so subtract 1 day
+      const actualEndDate = endDate
+        ? new Date(endDate.getTime() - 86400000)
+        : startDate;
+
+      const endKey = localDateKey(actualEndDate);
+
+      const isMultiDayAllDay = ev.allDay && startKey !== endKey;
+
+      // Only show as ongoing if today is inside the event range
+      const isCurrentlyOngoing =
+        isMultiDayAllDay &&
+        today >= startKey &&
+        today <= endKey;
+
+      if(isCurrentlyOngoing){
+        ongoingEvents.push(ev);
+      } else {
+        (groups[startKey] = groups[startKey] || []).push(ev);
+      }
     });
-    el.innerHTML = Object.keys(groups).sort().map(key =>
-      '<div class="cal-day-header">'+dayLabel(key)+'</div>' + groups[key].map(ev => eventRowHtml(ev, now)).join('')
+
+    let html = '';
+
+    // Ongoing events always appear first
+    if(ongoingEvents.length > 0){
+      ongoingEvents.forEach(ev => {
+        const startDate = new Date(ev.start);
+        const endDate = new Date(ev.end);
+        endDate.setDate(endDate.getDate() - 1);
+    
+        html += '<div class="cal-day-header">'
+          + 'Ongoing, '
+          + startDate.toLocaleDateString([], {day:'2-digit', month:'short'})
+          + ' - '
+          + endDate.toLocaleDateString([], {day:'2-digit', month:'short'})
+          + '</div>';
+    
+        html += eventRowHtml(ev, now);
+      });
+    }
+
+    // Normal events grouped by start date
+    const sortedKeys = Object.keys(groups).sort();
+
+    html += sortedKeys.map(key =>
+      '<div class="cal-day-header">' + dayLabel(key) + '</div>' +
+      groups[key].map(ev => eventRowHtml(ev, now)).join('')
     ).join('');
+
+    el.innerHTML = html;
   }
+
   $('calUpdatedInSheet').textContent = gcal.lastUpdated
     ? 'Last updated ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
     : '';
