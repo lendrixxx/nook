@@ -1499,13 +1499,30 @@ function fmtEventTime(iso){
 }
 function dayLabel(dateKey){
   if(dateKey.startsWith('Ongoing')) return dateKey;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate()+1);
+
   const d = new Date(dateKey + 'T00:00:00');
-  if(dateKey === localDateKey(today)) return 'Today';
-  if(dateKey === localDateKey(tomorrow)) return 'Tomorrow';
-  return d.toLocaleDateString([], { weekday:'long', month:'short', day:'numeric' });
+
+  const dateText = d.toLocaleDateString([], {
+    month:'short',
+    day:'numeric'
+  });
+
+  if(dateKey === localDateKey(today)) return `Today, ${dateText}`;
+  if(dateKey === localDateKey(tomorrow)) return `Tomorrow, ${dateText}`;
+
+  return d.toLocaleDateString([], {
+    weekday:'long',
+    month:'short',
+    day:'numeric'
+  });
 }
+
 function eventRowHtml(ev, now){
   const startMs = ev.start ? new Date(ev.start).getTime() : null;
   const endMs = ev.end ? new Date(ev.end).getTime() : null;
