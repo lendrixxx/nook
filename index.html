@@ -1210,7 +1210,7 @@ async function drawCharacter(){
   if(myToken !== companionRenderToken) return;
 
   const innerOf = svgText => svgText.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
-  charEl.innerHTML = '<svg viewBox="-100 -150 200 240" width="66" height="82">'
+  charEl.innerHTML = '<svg viewBox="0 0 256 256" width="66" height="82">'
     + innerOf(baseSVG)
     + (accSVG ? innerOf(accSVG) : '')
     + '</svg>';
@@ -1227,7 +1227,7 @@ async function setCompanionState(poseState){
   catch(e){ return; }
   if(myToken !== companionRenderToken) return;
   const innerOf = t => t.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
-  charEl.innerHTML = '<svg viewBox="-100 -150 200 240" width="66" height="82">'+innerOf(svgText)+'</svg>';
+  charEl.innerHTML = '<svg viewBox="0 0 256 256" width="66" height="82">'+innerOf(svgText)+'</svg>';
 }
 
 
