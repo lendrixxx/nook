@@ -1257,10 +1257,8 @@ function renderWeeklyForecast(el){
 }
 function renderHourlyForecast(el){
   if(!state.hourly || state.hourly.length === 0){ el.innerHTML = '<div class="todo-empty">Hourly data unavailable</div>'; return; }
-  const nowHour = new Date().getHours();
-  el.innerHTML = state.hourly.map(h => {
-    const hr = new Date(h.time).getHours();
-    const isNow = hr === nowHour;
+  el.innerHTML = state.hourly.map((h, idx) => {
+    const isNow = idx === 0;
     const label = isNow ? 'Now' : new Date(h.time).toLocaleTimeString([], { hour:'numeric' });
     return '<div class="forecast-day'+(isNow?' fd-now':'')+'">'
       + '<span class="fd-name">'+label+'</span>'
@@ -1338,11 +1336,21 @@ async function fetchWeather(lat, lon){
     }));
   }
   if(data.hourly){
-    const todayKey = localDateKey(new Date());
-    state.hourly = data.hourly.time
-      .map((t,i) => ({ time:t, base: classify(data.hourly.weather_code[i], 0).base, temp: data.hourly.temperature_2m[i] }))
-      .filter(h => localDateKey(new Date(h.time)) === todayKey);
+    const now = new Date();
+    const all = data.hourly.time.map((t,i) => ({
+      time: t,
+      base: classify(data.hourly.weather_code[i], 0).base,
+      temp: data.hourly.temperature_2m[i]
+    }));
+    // find the last hourly entry at/before now — that's the current hour's bucket
+    let startIdx = 0;
+    for(let i = 0; i < all.length; i++){
+      if(new Date(all[i].time) <= now) startIdx = i;
+      else break;
+    }
+    state.hourly = all.slice(startIdx, startIdx + 24);
   }
+
   renderScene();
 }
 async function reverseGeocodeName(lat, lon){
