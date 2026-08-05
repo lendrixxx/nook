@@ -987,7 +987,10 @@ let ROOM_LAYOUT = [
 const assetCache = {};
 async function fetchAsset(url){
   if(assetCache[url]) return assetCache[url];
-  const p = fetch(url).then(r => r.text());
+  const p = fetch(url).then(r => {
+    if(!r.ok) throw new Error('Asset not found: ' + url);
+    return r.text();
+  });
   assetCache[url] = p;
   return p;
 }
@@ -1197,11 +1200,14 @@ async function drawCharacter(){
   let baseSVG, accSVG = '';
   try{
     baseSVG = await fetchAsset('assets/companions/'+c.species+'/'+poseState+'.svg');
-    if(accessory) accSVG = await fetchAsset('assets/companions/_accessories/'+accessory+'.svg');
   } catch(e){
-    return; // asset missing/offline — leave the last rendered pose in place
+    try{ baseSVG = await fetchAsset('assets/companions/'+c.species+'/happy.svg'); }
+    catch(e2){ return; } // truly nothing to render
   }
-  if(myToken !== companionRenderToken) return; // a newer render started; drop this one
+  try{
+    if(accessory) accSVG = await fetchAsset('assets/companions/_accessories/'+accessory+'.svg');
+  } catch(e){ accSVG = ''; }
+  if(myToken !== companionRenderToken) return;
 
   const innerOf = svgText => svgText.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
   charEl.innerHTML = '<svg viewBox="-100 -150 200 240" width="66" height="82">'
@@ -1209,6 +1215,7 @@ async function drawCharacter(){
     + (accSVG ? innerOf(accSVG) : '')
     + '</svg>';
 }
+
 async function setCompanionState(poseState){
   // Small helper for one-off poses driven by user actions (e.g. celebrate
   // on completing a to-do) that aren't purely a function of weather/mood.
