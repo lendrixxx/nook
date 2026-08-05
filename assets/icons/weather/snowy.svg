@@ -1,3 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M6.5 13h10.3a3.7 3.7 0 0 0 .4-7.38A5 5 0 0 0 6.4 6.9 3.4 3.4 0 0 0 6.5 13z" class="filled"/><path d="M8 16.6v5M5.7 18.1l4.6 2M10.3 18.1l-4.6 2M16 16.6v5M13.7 18.1l4.6 2M18.3 18.1l-4.6 2"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook weather icon: snowy -->
+
+
+  <!-- cloud -->
+
+  <path
+    d="
+      M16 32
+      C11 32 8 36 9 41
+      C10 46 15 48 21 48
+      H44
+      C51 48 55 44 54 39
+      C53 34 48 31 43 32
+      C40 24 32 21 25 24
+      C21 25 18 28 16 32 Z"
+    fill="var(--cloud,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- snow flakes -->
+
+  <g
+    stroke="var(--snow,#79BFE8)"
+    stroke-width="3"
+    stroke-linecap="round">
+
+    <!-- left -->
+
+    <line x1="19" y1="53" x2="19" y2="61"/>
+    <line x1="15" y1="57" x2="23" y2="57"/>
+    <line x1="16" y1="54" x2="22" y2="60"/>
+    <line x1="22" y1="54" x2="16" y2="60"/>
+
+
+    <!-- middle -->
+
+    <line x1="32" y1="55" x2="32" y2="63"/>
+    <line x1="28" y1="59" x2="36" y2="59"/>
+    <line x1="29" y1="56" x2="35" y2="62"/>
+    <line x1="35" y1="56" x2="29" y2="62"/>
+
+
+    <!-- right -->
+
+    <line x1="45" y1="53" x2="45" y2="61"/>
+    <line x1="41" y1="57" x2="49" y2="57"/>
+    <line x1="42" y1="54" x2="48" y2="60"/>
+    <line x1="48" y1="54" x2="42" y2="60"/>
+
+  </g>
+
 </svg>

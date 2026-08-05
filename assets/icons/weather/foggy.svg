@@ -1,3 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M4 8.5h11M4 12h16M4 15.5h13M4 19h9"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook weather icon: foggy -->
+
+  <!-- cloud -->
+
+  <path
+    d="
+      M18 30
+      C13 30 10 34 11 39
+      C12 44 17 46 23 46
+      H42
+      C49 46 53 42 52 37
+      C51 32 46 29 41 30
+      C38 22 31 20 25 23
+      C22 24 20 27 18 30 Z"
+    fill="var(--cloud,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- wavy fog -->
+
+  <path
+    d="
+      M10 52
+      C16 48 22 56 28 52
+      C34 48 40 56 46 52"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <path
+    d="
+      M18 59
+      C24 55 30 63 36 59
+      C42 55 48 63 54 59"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
 </svg>

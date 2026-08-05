@@ -1,3 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M4.5 12.5l5 5 10-11"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: check -->
+
+  <circle
+    cx="32"
+    cy="32"
+    r="24"
+    fill="var(--paper,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- check mark -->
+
+  <path
+    d="
+      M19 33
+      L28 42
+      L46 22"
+    fill="none"
+    stroke="var(--accent,#E8B04A)"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+
 </svg>

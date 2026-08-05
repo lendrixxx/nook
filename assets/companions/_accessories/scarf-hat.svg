@@ -1,6 +1,120 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -150 200 240" width="66" height="82">
-  <!-- Nook accessory asset: scarf + hat (worn on snowy weather) -->
-  <path d="M-30 -82 a30 22 0 0 1 60 0 z" fill="var(--accent)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
-  <rect x="-34" y="-83" width="68" height="10" rx="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="2.5"/>
-  <rect x="-26" y="10" width="52" height="14" rx="7" fill="var(--accent)" stroke="var(--ink)" stroke-width="2.5"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256">
+
+  <!-- Nook accessory asset: extravagant cozy scarf + winter hat -->
+
+
+  <!-- hat -->
+
+  <!-- hat body -->
+  <path
+    d="
+      M84 63
+      Q92 35 128 35
+      Q164 35 172 63
+      L166 78
+      Q128 88 90 78
+      Z"
+    fill="var(--accent,#E8A66A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- hat brim -->
+  <path
+    d="
+      M78 72
+      Q128 88 178 72
+      Q181 82 172 88
+      Q128 101 84 88
+      Q75 82 78 72
+      Z"
+    fill="var(--accent2,#F2C27B)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- pom pom -->
+  <circle
+    cx="128"
+    cy="31"
+    r="12"
+    fill="var(--accent2,#F2C27B)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- scarf collar -->
+  <path
+    d="
+      M82 120
+      Q92 112 108 116
+      Q128 123 148 116
+      Q164 112 174 120
+      L168 142
+      Q128 158 88 142
+      Z"
+    fill="var(--accent,#E8A66A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- scarf layered fold -->
+  <path
+    d="
+      M92 132
+      Q128 150 164 132
+      L162 148
+      Q128 166 94 148
+      Z"
+    fill="var(--accent2,#F2C27B)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+
+  <!-- scarf hanging tail -->
+  <path
+    d="
+      M146 144
+      Q164 148 174 163
+      Q180 178 168 202
+      Q161 211 151 201
+      Q157 181 150 166
+      Q145 156 146 144
+      Z"
+    fill="var(--accent,#E8A66A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- fringe -->
+  <path
+    d="
+      M151 200
+      L151 211
+      M157 201
+      L158 213
+      M163 200
+      L165 211"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="2.5"
+    stroke-linecap="round"/>
+
+
+  <!-- knit details -->
+  <path
+    d="
+      M104 132
+      Q128 143 152 132"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="2.5"
+    stroke-linecap="round"/>
+
 </svg>

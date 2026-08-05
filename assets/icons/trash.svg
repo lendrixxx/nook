@@ -1,3 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M5 7h14M9.5 7V4.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7M7 7l1 12.2a2 2 0 0 0 2 1.8h4a2 2 0 0 0 2-1.8L17 7"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: trash -->
+
+  <!-- lid -->
+
+  <path
+    d="
+      M14 18
+      H50"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <!-- handle -->
+
+  <path
+    d="
+      M25 12
+      H39
+      C40 12 41 13 41 15
+      V18
+      H23
+      V15
+      C23 13 24 12 25 12 Z"
+    fill="var(--paper,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"
+    stroke-linejoin="round"/>
+
+
+  <!-- bin -->
+
+  <path
+    d="
+      M18 20
+      H46
+      L43 53
+      C43 55 41 56 39 56
+      H25
+      C23 56 21 55 21 53
+      Z"
+    fill="var(--paper,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- inner lines -->
+
+  <path
+    d="
+      M28 29
+      V47"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
+  <path
+    d="
+      M36 29
+      V47"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
 </svg>

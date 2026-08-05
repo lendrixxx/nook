@@ -1,8 +1,217 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -150 200 240" width="66" height="82">
-  <!-- Nook companion asset: species=bear state=asleep
-       Palette (body/belly/ink/accent/cheek/earfill custom properties) is
-       applied by the app on the parent element; do not hardcode colors here. -->
-  <g transform="rotate(-14 0 40)"><g class="legs"><ellipse class="leg leg-left" cx="-15" cy="88" rx="11" ry="15" fill="var(--body)" stroke="var(--ink)" stroke-width="3"/><ellipse class="leg leg-right" cx="15" cy="88" rx="11" ry="15" fill="var(--body)" stroke="var(--ink)" stroke-width="3"/></g><ellipse cx="0" cy="52" rx="30" ry="36" fill="var(--body)" stroke="var(--ink)" stroke-width="4"/><ellipse cx="0" cy="61" rx="18" ry="22" fill="var(--belly)"/><circle cx="-32" cy="-74" r="16" fill="var(--earfill)" stroke="var(--ink)" stroke-width="3.5"/><circle cx="32" cy="-74" r="16" fill="var(--earfill)" stroke="var(--ink)" stroke-width="3.5"/><circle cx="0" cy="-34" r="50" fill="var(--body)" stroke="var(--ink)" stroke-width="4"/><circle cx="-32" cy="-20" r="9" fill="var(--cheek)" opacity="0.85"/><circle cx="32" cy="-20" r="9" fill="var(--cheek)" opacity="0.85"/><g transform="translate(0,-34)"><g class="eyes"><path d="M-20 -4 q6 6 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -4 q6 6 12 0" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/></g><path d="M-6 12 q6 4 12 0" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/></g><ellipse cx="0" cy="-27" rx="4.5" ry="3.2" fill="var(--cheek)"/></g>
-  
-  <text x="34" y="-92" font-size="22" fill="var(--ink)" opacity="0.55" font-family="Fredoka,sans-serif" font-weight="700">z</text>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256">
+
+  <!-- Nook cozy bear: asleep -->
+
+  <defs>
+    <radialGradient id="blush">
+      <stop offset="0%" stop-color="#F3C6A7" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#F3C6A7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+
+  <!-- ears -->
+
+  <circle cx="92" cy="60" r="21"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+  <circle cx="164" cy="60" r="21"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+  <circle cx="92" cy="60" r="10"
+    fill="var(--earfill,#E9B89A)"/>
+
+  <circle cx="164" cy="60" r="10"
+    fill="var(--earfill,#E9B89A)"/>
+
+
+  <!-- tail -->
+
+  <circle cx="171" cy="162" r="15"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- legs behind body -->
+
+  <path
+    d="M103 150
+       C102 174 101 190 104 201
+       C106 208 111 211 117 211
+       C123 211 127 207 127 200
+       C128 182 126 164 125 150 Z"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+  <path
+    d="M131 150
+       C130 164 128 182 129 200
+       C129 207 133 211 139 211
+       C145 211 150 208 152 201
+       C155 190 154 174 153 150 Z"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <ellipse cx="116" cy="210" rx="11" ry="6"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+  <ellipse cx="140" cy="210" rx="11" ry="6"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+
+  <!-- body -->
+
+  <path
+    d="M96 124
+       Q103 105 128 105
+       Q153 105 160 124
+       Q166 146 165 170
+       Q160 197 128 201
+       Q96 197 91 170
+       Q90 146 96 124 Z"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- belly -->
+
+  <ellipse
+    cx="128"
+    cy="161"
+    rx="20"
+    ry="26"
+    fill="var(--belly,#EED2B4)"/>
+
+
+  <!-- head -->
+
+  <path
+    d="M77 82
+       C77 62 88 45 105 42
+       Q128 35 151 42
+       C168 45 179 62 179 82
+       C186 112 163 131 128 131
+       C93 131 70 112 77 82 Z"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- arms -->
+
+  <path
+    d="M96 132
+       C87 138 83 151 86 162
+       C89 170 95 174 101 171
+       C105 169 107 164 106 158
+       C105 149 102 140 96 132 Z"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"/>
+
+  <path
+    d="M160 132
+       C169 138 173 151 170 162
+       C167 170 161 174 155 171
+       C151 169 149 164 150 158
+       C151 149 154 140 160 132 Z"
+    fill="var(--body,#C98F62)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"/>
+
+
+  <!-- muzzle -->
+
+  <ellipse
+    cx="128"
+    cy="103"
+    rx="18"
+    ry="14"
+    fill="var(--muzzle,#F4D8B8)"/>
+
+
+  <!-- cheeks -->
+
+  <circle cx="97" cy="101" r="12"
+    fill="url(#blush)"/>
+
+  <circle cx="159" cy="101" r="12"
+    fill="url(#blush)"/>
+
+
+  <!-- sleeping eyes -->
+
+  <path
+    d="M105 94 Q111 100 117 94"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+  <path
+    d="M139 94 Q145 100 151 94"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <!-- nose -->
+
+  <ellipse
+    cx="128"
+    cy="99"
+    rx="5"
+    ry="4"
+    fill="var(--ink,#74553B)"/>
+
+
+  <!-- asleep mouth -->
+
+  <path
+    d="M128 103 V107"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="2.8"
+    stroke-linecap="round"/>
+
+
+  <!-- zzz shifted right -->
+
+  <text
+    x="193"
+    y="78"
+    font-family="sans-serif"
+    font-size="22"
+    font-weight="700"
+    fill="var(--ink,#74553B)">
+    z
+  </text>
+
+  <text
+    x="211"
+    y="55"
+    font-family="sans-serif"
+    font-size="16"
+    font-weight="700"
+    fill="var(--ink,#74553B)">
+    z
+  </text>
+
+
 </svg>

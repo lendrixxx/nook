@@ -1,3 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 9.5h17M8 3v3.6M16 3v3.6"/><circle cx="8" cy="14" r="1.1" class="filled"/><circle cx="12" cy="14" r="1.1" class="filled"/><circle cx="16" cy="14" r="1.1" class="filled"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: calendar -->
+
+  <rect x="10" y="14"
+        width="44" height="40"
+        rx="8"
+        fill="var(--paper,#FFF7EA)"
+        stroke="var(--ink,#74553B)"
+        stroke-width="4"/>
+
+
+  <!-- top binding -->
+
+  <path
+    d="M10 25 H54"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <!-- rings -->
+
+  <path
+    d="M22 10 V20"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+  <path
+    d="M42 10 V20"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <!-- little date marks -->
+
+  <circle cx="22" cy="34" r="3"
+    fill="var(--accent,#E8B04A)"/>
+
+  <circle cx="32" cy="34" r="3"
+    fill="var(--accent,#E8B04A)"/>
+
+  <circle cx="42" cy="34" r="3"
+    fill="var(--accent,#E8B04A)"/>
+
+
+  <circle cx="22" cy="44" r="3"
+    fill="var(--accent,#E8B04A)"/>
+
+  <circle cx="32" cy="44" r="3"
+    fill="var(--accent,#E8B04A)"/>
+
+  <circle cx="42" cy="44" r="3"
+    fill="var(--accent,#E8B04A)"/>
+
 </svg>

@@ -1,3 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M6.5 15h10.3a3.7 3.7 0 0 0 .4-7.38A5 5 0 0 0 6.4 8.9 3.4 3.4 0 0 0 6.5 15z" class="filled"/><path d="M8 18.3l-1 2.2M12 18.3l-1 2.2M16 18.3l-1 2.2"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook weather icon: rainy -->
+
+
+  <!-- cloud -->
+
+  <path
+    d="
+      M16 34
+      C11 34 8 38 9 43
+      C10 48 15 50 21 50
+      H44
+      C51 50 55 46 54 41
+      C53 36 48 33 43 34
+      C40 26 32 23 25 26
+      C21 27 18 30 16 34 Z"
+    fill="var(--cloud,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- rain drops (flipped) -->
+
+  <g
+    fill="var(--rain,#79BFE8)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="2.5"
+    stroke-linejoin="round">
+
+    <path
+      d="
+        M19 42
+        C19 42 24 49 24 52
+        C24 55 19 55 19 52
+        C19 49 19 42 19 42 Z"/>
+
+    <path
+      d="
+        M32 46
+        C32 46 37 53 37 56
+        C37 59 32 59 32 56
+        C32 53 32 46 32 46 Z"/>
+
+    <path
+      d="
+        M45 42
+        C45 42 50 49 50 52
+        C50 55 45 55 45 52
+        C45 49 45 42 45 42 Z"/>
+
+  </g>
+
 </svg>

@@ -1,3 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <circle cx="12" cy="12" r="3.2"/><path d="M12 3.2v2.1M12 18.7v2.1M20.8 12h-2.1M5.3 12H3.2M18 6l-1.5 1.5M7.5 16.5L6 18M18 18l-1.5-1.5M7.5 7.5L6 6"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: gear -->
+
+  <path
+    d="
+      M28 8
+      H36
+      L38 16
+      C41 17 44 19 46 22
+      L54 20
+      L58 28
+      L51 32
+      C51 35 51 38 50 41
+      L56 46
+      L50 54
+      L42 50
+      C40 52 37 54 34 55
+      L33 62
+      H23
+      L22 55
+      C19 54 16 52 14 50
+      L7 54
+      L2 46
+      L9 41
+      C8 38 8 35 8 32
+      L2 28
+      L6 20
+      L14 22
+      C16 19 19 17 22 16
+      L24 8
+      Z"
+    fill="var(--paper,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"
+    stroke-linejoin="round"/>
+
+
+  <!-- center -->
+
+  <circle
+    cx="30"
+    cy="35"
+    r="10"
+    fill="var(--accent,#E8B04A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
 </svg>

@@ -8,7 +8,9 @@
     </radialGradient>
   </defs>
 
-  <!-- tail -->
+
+  <!-- tail: slightly larger and more visible -->
+
   <path
     d="
       M180 148
@@ -76,9 +78,13 @@
       M96 124
       Q103 105 128 105
       Q153 105 160 124
+
       Q166 146 165 170
+
       Q160 197 128 201
+
       Q96 197 91 170
+
       Q90 146 96 124
       Z"
     fill="var(--body,#FFF7EA)"
@@ -96,30 +102,31 @@
     fill="var(--belly,#FFFDF7)"/>
 
 
-  <!-- arms relaxed -->
+  <!-- arms -->
 
   <g id="arms">
 
     <path
       d="
-        M96 136
-        C89 141 87 153 89 162
-        C91 168 96 171 101 169
-        C105 167 106 162 104 156
-        C102 148 100 141 96 136
+        M96 132
+        C87 138 83 151 86 162
+        C89 170 95 174 101 171
+        C105 169 107 164 106 158
+        C105 149 102 140 96 132
         Z"
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="3.5"
       stroke-linejoin="round"/>
 
+
     <path
       d="
-        M160 136
-        C167 141 169 153 167 162
-        C165 168 160 171 155 169
-        C151 167 150 162 152 156
-        C154 148 156 141 160 136
+        M160 132
+        C169 138 173 151 170 162
+        C167 170 161 174 155 171
+        C151 169 149 164 150 158
+        C151 149 154 140 160 132
         Z"
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
@@ -129,20 +136,30 @@
   </g>
 
 
-  <!-- head -->
+  <!-- head: softer rounder silhouette -->
 
   <path
     d="
       M77 82
+
       C77 68 80 55 87 47
+
       C93 39 101 37 108 43
+
       L116 51
+
       Q128 43 140 51
+
       L148 43
+
       C155 37 163 39 169 47
+
       C176 55 179 68 179 82
+
       C186 112 163 129 128 131
+
       C93 129 70 112 77 82
+
       Z"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
@@ -150,7 +167,7 @@
     stroke-linejoin="round"/>
 
 
-  <!-- ears -->
+  <!-- integrated ears -->
 
   <path
     d="
@@ -177,25 +194,21 @@
   <circle cx="159" cy="101" r="12" fill="url(#blush)"/>
 
 
-  <!-- cozy sleepy eyes -->
+  <!-- eyes -->
 
-  <path
-    d="
-      M104 94
-      Q111 100 118 94"
-    fill="none"
-    stroke="var(--ink,#74553B)"
-    stroke-width="3.5"
-    stroke-linecap="round"/>
+  <ellipse
+    cx="111"
+    cy="92"
+    rx="4"
+    ry="6"
+    fill="var(--ink,#74553B)"/>
 
-  <path
-    d="
-      M138 94
-      Q145 100 152 94"
-    fill="none"
-    stroke="var(--ink,#74553B)"
-    stroke-width="3.5"
-    stroke-linecap="round"/>
+  <ellipse
+    cx="145"
+    cy="92"
+    rx="4"
+    ry="6"
+    fill="var(--ink,#74553B)"/>
 
 
   <!-- nose -->
@@ -208,20 +221,14 @@
     fill="var(--ink,#74553B)"/>
 
 
-  <!-- cozy smile -->
+  <!-- mouth -->
 
   <path
-    d="
-      M128 103
-      v4
-      Q128 112 123 111
-      Q128 116 133 111
-      Q128 112 128 107"
+    d="M128 102 v5"
     fill="none"
     stroke="var(--ink,#74553B)"
-    stroke-width="2.8"
-    stroke-linecap="round"
-    stroke-linejoin="round"/>
+    stroke-width="2.5"
+    stroke-linecap="round"/>
 
 
   <!-- whiskers -->

@@ -1,9 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10.0 -10.0 20.0 21.6">
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="-8 -7 16 18">
+
   <!-- Nook room decoration asset: stool
-       Low stool (default room anchor: 2.4, 0.77, 0)
-       Authored at local grid origin (0,0,0); the runtime positions this
-       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
-       room design tokens (see index.html :root) so themes can recolor
-       every decoration without editing this file. -->
-  <polygon points="-12.0,6.0 0.0,12.0 0.0,1.6 -12.0,-4.4" fill="var(--room-wood-lo)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="12.0,6.0 0.0,12.0 0.0,1.6 12.0,-4.4" fill="var(--room-wood)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><polygon points="0.0,-10.4 12.0,-4.4 0.0,1.6 -12.0,-4.4" fill="var(--room-wood-hi)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/>
+       Small cozy wooden stool.
+       Uses existing room wood tokens. -->
+
+
+  <!-- left leg -->
+
+  <polygon
+    points="
+      -4,2
+      0,4
+      0,8
+      -4,6"
+    fill="var(--room-wood-lo,#A96C46)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="1.8"
+    stroke-linejoin="round"/>
+
+
+  <!-- right leg -->
+
+  <polygon
+    points="
+      4,2
+      0,4
+      0,8
+      4,6"
+    fill="var(--room-wood,#B9784D)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="1.8"
+    stroke-linejoin="round"/>
+
+
+  <!-- lower seat -->
+
+  <path
+    d="
+      M0 -4
+      L6 -1
+      L6 0.5
+      L0 3.5
+      L-6 0.5
+      L-6 -1
+      Z"
+    fill="var(--room-wood-hi,#D5A06A)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="1.8"
+    stroke-linejoin="round"/>
+
+
+  <!-- seat front edge -->
+
+  <path
+    d="
+      M-6 0.5
+      Q0 3.5 6 0.5"
+    fill="none"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="1.5"
+    stroke-linecap="round"/>
+
 </svg>

@@ -1,9 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-28.0 -16.0 56.0 45.0">
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
   <!-- Nook room decoration asset: mug
-       Desk mug, drawn in flat screen-space (not grid-projected — small enough that iso skew is not needed). Default anchor: desk top, front-right corner.
-       Authored at local grid origin (0,0,0); the runtime positions this
-       with a translate to iso(worldGX, worldGY, worldGZ). Colors use the
-       room design tokens (see index.html :root) so themes can recolor
-       every decoration without editing this file. -->
-  <path d="M-9 -3 q-1 15 9 15 q10 0 9 -15 Z" fill="var(--room-mug)" stroke="var(--room-outline)" stroke-width="2" stroke-linejoin="round"/><ellipse cx="0" cy="-3" rx="9" ry="3" fill="var(--room-mug-hi)" stroke="var(--room-outline)" stroke-width="1.5"/><path d="M8 1 q7 1 5 8 q-2 6 -8 4" fill="none" stroke="var(--room-outline)" stroke-width="2.2" stroke-linecap="round"/>
+       Small ceramic mug prop.
+       Colors use room design tokens with cozy defaults. -->
+
+
+  <!-- handle behind -->
+
+  <path
+    d="
+      M39 28
+      C48 26 52 30 50 36
+      C49 41 44 43 39 40
+      L39 36
+      C43 38 46 37 46 33
+      C46 30 43 31 39 32
+      Z"
+    fill="var(--room-mug-accent,#D98B6B)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+
+  <!-- rounded mug body -->
+
+  <path
+    d="
+      M18 25
+      Q29 21 40 25
+      V40
+      C40 47 35 50 29 50
+      C23 50 18 47 18 40
+      Z"
+    fill="var(--room-mug,#FFF7EA)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3.5"
+    stroke-linejoin="round"/>
+
+
+  <!-- rim -->
+
+  <ellipse
+    cx="29"
+    cy="25"
+    rx="11"
+    ry="4"
+    fill="var(--room-mug-hi,#FFF7EA)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"/>
+
+
+  <!-- coffee -->
+
+  <ellipse
+    cx="29"
+    cy="25"
+    rx="7"
+    ry="2.2"
+    fill="var(--room-coffee,#8B5E3C)"/>
+
+
+  <!-- subtle highlight -->
+
+  <path
+    d="
+      M22 32
+      V39"
+    fill="none"
+    stroke="var(--room-highlight,#FFFFFF)"
+    stroke-width="2"
+    stroke-linecap="round"/>
+
 </svg>

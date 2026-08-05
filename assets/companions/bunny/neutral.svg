@@ -1,84 +1,97 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 256 256">
 
-  <!-- Nook cozy bunny: walk 1 neutral expression -->
+  <!-- Nook cozy bunny: neutral (slightly thinner head) -->
 
   <defs>
     <radialGradient id="blush">
-      <stop offset="0%" stop-color="#F3C6A7" stop-opacity=".45"/>
+      <stop offset="0%" stop-color="#F3C6A7" stop-opacity=".55"/>
       <stop offset="100%" stop-color="#F3C6A7" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
 
-  <!-- tail -->
-
-  <circle cx="178" cy="158" r="16"
-    fill="var(--body,#FFF7EA)"
-    stroke="var(--ink,#74553B)"
-    stroke-width="4"/>
-
-
-  <!-- ears behind head -->
+  <!-- ears -->
 
   <path
-    d="M101 72 C92 48 91 18 105 12 C119 7 125 38 123 66 Z"
+    d="
+      M101 72
+      C92 48 91 18 105 12
+      C119 7 125 38 123 66
+      Z"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
-    stroke-width="4"/>
+    stroke-width="4"
+    stroke-linejoin="round"/>
 
   <path
-    d="M155 72 C164 48 165 18 151 12 C137 7 131 38 133 66 Z"
+    d="
+      M155 72
+      C164 48 165 18 151 12
+      C137 7 131 38 133 66
+      Z"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
-    stroke-width="4"/>
+    stroke-width="4"
+    stroke-linejoin="round"/>
 
 
   <!-- inner ears -->
 
   <path
-    d="M106 61 C101 42 101 26 107 23 C113 21 117 43 117 61 Z"
+    d="
+      M106 61
+      C101 42 101 26 107 23
+      C113 21 117 43 117 61 Z"
     fill="var(--earfill,#F2C8C1)"/>
-
-  <path
-    d="M150 61 C155 42 155 26 149 23 C143 21 139 43 139 61 Z"
-    fill="var(--earfill,#F2C8C1)"/>
-
-
-  <!-- back leg -->
 
   <path
     d="
-      M130 151
-      C137 163 145 177 148 190
-      C150 197 147 203 141 205
-      C135 207 130 202 130 195
-      C128 180 125 164 125 151 Z"
+      M150 61
+      C155 42 155 26 149 23
+      C143 21 139 43 139 61 Z"
+    fill="var(--earfill,#F2C8C1)"/>
+
+
+  <!-- tail -->
+
+  <circle cx="178" cy="160" r="16"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"/>
 
 
-  <!-- front leg -->
+  <!-- legs -->
 
   <path
     d="
-      M103 151
-      C99 168 97 184 101 198
-      C103 205 108 209 114 209
-      C121 209 125 204 125 198
-      C124 181 127 165 128 151 Z"
+      M103 150
+      C102 174 101 190 104 201
+      C106 208 111 211 117 211
+      C123 211 127 207 127 200
+      C128 182 126 164 125 150 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+  <path
+    d="
+      M131 150
+      C130 164 128 182 129 200
+      C129 207 133 211 139 211
+      C145 211 150 208 152 201
+      C155 190 154 174 153 150 Z"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"/>
 
 
-  <ellipse cx="112" cy="208" rx="11" ry="6"
+  <ellipse cx="116" cy="210" rx="11" ry="6"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
     stroke-width="3"/>
 
-  <ellipse cx="143" cy="204" rx="11" ry="6"
+  <ellipse cx="140" cy="210" rx="11" ry="6"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
     stroke-width="3"/>
@@ -110,7 +123,7 @@
     fill="var(--belly,#FFFDF7)"/>
 
 
-  <!-- head -->
+  <!-- thinner head -->
 
   <path
     d="
@@ -131,10 +144,10 @@
   <path
     d="
       M97 132
-      C89 138 85 151 88 160
-      C91 168 97 171 102 168
-      C106 165 106 159 104 153
-      C102 144 100 136 97 132 Z"
+      C88 138 84 151 87 161
+      C90 169 96 172 102 169
+      C106 166 107 160 105 154
+      C103 145 101 137 97 132 Z"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
     stroke-width="3.5"/>
@@ -142,10 +155,10 @@
   <path
     d="
       M159 132
-      C168 137 172 148 170 157
-      C168 165 162 168 157 165
-      C153 162 153 156 154 150
-      C155 142 157 135 159 132 Z"
+      C168 138 172 151 169 161
+      C166 169 160 172 154 169
+      C150 166 149 160 151 154
+      C153 145 155 137 159 132 Z"
     fill="var(--body,#FFF7EA)"
     stroke="var(--ink,#74553B)"
     stroke-width="3.5"/>
@@ -160,44 +173,37 @@
     fill="url(#blush)"/>
 
 
-  <!-- neutral eyes (same as neutral pose) -->
+  <!-- eyes -->
 
-  <path
-    d="M105 94 Q111 88 117 94"
-    fill="none"
-    stroke="var(--ink,#74553B)"
-    stroke-width="4"
-    stroke-linecap="round"/>
+  <ellipse cx="111" cy="93" rx="4" ry="5"
+    fill="var(--ink,#74553B)"/>
 
-  <path
-    d="M139 94 Q145 88 151 94"
-    fill="none"
-    stroke="var(--ink,#74553B)"
-    stroke-width="4"
-    stroke-linecap="round"/>
+  <ellipse cx="145" cy="93" rx="4" ry="5"
+    fill="var(--ink,#74553B)"/>
 
 
   <!-- nose -->
 
   <ellipse
     cx="128"
-    cy="101"
-    rx="3"
-    ry="2.5"
+    cy="100"
+    rx="4"
+    ry="3"
     fill="var(--ink,#74553B)"/>
 
 
-  <!-- neutral mouth (not sad) -->
+  <!-- mouth -->
 
   <path
     d="
       M128 103
-      V107
-      M124 108
-      Q128 110 132 108"
+      V108
+      Q124 112 120 108
+      M128 108
+      Q132 112 136 108"
     fill="none"
     stroke="var(--ink,#74553B)"
-    stroke-width="3"
+    stroke-width="2.8"
     stroke-linecap="round"/>
 
 
@@ -215,5 +221,6 @@
     <line x1="167" y1="107" x2="188" y2="111"/>
 
   </g>
+
 
 </svg>

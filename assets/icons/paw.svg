@@ -1,3 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <circle cx="12" cy="15.7" r="4.3" class="filled"/><circle cx="5.8" cy="10.4" r="2.2" class="filled"/><circle cx="10.6" cy="6.3" r="2.1" class="filled"/><circle cx="16.4" cy="7.4" r="2.1" class="filled"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: paw -->
+
+  <!-- paw pad -->
+
+  <path
+    d="
+      M32 34
+      C22 33 16 40 18 48
+      C20 55 28 56 32 52
+      C36 56 44 55 46 48
+      C48 40 42 33 32 34 Z"
+    fill="var(--accent,#E8B04A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"
+    stroke-linejoin="round"/>
+
+
+  <!-- toes -->
+
+  <ellipse
+    cx="18"
+    cy="23"
+    rx="7"
+    ry="9"
+    fill="var(--accent,#E8B04A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+  <ellipse
+    cx="32"
+    cy="17"
+    rx="7"
+    ry="9"
+    fill="var(--accent,#E8B04A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+  <ellipse
+    cx="46"
+    cy="23"
+    rx="7"
+    ry="9"
+    fill="var(--accent,#E8B04A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+
 </svg>

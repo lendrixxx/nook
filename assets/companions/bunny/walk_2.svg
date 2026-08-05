@@ -1,8 +1,217 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -150 200 240" width="66" height="82">
-  <!-- Nook companion asset: species=bunny state=walk_2
-       Palette (body/belly/ink/accent/cheek/earfill custom properties) is
-       applied by the app on the parent element; do not hardcode colors here. -->
-  <g><circle cx="42" cy="46" r="19" fill="var(--body)" stroke="var(--ink)" stroke-width="3.5"/><g class="legs"><ellipse class="leg leg-left" cx="-12" cy="80" rx="10.5" ry="12" fill="var(--body)" stroke="var(--ink)" stroke-width="3"/><ellipse class="leg leg-right" cx="21" cy="91" rx="11" ry="15" fill="var(--body)" stroke="var(--ink)" stroke-width="3"/></g><ellipse cx="0" cy="52" rx="30" ry="36" fill="var(--body)" stroke="var(--ink)" stroke-width="4"/><ellipse cx="0" cy="61" rx="18" ry="22" fill="var(--belly)"/><ellipse cx="-24" cy="-110" rx="10" ry="36" fill="var(--earfill)" stroke="var(--ink)" stroke-width="3.5" transform="rotate(-8 -24 -110)"/><ellipse cx="-24" cy="-110" rx="4.5" ry="28" fill="var(--body)" opacity="0.5" transform="rotate(-8 -24 -110)"/><ellipse cx="24" cy="-110" rx="10" ry="36" fill="var(--earfill)" stroke="var(--ink)" stroke-width="3.5" transform="rotate(8 24 -110)"/><ellipse cx="24" cy="-110" rx="4.5" ry="28" fill="var(--body)" opacity="0.5" transform="rotate(8 24 -110)"/><circle cx="0" cy="-34" r="50" fill="var(--body)" stroke="var(--ink)" stroke-width="4"/><circle cx="-32" cy="-20" r="9" fill="var(--cheek)" opacity="0.85"/><circle cx="32" cy="-20" r="9" fill="var(--cheek)" opacity="0.85"/><g transform="translate(0,-34)"><g class="eyes"><path d="M-20 -6 q6 -10 12 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M8 -6 q6 -10 12 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/></g><path d="M-12 10 q12 14 24 0" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/></g><ellipse cx="0" cy="-27" rx="4.5" ry="3.2" fill="var(--cheek)"/></g>
-  
-  
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256">
+
+  <!-- Nook cozy bunny: walk 2 -->
+
+  <defs>
+    <radialGradient id="blush">
+      <stop offset="0%" stop-color="#F3C6A7" stop-opacity=".45"/>
+      <stop offset="100%" stop-color="#F3C6A7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+
+  <!-- tail -->
+
+  <circle cx="178" cy="158" r="16"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- ears behind head -->
+
+  <path
+    d="M101 72 C92 48 91 18 105 12 C119 7 125 38 123 66 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+  <path
+    d="M155 72 C164 48 165 18 151 12 C137 7 131 38 133 66 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- inner ears -->
+
+  <path d="M106 61 C101 42 101 26 107 23 C113 21 117 43 117 61 Z"
+    fill="var(--earfill,#F2C8C1)"/>
+
+  <path d="M150 61 C155 42 155 26 149 23 C143 21 139 43 139 61 Z"
+    fill="var(--earfill,#F2C8C1)"/>
+
+
+  <!-- back right leg -->
+
+  <path
+    d="
+      M126 151
+      C119 163 111 177 108 190
+      C106 197 109 203 115 205
+      C121 207 126 202 126 195
+      C128 180 131 164 131 151 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- front left leg -->
+
+  <path
+    d="
+      M153 151
+      C157 168 159 184 155 198
+      C153 205 148 209 142 209
+      C135 209 131 204 131 198
+      C132 181 129 165 128 151 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <ellipse cx="116" cy="204" rx="11" ry="6"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+  <ellipse cx="145" cy="208" rx="11" ry="6"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
+
+  <!-- body -->
+
+  <path
+    d="
+      M96 124
+      Q103 105 128 105
+      Q153 105 160 124
+      Q166 146 165 170
+      Q160 197 128 201
+      Q96 197 91 170
+      Q90 146 96 124 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- belly -->
+
+  <ellipse
+    cx="128"
+    cy="161"
+    rx="20"
+    ry="26"
+    fill="var(--belly,#FFFDF7)"/>
+
+
+  <!-- head -->
+
+  <path
+    d="
+      M82 82
+      C82 63 91 47 106 43
+      Q128 37 150 43
+      C165 47 174 63 174 82
+      C181 110 160 128 128 130
+      C96 128 75 110 82 82 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- arms -->
+
+  <path
+    d="
+      M97 132
+      C91 139 90 151 94 159
+      C98 166 104 168 108 164
+      C111 160 109 154 106 149
+      C103 141 100 135 97 132 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"/>
+
+  <path
+    d="
+      M159 132
+      C166 138 170 150 167 158
+      C164 165 158 168 154 164
+      C151 160 152 154 153 149
+      C155 141 157 135 159 132 Z"
+    fill="var(--body,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"/>
+
+
+  <!-- cheeks -->
+
+  <circle cx="97" cy="101" r="12"
+    fill="url(#blush)"/>
+
+  <circle cx="159" cy="101" r="12"
+    fill="url(#blush)"/>
+
+
+  <!-- neutral eyes -->
+
+  <path
+    d="M105 94 Q111 88 117 94"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+  <path
+    d="M139 94 Q145 88 151 94"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <!-- nose -->
+
+  <ellipse
+    cx="128"
+    cy="101"
+    rx="3"
+    ry="2.5"
+    fill="var(--ink,#74553B)"/>
+
+
+  <!-- neutral mouth -->
+
+  <path
+    d="
+      M128 103
+      V107
+      M124 108
+      Q128 110 132 108"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
+
+  <!-- whiskers -->
+
+  <g
+    stroke="var(--ink,#74553B)"
+    stroke-width="2"
+    stroke-linecap="round">
+
+    <line x1="89" y1="101" x2="68" y2="97"/>
+    <line x1="89" y1="107" x2="68" y2="111"/>
+
+    <line x1="167" y1="101" x2="188" y2="97"/>
+    <line x1="167" y1="107" x2="188" y2="111"/>
+
+  </g>
+
 </svg>

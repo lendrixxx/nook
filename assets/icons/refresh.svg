@@ -1,3 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M4 12a8 8 0 0 1 13.6-5.7M20 12a8 8 0 0 1-13.6 5.7"/><path d="M17.2 3.6v3.4h-3.4M6.8 20.4V17h3.4"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: refresh -->
+
+  <!-- circular arrow -->
+
+  <path
+    d="
+      M49 23
+      C45 15 38 11 30 11
+      C19 11 11 20 11 32
+      C11 43 20 52 31 52
+      C41 52 49 46 52 38"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="5"
+    stroke-linecap="round"/>
+
+
+  <!-- solid arrow head -->
+
+  <path
+    d="
+      M49 12
+      L53 29
+      L37 22
+      Z"
+    fill="var(--accent,#E8B04A)"/>
+
 </svg>

@@ -1,3 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <rect x="4" y="3" width="15" height="18" rx="3.5"/><path d="M9 3v18M4 8h1.2M4 13h1.2"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook icon: notebook -->
+
+  <!-- pages -->
+
+  <rect
+    x="14"
+    y="10"
+    width="38"
+    height="46"
+    rx="6"
+    fill="var(--paper,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"/>
+
+
+  <!-- spine -->
+
+  <path
+    d="M22 10 V56"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linecap="round"/>
+
+
+  <!-- bookmark -->
+
+  <path
+    d="
+      M38 10
+      V25
+      L43 21
+      L48 25
+      V10"
+    fill="var(--accent,#E8B04A)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+
+  <!-- writing lines -->
+
+  <path
+    d="M28 34 H44"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
+  <path
+    d="M28 42 H42"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
+
+  <path
+    d="M28 50 H38"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
 </svg>

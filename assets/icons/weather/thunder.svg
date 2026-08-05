@@ -1,3 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M6.5 12h10.3a3.7 3.7 0 0 0 .3-7.38A5 5 0 0 0 6.4 5.9 3.4 3.4 0 0 0 6.5 12z" class="filled"/><path d="M13 12.5l-3.4 5H12l-1.6 4.3 4.8-5.8h-2.6z" class="filled"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+
+  <!-- Nook weather icon: thunder -->
+
+
+  <!-- cloud -->
+
+  <path
+    d="
+      M16 31
+      C11 31 8 35 9 40
+      C10 45 15 47 21 47
+      H44
+      C51 47 55 43 54 38
+      C53 33 48 30 43 31
+      C40 23 32 20 25 23
+      C21 24 18 27 16 31 Z"
+    fill="var(--cloud,#FFF7EA)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="4"
+    stroke-linejoin="round"/>
+
+
+  <!-- lowered centered lightning -->
+
+  <path
+    d="
+      M34 38
+      L23 52
+      H31
+      L27 64
+      L41 47
+      H33
+      Z"
+    fill="var(--bolt,#F6C85F)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3.5"
+    stroke-linejoin="round"/>
+
 </svg>

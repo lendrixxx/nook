@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 256 256">
 
-  <!-- Nook cozy bear: walk 1 -->
+  <!-- Nook cozy bear: neutral -->
 
   <defs>
     <radialGradient id="blush">
@@ -30,7 +30,7 @@
     fill="var(--earfill,#E9B89A)"/>
 
 
-  <!-- tail closer -->
+  <!-- tail closer to body -->
 
   <circle cx="171" cy="162" r="15"
     fill="var(--body,#C98F62)"
@@ -38,15 +38,16 @@
     stroke-width="4"/>
 
 
-  <!-- legs: right leg forward -->
+  <!-- legs behind body -->
 
   <path
     d="
       M103 150
-      C100 168 96 186 99 199
-      C101 207 107 211 113 211
-      C120 211 124 206 125 199
-      C127 183 126 163 125 150 Z"
+      C102 174 101 190 104 201
+      C106 208 111 211 117 211
+      C123 211 127 207 127 200
+      C128 182 126 164 125 150
+      Z"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"/>
@@ -54,21 +55,22 @@
   <path
     d="
       M131 150
-      C134 168 137 183 142 197
-      C144 204 149 207 154 204
-      C159 201 159 195 156 188
-      C151 173 153 160 153 150 Z"
+      C130 164 128 182 129 200
+      C129 207 133 211 139 211
+      C145 211 150 208 152 201
+      C155 190 154 174 153 150
+      Z"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"/>
 
 
-  <ellipse cx="110" cy="209" rx="11" ry="6"
+  <ellipse cx="116" cy="210" rx="11" ry="6"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="3"/>
 
-  <ellipse cx="151" cy="202" rx="11" ry="6"
+  <ellipse cx="140" cy="210" rx="11" ry="6"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="3"/>
@@ -84,7 +86,8 @@
       Q166 146 165 170
       Q160 197 128 201
       Q96 197 91 170
-      Q90 146 96 124 Z"
+      Q90 146 96 124
+      Z"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"/>
@@ -109,31 +112,36 @@
       Q128 35 151 42
       C168 45 179 62 179 82
       C186 112 163 131 128 131
-      C93 131 70 112 77 82 Z"
+      C93 131 70 112 77 82
+      Z"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"
     stroke-linejoin="round"/>
 
 
-  <!-- arms swinging -->
+  <!-- arms -->
 
   <path
     d="
-      M97 132
-      C88 140 87 152 92 160
-      C96 166 102 165 106 159
-      C109 153 106 141 97 132 Z"
+      M96 132
+      C87 138 83 151 86 162
+      C89 170 95 174 101 171
+      C105 169 107 164 106 158
+      C105 149 102 140 96 132
+      Z"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="3.5"/>
 
   <path
     d="
-      M159 132
-      C168 138 171 148 169 156
-      C167 163 161 165 156 160
-      C152 154 153 141 159 132 Z"
+      M160 132
+      C169 138 173 151 170 162
+      C167 170 161 174 155 171
+      C151 169 149 164 150 158
+      C151 149 154 140 160 132
+      Z"
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="3.5"/>
@@ -151,19 +159,24 @@
 
   <!-- cheeks -->
 
-  <circle cx="97" cy="101" r="12"
-    fill="url(#blush)"/>
-
-  <circle cx="159" cy="101" r="12"
-    fill="url(#blush)"/>
+  <circle cx="97" cy="101" r="12" fill="url(#blush)"/>
+  <circle cx="159" cy="101" r="12" fill="url(#blush)"/>
 
 
-  <!-- neutral happy walk eyes -->
+  <!-- neutral eyes -->
 
-  <ellipse cx="111" cy="93" rx="4" ry="5"
+  <ellipse
+    cx="111"
+    cy="92"
+    rx="4"
+    ry="6"
     fill="var(--ink,#74553B)"/>
 
-  <ellipse cx="145" cy="93" rx="4" ry="5"
+  <ellipse
+    cx="145"
+    cy="92"
+    rx="4"
+    ry="6"
     fill="var(--ink,#74553B)"/>
 
 
@@ -177,13 +190,15 @@
     fill="var(--ink,#74553B)"/>
 
 
-  <!-- tiny smile -->
+  <!-- neutral mouth -->
 
   <path
-    d="M128 103 V107 Q124 111 120 107 M128 107 Q132 111 136 107"
+    d="
+      M128 103
+      V109"
     fill="none"
     stroke="var(--ink,#74553B)"
-    stroke-width="2.8"
+    stroke-width="2.5"
     stroke-linecap="round"/>
 
 

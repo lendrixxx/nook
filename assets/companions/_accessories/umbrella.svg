@@ -1,7 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -150 200 240" width="66" height="82">
-  <!-- Nook accessory asset: umbrella (worn on rainy/thunder weather) -->
-  <g transform="translate(50,-74)">
-    <path d="M-28 6 A28 26 0 0 1 28 6 Z" fill="var(--accent)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
-    <line x1="0" y1="6" x2="0" y2="48" stroke="var(--accent)" stroke-width="4.5" stroke-linecap="round"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256">
+
+  <!-- Nook accessory asset: clean cozy umbrella -->
+
+
+  <!-- handle -->
+  <path
+    d="
+      M160 82
+      Q160 128 173 166
+      Q178 181 173 194"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="6"
+    stroke-linecap="round"/>
+
+
+  <!-- hook -->
+  <path
+    d="
+      M173 194
+      Q159 198 160 210
+      Q161 218 171 218"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="6"
+    stroke-linecap="round"/>
+
+
+  <!-- canopy -->
+  <path
+    d="
+      M96 84
+      Q160 24 224 84
+
+      Q214 78 204 84
+      Q194 91 184 84
+      Q174 77 164 84
+      Q154 91 144 84
+      Q134 77 124 84
+      Q112 91 96 84
+
+      Z"
+    fill="var(--accent,#8FC7C8)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="5"
+    stroke-linejoin="round"/>
+
+
+  <!-- center seam -->
+  <path
+    d="
+      M160 30
+      Q160 55 160 84"
+    fill="none"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
+
+  <!-- top button -->
+  <circle
+    cx="160"
+    cy="30"
+    r="5"
+    fill="var(--accent2,#F2C27B)"
+    stroke="var(--ink,#74553B)"
+    stroke-width="3"/>
+
 </svg>
