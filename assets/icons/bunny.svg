@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- ears -->
+  <ellipse cx="8.4" cy="4.6" rx="1.8" ry="4.6"
+           fill="var(--bunny-fur,#F4F0EB)"/>
+  <ellipse cx="15.6" cy="4.6" rx="1.8" ry="4.6"
+           fill="var(--bunny-fur,#F4F0EB)"/>
+
+  <ellipse cx="8.4" cy="4.8" rx=".7" ry="2.8"
+           fill="var(--bunny-inner-ear,#F6C5D7)"/>
+  <ellipse cx="15.6" cy="4.8" rx=".7" ry="2.8"
+           fill="var(--bunny-inner-ear,#F6C5D7)"/>
+
+  <!-- head -->
+  <circle cx="12" cy="13.3" r="7.4"
+          fill="var(--bunny-fur,#F4F0EB)"/>
+
+  <!-- eyes -->
+  <ellipse cx="9.4" cy="12.1" rx=".7" ry="1"
+           fill="var(--animal-eye,#35281F)"/>
+  <ellipse cx="14.6" cy="12.1" rx=".7" ry="1"
+           fill="var(--animal-eye,#35281F)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="12" cy="15.3" rx="2.6" ry="2"
+           fill="var(--bunny-muzzle,#FFF8F2)"/>
+
+  <!-- nose -->
+  <path d="M12 14.2l-.55.7h1.1z"
+        fill="var(--animal-nose,#E78CA4)"/>
+
+  <!-- mouth -->
+  <path d="M11.5 15.4Q12 16.2 12.5 15.4"
+        stroke="var(--animal-eye,#35281F)"
+        stroke-width=".6"
+        stroke-linecap="round"
+        fill="none"/>
+
+  <!-- blush -->
+  <circle cx="8" cy="15" r=".6"
+          fill="var(--animal-blush,#F5B5B5)"
+          opacity=".55"/>
+  <circle cx="16" cy="15" r=".6"
+          fill="var(--animal-blush,#F5B5B5)"
+          opacity=".55"/>
+</svg>

@@ -1,4 +1,4 @@
-import { $, shade } from './utils.js';
+import { $, shade, fetchAsset, stripSvgWrapper } from './utils.js';
 
 /* ---------------- Outdoor background scenery ---------------- */
 const SKY_BG = {
@@ -14,27 +14,33 @@ const HILL_COLOR = {
   sunny:'#8FB88A', partly:'#8FB88A', cloudy:'#7C9A80', foggy:'#95A398',
   rainy:'#5F7B6C', snowy:'#EDF3F3', thunder:'#495A50'
 };
-export function updateBackground(w){
-  const sky = SKY_BG[w.base] || SKY_BG.cloudy;
-  $('skyBg').style.background = w.isDay ? sky.day : sky.night;
+
+/* Weather artwork (sun/moon/cloud/hills) lives in assets/icons/weather/ as
+   plain files already positioned to match the 400x380 bgScene viewBox —
+   this function's job is purely deciding WHICH pieces apply and, for the
+   hills (the one piece whose color genuinely depends on weather + time of
+   day), setting the CSS variables their fill is bound to. No path data
+   is generated here. */
+let renderToken = 0;
+export async function updateBackground(w){
+  const myToken = ++renderToken;
+  const bgScene = $('bgScene');
+
+  $('skyBg').style.background = w.isDay ? (SKY_BG[w.base]||SKY_BG.cloudy).day : (SKY_BG[w.base]||SKY_BG.cloudy).night;
 
   const hill = HILL_COLOR[w.base] || HILL_COLOR.cloudy;
   const hillBack = shade(hill, w.isDay ? 12 : -20);
   const hillFront = shade(hill, w.isDay ? -6 : -34);
 
-  let sun = '';
-  if(w.base==='sunny' || w.base==='partly'){
-    sun = w.isDay
-      ? '<circle cx="345" cy="55" r="22" fill="#FFE9A8"/><circle cx="345" cy="55" r="34" fill="#FFE9A8" opacity="0.35"/>'
-      : '<circle cx="345" cy="55" r="16" fill="#F1EAFB"/><circle cx="345" cy="55" r="26" fill="#F1EAFB" opacity="0.25"/>';
-  }
-  let clouds = '';
-  if(w.base==='cloudy' || w.base==='partly' || w.base==='foggy'){
-    clouds = '<ellipse cx="330" cy="45" rx="28" ry="11" fill="#fff" opacity="0.55"/><ellipse cx="355" cy="52" rx="20" ry="9" fill="#fff" opacity="0.45"/>';
-  }
+  const pieces = [];
+  if(w.base==='sunny' || w.base==='partly') pieces.push(w.isDay ? 'sun' : 'moon');
+  if(w.base==='cloudy' || w.base==='partly' || w.base==='foggy') pieces.push('cloud');
+  pieces.push('hill-back', 'hill-front');
 
-  $('bgScene').innerHTML =
-    sun + clouds +
-    '<path d="M0 380 L0 300 Q100 250 200 300 T400 290 L400 380 Z" fill="'+hillBack+'"/>' +
-    '<path d="M0 380 L0 335 Q120 300 220 335 T400 325 L400 380 Z" fill="'+hillFront+'"/>';
+  const fetched = await Promise.all(pieces.map(name => fetchAsset('assets/icons/weather/'+name+'.svg').catch(()=>null)));
+  if(myToken !== renderToken) return; // a newer weather update started before this one finished
+
+  bgScene.innerHTML = fetched.map(svgText => svgText ? stripSvgWrapper(svgText) : '').join('');
+  bgScene.style.setProperty('--hill-back-color', hillBack);
+  bgScene.style.setProperty('--hill-front-color', hillFront);
 }

@@ -16,6 +16,7 @@ window.onerror = function(msg, url, line) {
 import { $ } from './utils.js';
 import { state } from './state.js';
 import { initCompanion } from './companion.js';
+import { initIcons } from './icons.js';
 import { loadTheme, currentThemeId } from './room.js';
 import { resizeCanvas } from './particles.js';
 import {
@@ -31,6 +32,7 @@ import { initMovement, resolveIdleState } from './movement.js';
 import { initUI } from './ui.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
+initIcons();
 initCompanion();
 initWeatherUI();
 initTodos();

@@ -1,6 +1,7 @@
 import { $, escapeHtml, localDateKey } from './utils.js';
 import * as storage from './storage.js';
 import { goToDesk, leaveDesk, getBusyReason } from './movement.js';
+import { hydrateIcons } from './icons.js';
 
 /* =========================================================================
    GOOGLE CALENDAR (optional — Nook works exactly as before without it)
@@ -38,7 +39,13 @@ export function initGcalUI(){
   $('calRangePicker').querySelectorAll('.range-chip').forEach(c => {
     c.classList.toggle('active', parseInt(c.dataset.days,10) === gcal.rangeDays);
   });
-  $('calSheetTitle').innerHTML = '<svg class="icon"><use href="#icon-calendar"/></svg>' + (gcal.rangeDays === 1 ? 'Today' : gcal.rangeDays === 3 ? 'Next 3 days' : 'Next 7 days');
+  setCalSheetTitle();
+}
+
+function setCalSheetTitle(){
+  const el = $('calSheetTitle');
+  el.innerHTML = '<svg class="icon" viewBox="0 0 24 24" data-icon="calendar"></svg>' + (gcal.rangeDays === 1 ? 'Today' : gcal.rangeDays === 3 ? 'Next 3 days' : 'Next 7 days');
+  hydrateIcons(el);
 }
 
 /* ---- auth: redirect to the Worker, which redirects to Google, which
@@ -230,7 +237,7 @@ export function renderCalendarList(){
   const el = $('calList');
   if(!el) return;
   if(!gcal.events || gcal.events.length === 0){
-    el.innerHTML = '<div class="todo-empty" style="display:flex;align-items:center;justify-content:center;gap:6px;">Nothing on your calendar <svg class="icon" style="width:14px;height:14px;"><use href="#icon-mug"/></svg></div>';
+    el.innerHTML = '<div class="todo-empty" style="display:flex;align-items:center;justify-content:center;gap:6px;">Nothing on your calendar <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" data-icon="mug"></svg></div>';
   } else if(gcal.rangeDays <= 1){
     const now = Date.now();
     el.innerHTML = gcal.events.map(ev => eventRowHtml(ev, now)).join('');
@@ -287,6 +294,7 @@ export function renderCalendarList(){
 
     el.innerHTML = html;
   }
+  hydrateIcons(el);
   $('calUpdatedInSheet').textContent = gcal.lastUpdated
     ? 'Last updated ' + new Date(gcal.lastUpdated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
     : '';
@@ -325,7 +333,7 @@ export function initCalendar(){
       gcal.rangeDays = parseInt(chip.dataset.days, 10);
       saveGcalState();
       $('calRangePicker').querySelectorAll('.range-chip').forEach(c => c.classList.toggle('active', c===chip));
-      $('calSheetTitle').innerHTML = '<svg class="icon"><use href="#icon-calendar"/></svg>' + (gcal.rangeDays === 1 ? 'Today' : gcal.rangeDays === 3 ? 'Next 3 days' : 'Next 7 days');
+      setCalSheetTitle();
       fetchCalendarEvents();
     };
   });

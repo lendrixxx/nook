@@ -1,0 +1,3 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 380">
+  <path d="M0 380 L0 300 Q100 250 200 300 T400 290 L400 380 Z" fill="var(--hill-back-color, #8FB88A)"/>
+</svg>

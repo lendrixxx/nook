@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- ears -->
+  <path d="M7 9L8.3 3.2L11 7.4Z"
+        fill="var(--cat-fur,#E0A86A)"/>
+  <path d="M17 9L15.7 3.2L13 7.4Z"
+        fill="var(--cat-fur,#E0A86A)"/>
+
+  <path d="M8.3 5L8.8 7L10 6.8Z"
+        fill="var(--cat-inner-ear,#F4B7C5)"/>
+  <path d="M15.7 5L15.2 7L14 6.8Z"
+        fill="var(--cat-inner-ear,#F4B7C5)"/>
+
+  <!-- head -->
+  <circle cx="12" cy="13" r="7.5"
+          fill="var(--cat-fur,#E0A86A)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="12" cy="15.3" rx="2.6" ry="2"
+           fill="var(--cat-muzzle,#FFF6EE)"/>
+
+  <!-- eyes -->
+  <ellipse cx="9.2" cy="12.1" rx=".65" ry="1"
+           fill="var(--animal-eye,#35281F)"/>
+  <ellipse cx="14.8" cy="12.1" rx=".65" ry="1"
+           fill="var(--animal-eye,#35281F)"/>
+
+  <!-- nose -->
+  <path d="M12 14.1l-.5.7h1z"
+        fill="var(--animal-nose,#A96B5D)"/>
+
+  <!-- mouth -->
+  <path d="M11.4 15.5Q12 16.1 12.6 15.5"
+        stroke="var(--animal-eye,#35281F)"
+        stroke-width=".6"
+        stroke-linecap="round"
+        fill="none"/>
+
+  <!-- whiskers -->
+  <path d="M6.8 14.7H9.6M6.8 15.8H9.4M14.4 14.7H17.2M14.6 15.8H17.2"
+        stroke="var(--animal-eye,#35281F)"
+        stroke-width=".45"
+        stroke-linecap="round"/>
+
+  <!-- blush -->
+  <circle cx="8" cy="15" r=".6"
+          fill="var(--animal-blush,#F5B5B5)"
+          opacity=".55"/>
+  <circle cx="16" cy="15" r=".6"
+          fill="var(--animal-blush,#F5B5B5)"
+          opacity=".55"/>
+</svg>

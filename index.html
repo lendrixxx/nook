@@ -20,61 +20,6 @@
 <link rel="stylesheet" href="css/themes.css">
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-<defs>
-  <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.2v2.1M12 18.7v2.1M20.8 12h-2.1M5.3 12H3.2M18 6l-1.5 1.5M7.5 16.5L6 18M18 18l-1.5-1.5M7.5 7.5L6 6"/></symbol>
-  <symbol id="icon-notebook" viewBox="0 0 24 24"><rect x="4" y="3" width="15" height="18" rx="3.5"/><path d="M9 3v18M4 8h1.2M4 13h1.2"/></symbol>
-  <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 9.5h17M8 3v3.6M16 3v3.6"/><circle cx="8" cy="14" r="1.1" class="filled"/><circle cx="12" cy="14" r="1.1" class="filled"/><circle cx="16" cy="14" r="1.1" class="filled"/></symbol>
-  <symbol id="icon-sun" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="4.2"/>
-    <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2"/>
-    <path d="M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M19.1 4.9l-1.6 1.6M6.5 17.5l-1.6 1.6"/>
-  </symbol>
-  <symbol id="icon-bell" viewBox="0 0 24 24">
-    <path d="M18 9.5a6 6 0 0 0-12 0c0 7-2.2 7-2.2 8.5h16.4C20.2 16.5 18 16.5 18 9.5Z"/>
-    <path d="M9.5 20a2.8 2.8 0 0 0 5 0"/>
-  </symbol>
-  <symbol id="icon-mirror" viewBox="0 0 24 24"><path d="M12 3C8.1 3 5 6.8 5 11.5S8.1 20 12 20s7-3.8 7-8.5S15.9 3 12 3Z"/><path d="M9 21h6"/><path d="M12 6.5c1.8 0 3.2 1.8 3.2 4"/></symbol>
-  <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.6-5.7M20 12a8 8 0 0 1-13.6 5.7"/><path d="M17.2 3.6v3.4h-3.4M6.8 20.4V17h3.4"/></symbol>
-  <symbol id="icon-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
-  <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V4.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7M7 7l1 12.2a2 2 0 0 0 2 1.8h4a2 2 0 0 0 2-1.8L17 7"/></symbol>
-  <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="M5.5 9l6.5 6.5L18.5 9"/></symbol>
-  <symbol id="icon-paw" viewBox="0 0 24 24"><circle cx="12" cy="15.7" r="4.3" class="filled"/><circle cx="5.8" cy="10.4" r="2.2" class="filled"/><circle cx="10.6" cy="6.3" r="2.1" class="filled"/><circle cx="16.4" cy="7.4" r="2.1" class="filled"/></symbol>
-  <symbol id="icon-mug" viewBox="0 0 24 24"><path d="M5 6h11v9a4.5 4.5 0 0 1-4.5 4.5H9.5A4.5 4.5 0 0 1 5 15V6z"/><path d="M16 8.5h1.5a3 3 0 0 1 0 6H16"/><path d="M8 3.2c-.6.7-.6 1.3 0 2M11.5 3.2c-.6.7-.6 1.3 0 2"/></symbol>
-  <symbol id="icon-w-sunny" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" class="filled"/><path d="M12 2.6v2.3M12 19.1v2.3M21.4 12h-2.3M4.9 12H2.6M18.1 5.9l-1.6 1.6M7.5 16.5l-1.6 1.6M18.1 18.1l-1.6-1.6M7.5 7.5L5.9 5.9"/></symbol>
-  <symbol id="icon-w-partly" viewBox="0 0 24 24"><circle cx="8.3" cy="8.3" r="3.6" class="filled"/><path d="M8.3 2.2v1.7M14.4 8.3h-1.7M4.2 8.3H2.5M12.4 4.3l-1.2 1.2M4.2 12.4l1.2-1.2"/><path d="M9.5 20.2h7a3.7 3.7 0 0 0 .6-7.35A5 5 0 0 0 7.6 15.1a3.4 3.4 0 0 0 1.9 5.1z" class="filled"/></symbol>
-  <symbol id="icon-w-cloudy" viewBox="0 0 24 24"><path d="M7 19h10.3a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 6.9 12.9 3.7 3.7 0 0 0 7 19z" class="filled"/></symbol>
-  <symbol id="icon-w-foggy" viewBox="0 0 24 24"><path d="M4 8.5h11M4 12h16M4 15.5h13M4 19h9"/></symbol>
-  <symbol id="icon-w-rainy" viewBox="0 0 24 24"><path d="M6.5 15h10.3a3.7 3.7 0 0 0 .4-7.38A5 5 0 0 0 6.4 8.9 3.4 3.4 0 0 0 6.5 15z" class="filled"/><path d="M8 18.3l-1 2.2M12 18.3l-1 2.2M16 18.3l-1 2.2"/></symbol>
-  <symbol id="icon-w-snowy" viewBox="0 0 24 24"><path d="M6.5 13h10.3a3.7 3.7 0 0 0 .4-7.38A5 5 0 0 0 6.4 6.9 3.4 3.4 0 0 0 6.5 13z" class="filled"/><path d="M8 16.6v5M5.7 18.1l4.6 2M10.3 18.1l-4.6 2M16 16.6v5M13.7 18.1l4.6 2M18.3 18.1l-4.6 2"/></symbol>
-  <symbol id="icon-w-thunder" viewBox="0 0 24 24"><path d="M6.5 12h10.3a3.7 3.7 0 0 0 .3-7.38A5 5 0 0 0 6.4 5.9 3.4 3.4 0 0 0 6.5 12z" class="filled"/><path d="M13 12.5l-3.4 5H12l-1.6 4.3 4.8-5.8h-2.6z" class="filled"/></symbol>
-  <symbol id="icon-cat" viewBox="0 0 24 24">
-    <path d="M5 9V4l4 3c2-1 4-1 6 0l4-3v5"/>
-    <path d="M5 10c0-3 3-5 7-5s7 2 7 5v5c0 3-3 5-7 5s-7-2-7-5z"/>
-    <circle cx="9" cy="13" r="1"/>
-    <circle cx="15" cy="13" r="1"/>
-    <path d="M10 17c1 .8 3 .8 4 0"/>
-  </symbol>
-
-  <symbol id="icon-bear" viewBox="0 0 24 24">
-    <circle cx="7" cy="7" r="3"/>
-    <circle cx="17" cy="7" r="3"/>
-    <circle cx="12" cy="13" r="8"/>
-    <circle cx="9" cy="12" r="1"/>
-    <circle cx="15" cy="12" r="1"/>
-    <path d="M10 16c1 .8 3 .8 4 0"/>
-  </symbol>
-
-  <symbol id="icon-bunny" viewBox="0 0 24 24">
-    <path d="M8 9C6 5 7 2 9 2c2 0 2 4 3 7"/>
-    <path d="M16 9c2-4 1-7-1-7-2 0-2 4-3 7"/>
-    <circle cx="12" cy="14" r="7"/>
-    <circle cx="9.5" cy="14" r="1"/>
-    <circle cx="14.5" cy="14" r="1"/>
-    <path d="M10 17c1 .8 3 .8 4 0"/>
-  </symbol>
-</defs>
-</svg>
 <div id="app">
 
   <header>
@@ -83,7 +28,7 @@
       <span class="sub" id="placeSub">&nbsp;</span>
     </div>
     <div class="header-actions">
-      <button class="iconbtn" id="settingsBtn" title="Settings"><svg class="icon"><use href="#icon-gear"/></svg></button>
+      <button class="iconbtn" id="settingsBtn" title="Settings"><svg class="icon" viewBox="0 0 24 24" data-icon="settings"></svg></button>
     </div>
   </header>
 
@@ -93,15 +38,15 @@
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <div class="scene-actions">
       <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none;">
-        <svg class="icon"><use href="#icon-calendar"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" data-icon="calendar"></svg>
       </button>
 
       <button id="customizeProp" class="scene-btn" title="Customize">
-        <svg class="icon"><use href="#icon-mirror"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" data-icon="mirror"></svg>
       </button>
 
       <button id="todoProp" class="scene-btn" title="To-dos">
-        <svg class="icon"><use href="#icon-notebook"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>
       </button>
     </div>
     <div id="windowFog"></div>
@@ -125,7 +70,7 @@
       <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
       <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
       <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
-      <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon"><use href="#icon-refresh"/></svg></button>
+      <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
     </div>
     <div class="forecast-header">
       <span class="forecast-toggle" data-mode="hourly">Hourly</span>
@@ -143,7 +88,7 @@
 <div class="sheet" id="sheet">
   <div class="sheet-handle"></div>
 
-  <h2><svg class="icon"><use href="#icon-sun"/></svg>Weather</h2>
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="sun-outline"></svg>Weather</h2>
 
   <div class="field">
     <label>Search a city</label>
@@ -153,7 +98,7 @@
 
   <div class="divider"></div>
 
-  <h2><svg class="icon"><use href="#icon-bell"/></svg>Reminders</h2>
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="bell"></svg>Reminders</h2>
 
   <div class="field">
     <button class="btn secondary" id="notifyBtn" style="margin-top:0;">
@@ -167,7 +112,7 @@
 
   <div class="divider"></div>
 
-  <h2><svg class="icon"><use href="#icon-calendar"/></svg>Google Calendar</h2>
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="calendar"></svg>Google Calendar</h2>
 
   <div id="calDisconnected">
     <p class="hint">
@@ -211,7 +156,7 @@
 
 <div class="sheet" id="todoSheet">
   <div class="sheet-handle"></div>
-  <h2><svg class="icon"><use href="#icon-notebook"/></svg>To-dos</h2>
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>To-dos</h2>
 
   <div class="row2">
     <div class="field" style="flex:2">
@@ -231,7 +176,7 @@
   <div class="divider"></div>
   <div class="hist-toggle" id="historyToggle">
     <span>Completed history</span>
-    <span id="historyCaret"><svg class="icon"><use href="#icon-chevron"/></svg></span>
+    <span id="historyCaret"><svg class="icon" viewBox="0 0 24 24" data-icon="chevron"></svg></span>
   </div>
   <div id="todoHistoryList" style="display:none;"></div>
 
@@ -240,7 +185,7 @@
 
 <div class="sheet" id="calSheet">
   <div class="sheet-handle"></div>
-  <h2 id="calSheetTitle"><svg class="icon"><use href="#icon-calendar"/></svg>Today</h2>
+  <h2 id="calSheetTitle"><svg class="icon" viewBox="0 0 24 24" data-icon="calendar"></svg>Today</h2>
   <div class="cal-switcher" id="calRangePicker" style="padding:0 0 12px;">
     <div class="cal-chip range-chip active" data-days="1">Today</div>
     <div class="cal-chip range-chip" data-days="3">3 days</div>
@@ -267,13 +212,13 @@
       <label>Species</label>
       <div class="species-picker" id="speciesPicker">
         <button class="species-option" data-species="cat" type="button">
-          <svg class="icon"><use href="#icon-cat"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" data-icon="cat"></svg>
         </button>
         <button class="species-option" data-species="bear" type="button">
-          <svg class="icon"><use href="#icon-bear"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" data-icon="bear"></svg>
         </button>
         <button class="species-option" data-species="bunny" type="button">
-          <svg class="icon"><use href="#icon-bunny"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" data-icon="bunny"></svg>
         </button>
       </div>
 

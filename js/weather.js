@@ -5,6 +5,7 @@ import { updateBackground } from './background.js';
 import { seedParticles } from './particles.js';
 import { drawCharacter } from './companion.js';
 import { resolveIdleState } from './movement.js';
+import { hydrateIcons } from './icons.js';
 
 const stageEl = $('stage');
 const flashEl = $('flash');
@@ -34,8 +35,8 @@ const WINDOW_SKY = {
   thunder: { day:['#4A5568','#8B8C7A'], night:['#0B0E1A','#333243'] }
 };
 
-const FORECAST_GLYPH = { sunny:'icon-w-sunny', partly:'icon-w-partly', cloudy:'icon-w-cloudy', foggy:'icon-w-foggy', rainy:'icon-w-rainy', snowy:'icon-w-snowy', thunder:'icon-w-thunder' };
-function weatherIconSVG(base, cls){ return '<svg class="'+(cls||'fd-icon')+'"><use href="#'+(FORECAST_GLYPH[base]||'icon-w-cloudy')+'"/></svg>'; }
+const FORECAST_GLYPH = { sunny:'sunny', partly:'partly', cloudy:'cloudy', foggy:'foggy', rainy:'rainy', snowy:'snowy', thunder:'thunder' };
+function weatherIconSVG(base, cls){ return '<svg class="'+(cls||'fd-icon')+'" viewBox="0 0 24 24" data-icon="weather/'+(FORECAST_GLYPH[base]||'cloudy')+'"></svg>'; }
 let forecastMode = loadForecastMode();
 export function renderForecast(){
   const el = $('forecastRow');
@@ -43,6 +44,7 @@ export function renderForecast(){
   el.classList.toggle('hourly-mode', forecastMode === 'hourly');
   if(forecastMode === 'hourly') renderHourlyForecast(el);
   else renderWeeklyForecast(el);
+  hydrateIcons(el);
 }
 function renderWeeklyForecast(el){
   if(!state.forecast) return;

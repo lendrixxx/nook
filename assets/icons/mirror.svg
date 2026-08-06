@@ -1,19 +1,73 @@
-<symbol id="icon-mirror" viewBox="0 0 24 24">
-  <path d="M12 3c3.9 0 7 3.8 7 8.5S15.9 20 12 20s-7-3.8-7-8.5S8.1 3 12 3z"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"/>
-  <path d="M9 21h6"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"/>
-  <path d="M12 6.5c1.8 0 3.2 1.8 3.2 4"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        opacity=".45"/>
-</symbol>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64"
+     fill="none">
+
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"
+            fill="var(--mirror-frame, #ffffff)"/>
+      <stop offset="1"
+            fill="var(--mirror-frame-shadow, #dfe3e8)"/>
+    </linearGradient>
+
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"
+            fill="var(--mirror-glass, #ffffff)"/>
+      <stop offset="1"
+            fill="var(--mirror-glass-shadow, #d9e8f2)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- shadow -->
+  <ellipse cx="32" cy="58"
+           rx="12" ry="2.5"
+           fill="var(--shadow, #000000)"
+           opacity="0.12"/>
+
+  <!-- short stand -->
+  <path d="
+    M28 42
+    L36 42
+    L37 56
+    Q32 57 27 56
+    Z"
+    fill="url(#frame)"
+    stroke="var(--aage-dark, #6b5a4b)"
+    stroke-width="2"
+    stroke-linejoin="round"/>
+
+  <!-- base -->
+  <path d="
+    M24 56
+    Q32 54 40 56
+    Q40 58 32 58.5
+    Q24 58 24 56
+    Z"
+    fill="var(--mirror-frame, #ffffff)"
+    stroke="var(--aage-dark, #6b5a4b)"
+    stroke-width="1.5"/>
+
+  <!-- outer mirror -->
+  <ellipse cx="32" cy="23"
+           rx="19" ry="22"
+           fill="url(#frame)"
+           stroke="var(--aage-dark, #6b5a4b)"
+           stroke-width="2"/>
+
+  <!-- glass -->
+  <ellipse cx="32" cy="23"
+           rx="14.5" ry="17.5"
+           fill="url(#glass)"
+           stroke="var(--mirror-border, #c5d2da)"
+           stroke-width="1.2"/>
+
+  <!-- reflection -->
+  <path d="
+    M25 15
+    Q28 11 30 12"
+    stroke="var(--highlight, #ffffff)"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    opacity="0.9"/>
+
+</svg>

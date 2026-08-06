@@ -5,6 +5,7 @@ import { isCharAsleep, drawCharacter, setCompanionState } from './companion.js';
 import { updatePlantMood } from './room.js';
 import { goToDesk, leaveDesk } from './movement.js';
 import { evaluateCalendarBusy } from './calendar.js';
+import { hydrateIcons } from './icons.js';
 
 /* ---------------- To-dos ---------------- */
 state.todos = [];
@@ -31,17 +32,17 @@ export function renderTodos(){
   const activeEl = $('todoActiveList');
   activeEl.innerHTML = active.length ? active.map(t =>
     '<div class="todo-row">'
-    + '<div class="todo-check" data-id="'+t.id+'"><svg class="icon"><use href="#icon-check"/></svg></div>'
+    + '<div class="todo-check" data-id="'+t.id+'"><svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg></div>'
     + '<div class="todo-text">'+escapeHtml(t.text)+'</div>'
     + (t.date ? '<div class="todo-date">'+fmtDate(t.date)+'</div>' : '')
-    + '<button class="todo-del" data-id="'+t.id+'"><svg class="icon"><use href="#icon-trash"/></svg></button>'
+    + '<button class="todo-del" data-id="'+t.id+'"><svg class="icon" viewBox="0 0 24 24" data-icon="trash"></svg></button>'
     + '</div>'
   ).join('') : '<div class="todo-empty">Nothing on the list yet — add something above.</div>';
 
   const histEl = $('todoHistoryList');
   histEl.innerHTML = done.length ? done.map(t =>
     '<div class="hist-row">'
-    + '<div class="todo-check checked" data-id="'+t.id+'"><svg class="icon"><use href="#icon-check"/></svg></div>'
+    + '<div class="todo-check checked" data-id="'+t.id+'"><svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg></div>'
     + '<div class="todo-text">'+escapeHtml(t.text)+'</div>'
     + '<div class="hist-when">'+(t.completedAt ? new Date(t.completedAt).toLocaleDateString([], {month:'short', day:'numeric'}) : '')+'</div>'
     + '</div>'
@@ -50,6 +51,8 @@ export function renderTodos(){
   activeEl.querySelectorAll('.todo-check').forEach(el => el.onclick = () => toggleTodo(el.dataset.id));
   activeEl.querySelectorAll('.todo-del').forEach(el => el.onclick = () => deleteTodo(el.dataset.id));
   histEl.querySelectorAll('.todo-check').forEach(el => el.onclick = () => toggleTodo(el.dataset.id));
+  hydrateIcons(activeEl);
+  hydrateIcons(histEl);
   updateTodoBadge();
   updatePlantMood();
   drawCharacter();
