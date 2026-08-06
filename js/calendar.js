@@ -224,12 +224,12 @@ function eventRowHtml(ev, now){
   const endMs = ev.end ? new Date(ev.end).getTime() : null;
   const isNow = !ev.allDay && startMs!=null && endMs!=null && now>=startMs && now<endMs;
   const isSoon = !ev.allDay && !isNow && startMs!=null && (startMs-now) > 0 && (startMs-now) <= 30*60000;
-  const badge = isNow ? '<div class="todo-date cal-now">now</div>' : isSoon ? '<div class="todo-date cal-soon">soon</div>' : '';
+  const badge = isNow ? '<div class="cal-time cal-now">now</div>' : isSoon ? '<div class="cal-time cal-soon">soon</div>' : '';
   const timeLabel = ev.allDay ? 'All day' : (fmtEventTime(ev.start) + (ev.end ? ' – ' + fmtEventTime(ev.end) : ''));
-  return '<div class="todo-row">'
-    + '<div class="todo-date">'+timeLabel+'</div>'
+  return '<div class="cal-row">'
+    + '<div class="cal-time">'+timeLabel+'</div>'
     + '<span class="cal-pick-dot" style="background:'+(ev.color||'#7E9B7E')+'"></span>'
-    + '<div class="todo-text">'+escapeHtml(ev.title)+'</div>'
+    + '<div class="cal-text">'+escapeHtml(ev.title)+'</div>'
     + badge
     + '</div>';
 }
@@ -237,7 +237,7 @@ export function renderCalendarList(){
   const el = $('calList');
   if(!el) return;
   if(!gcal.events || gcal.events.length === 0){
-    el.innerHTML = '<div class="todo-empty" style="display:flex;align-items:center;justify-content:center;gap:6px;">Nothing on your calendar <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" data-icon="mug"></svg></div>';
+    el.innerHTML = '<div class="cal-empty" style="display:flex;align-items:center;justify-content:center;gap:6px;">Nothing on your calendar <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" data-icon="mug"></svg></div>';
   } else if(gcal.rangeDays <= 1){
     const now = Date.now();
     el.innerHTML = gcal.events.map(ev => eventRowHtml(ev, now)).join('');
