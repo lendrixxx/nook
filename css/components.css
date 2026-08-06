@@ -1,0 +1,185 @@
+/* ---------- Bottom info card ---------- */
+.infocard{
+  margin:14px; background:var(--card); border-radius:24px;
+  padding:20px 22px 16px; box-shadow:var(--shadow-soft);
+  border:1px solid rgba(238,224,196,0.7);
+}
+.temp-row{ display:flex; align-items:flex-end; justify-content:space-between; }
+.temp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:54px; line-height:1; letter-spacing:-1px; color:var(--ink); }
+.temp sup{ font-size:22px; font-weight:600; }
+.condition{ text-align:right; }
+.condition .cond{ font-weight:800; font-size:15px; text-transform:capitalize; }
+.condition .feel{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+.stat-row{ display:flex; gap:18px; margin-top:14px; padding-top:14px; border-top:1.5px solid var(--line); align-items:center; }
+.stat{ display:flex; flex-direction:column; gap:2px; }
+.stat .k{ font-size:10px; letter-spacing:.06em; color:var(--ink-soft); font-weight:700; text-transform:uppercase; }
+.stat .v{ font-size:13px; font-weight:700; }
+.stat-refresh{
+  margin-left:auto;
+  width:30px; height:30px; border-radius:50%;
+  border:none; background:#F1F6EE; color:var(--sage-dark);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:transform .15s ease;
+  align-self:center;
+}
+.stat-refresh .icon{ width:15px; height:15px; }
+.stat-refresh:active{ transform:scale(0.88) rotate(90deg); }
+.forecast-row{
+  display:flex; justify-content:space-between; gap:4px;
+  margin-top:10px; padding-top:0;
+}
+.forecast-row.hourly-mode{
+  justify-content:flex-start; overflow-x:auto; gap:14px;
+  scrollbar-width:none; padding-bottom:2px;
+}
+.forecast-row.hourly-mode::-webkit-scrollbar{ display:none; }
+.forecast-row.hourly-mode .forecast-day{ flex:0 0 auto; min-width:38px; }
+.forecast-day{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  flex:1; min-width:0;
+}
+.forecast-day.fd-now .fd-name{ color:var(--sage-dark); }
+.forecast-day .fd-name{ font-size:10.5px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; }
+.forecast-day .fd-icon{ width:22px; height:22px; color:var(--sage-dark); }
+.forecast-day .fd-max{ font-size:12.5px; font-weight:800; }
+.forecast-day .fd-min{ font-size:11px; color:var(--ink-soft); font-weight:700; }
+.forecast-header{
+  display:flex; gap:14px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
+}
+.forecast-toggle{
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--ink-soft); cursor:pointer; padding-bottom:2px;
+}
+.forecast-toggle.active{ color:var(--sage-dark); border-bottom:2px solid var(--sage); }
+
+/* ---------- Calendar switcher ---------- */
+.cal-switcher{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.cal-chip{
+  flex:0 0 auto;
+  padding:7px 16px;
+  border-radius:999px;
+  background:var(--card);
+  border:2px solid transparent;
+  cursor:pointer;
+  font-weight:700;
+  font-size:13px;
+}
+
+.cal-chip.active{
+  border-color:var(--sage);
+  background:#F1F6F2;
+}
+
+/* ---------- Todos (also reused by the calendar event list) ---------- */
+.todo-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 4px;
+  border-bottom:1px solid var(--line);
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+.todo-row:last-child{ border-bottom:none; }
+.todo-check{
+  width:25px;height:25px; border-radius:50%; border:2px solid var(--sage);
+  flex:0 0 auto; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  background:#fff; color:#fff; transition:transform .12s ease;
+}
+.todo-check .icon{ width:13px; height:13px; opacity:0; transition:opacity .12s ease; }
+.todo-check.checked{ background:var(--sage); }
+.todo-check.checked .icon{ opacity:1; }
+.todo-check:active{ transform:scale(0.88); }
+.todo-text{
+  flex:1;
+  min-width:0;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.3;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.todo-text.done{ text-decoration:line-through; color:var(--ink-soft); font-weight:600; }
+.todo-date{
+  flex:0 1 auto;
+  max-width:90px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:10.5px;
+  font-weight:800;
+  color:var(--sage-dark);
+  background:#EAF2ED;
+  padding:3px 8px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+.todo-del{
+  width:24px;height:24px; border-radius:50%; border:none; background:transparent;
+  color:var(--ink-soft); cursor:pointer; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+}
+.todo-del .icon{ width:13px; height:13px; }
+.todo-empty{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:10px 0; }
+.hist-toggle{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-soft); cursor:pointer; padding:4px 2px;
+}
+#historyCaret{ display:flex; }
+#historyCaret .icon{ width:14px; height:14px; transition:transform .2s ease; }
+#historyCaret.open .icon{ transform:rotate(180deg); }
+.hist-row{ display:flex; align-items:center; gap:10px; padding:8px 4px; opacity:0.75; }
+.hist-row .todo-text{ text-decoration:line-through; font-weight:600; }
+.hist-when{ font-size:10px; color:var(--ink-soft); white-space:nowrap; }
+
+/* ---------- Calendar ---------- */
+.cal-now{ background:#E7F0EA; color:var(--sage-dark); }
+.cal-soon{ background:#FBEAD8; color:#C1512D; }
+.cal-day-header{
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-soft); padding:14px 2px 4px;
+}
+.cal-day-header:first-child{ padding-top:2px; }
+.range-chip{ padding:7px 16px; }
+.cal-pick-row{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 2px; border-bottom:1px solid var(--line);
+  font-size:13px; font-weight:700;
+}
+.cal-pick-row:last-child{ border-bottom:none; }
+.cal-pick-dot{ width:12px;height:12px;border-radius:50%; flex:0 0 auto; }
+.cal-pick-row input{ width:18px;height:18px; flex:0 0 auto; }
+
+/* ---------- Species ---------- */
+.species-picker{
+  display:flex;
+  gap:10px;
+}
+
+.species-option{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--card);
+}
+
+.species-option .icon{
+  width:32px;
+  height:32px;
+}
+
+.species-option.active{
+  outline:2px solid var(--accent);
+}

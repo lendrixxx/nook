@@ -1,0 +1,16 @@
+/* ---------- Themes ----------
+   Nook's room/companion palette is NOT swapped via alternate stylesheets.
+   The :root custom properties defined in main.css (--room-*, --char-*, etc.)
+   are the "Cozy Cream" defaults, chosen so the app still looks right even
+   if a theme fetch fails (offline, first paint before the network settles).
+
+   Switching to another theme happens entirely at runtime in js/room.js:
+   loadTheme(themeId) fetches assets/room/themes/<themeId>.json and calls
+   document.documentElement.style.setProperty(k, v) for each token override,
+   plus swaps ROOM_LAYOUT if the theme defines its own furniture placement.
+
+   This file intentionally has no rules of its own — it exists as the
+   place a future *static* theme override (e.g. a prefers-color-scheme
+   variant) would live, kept separate from main.css so that distinction
+   stays obvious.
+   ---------------------------------------------------------------- */

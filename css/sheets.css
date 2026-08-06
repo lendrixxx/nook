@@ -1,0 +1,55 @@
+/* ---------- Settings sheet ---------- */
+.sheet-backdrop{
+  position:fixed;inset:0; background:rgba(74,63,53,0.35);
+  opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:40;
+}
+.sheet-backdrop.open{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed;
+  left:0;right:0;bottom:0;
+  max-width:480px;
+  margin:0 auto;
+  background:var(--cream);
+  border-radius:28px 28px 0 0;
+  padding:14px 20px calc(env(safe-area-inset-bottom,0px) + 24px);
+  transform:translateY(100%);
+  transition:transform .3s ease;
+  z-index:41;
+  max-height:82vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  box-sizing:border-box;
+  box-shadow:0 -20px 50px -20px rgba(74,56,38,0.35);
+}
+.sheet.open{ transform:translateY(0); }
+.sheet h2{ font-family:'Fredoka',sans-serif; font-size:19px; margin:6px 0 14px; display:flex; align-items:center; gap:8px; }
+.sheet h2 .icon{ width:19px; height:19px; color:var(--sage-dark); }
+.sheet-handle{ width:36px;height:4px;border-radius:2px; background:var(--line); margin:0 auto 14px; }
+.field label{
+  display:block; font-size:11px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-soft); margin:12px 0 6px;
+}
+.field input, .field select{
+  width:100%; padding:12px 14px; border-radius:14px; border:1.5px solid var(--line);
+  background:#fff; font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; color:var(--ink);
+}
+.row2{ display:flex; gap:10px; }
+.row2 .field{ flex:1; }
+.colorfield{ display:flex; align-items:center; gap:8px; }
+.colorfield input[type=color]{ width:44px; height:40px; padding:2px; border-radius:12px; }
+.btn{
+  margin-top:16px; width:100%; padding:14px; border-radius:16px; border:none;
+  background:var(--sage); color:#fff; font-weight:800; font-size:14px; cursor:pointer;
+  box-shadow:0 10px 22px -12px rgba(92,122,92,0.6);
+  transition:transform .12s ease;
+}
+.btn:active{ transform:scale(0.98); }
+.btn.secondary{ background:transparent; color:var(--sage-dark); border:2px solid var(--line); margin-top:8px; box-shadow:none; }
+.searchresults{ margin-top:8px; }
+.searchresults div{
+  padding:11px 13px; background:#fff; border-radius:12px; margin-top:6px;
+  font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--line);
+}
+.divider{ height:1px; background:var(--line); margin:18px 0; }
+.hint{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; margin-top:4px; }
+#statusMsg{ font-size:12px; color:var(--ink-soft); text-align:center; padding:6px 0; }
