@@ -19,9 +19,12 @@
   overflow-y:auto;
   overflow-x:hidden;
   box-sizing:border-box;
+  box-shadow:none;
+}
+.sheet.open{
+  transform:translateY(0);
   box-shadow:0 -20px 50px -20px rgba(74,56,38,0.35);
 }
-.sheet.open{ transform:translateY(0); }
 .sheet h2{ font-family:'Fredoka',sans-serif; font-size:19px; margin:6px 0 14px; display:flex; align-items:center; gap:8px; }
 .sheet h2 .icon{ width:19px; height:19px; color:var(--sage-dark); }
 .sheet-handle{ width:36px;height:4px;border-radius:2px; background:var(--line); margin:0 auto 14px; }
