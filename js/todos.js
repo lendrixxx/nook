@@ -130,7 +130,7 @@ export function initTodos(){
     const text = $('todoText').value.trim();
     if(!text) return;
     state.todos.push({ id:'t'+Date.now(), text, date: $('todoDate').value || null, done:false, completedAt:null });
-    $('todoText').value=''; $('todoDate').value='';
+    $('todoText').value=''; $('todoDate').value=''; $('dateDisplay').textContent='';
     saveTodos();
     renderTodos();
   };
@@ -140,5 +140,25 @@ export function initTodos(){
     el.style.display = open ? 'none' : 'block';
     $('historyCaret').classList.toggle('open', !open);
   };
+  $('dateDisplay').onclick = () => {
+    const input = $('todoDate');
+    input.focus();
+    if (input.showPicker) {
+      try { input.showPicker(); } catch(e) { input.click(); }
+    } else {
+      input.click();
+    }
+  };
+
+  $('todoDate').onchange = () => {
+    const input = $('todoDate');
+    if (input.value) {
+      const d = new Date(input.value + 'T00:00:00');
+      $('dateDisplay').textContent = d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    } else {
+      $('dateDisplay').textContent = '';
+    }
+  };
+
   $('notifyBtn')?.addEventListener('click', requestNotifyPermission);
 }
