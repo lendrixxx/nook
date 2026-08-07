@@ -19,10 +19,11 @@
 
   <!-- legs walk 2 -->
 
-  <g id="legs">
+  <g class="legs" id="legs">
 
     <!-- left leg lifted inward -->
-    <path
+    <g class="leg leg-left legs">
+      <path
       d="
         M103 160
         C105 174 108 187 115 197
@@ -33,10 +34,17 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="4"/>
-
-
-    <!-- right leg planted -->
-    <path
+      <ellipse
+      cx="108"
+      cy="207"
+      rx="11"
+      ry="6"
+      fill="var(--body,#FFF7EA)"
+      stroke="var(--ink,#74553B)"
+      stroke-width="3"/>
+    </g>
+    <g class="leg leg-right legs">
+      <path
       d="
         M131 160
         C130 174 128 190 129 200
@@ -47,18 +55,7 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="4"/>
-
-
-    <ellipse
-      cx="108"
-      cy="207"
-      rx="11"
-      ry="6"
-      fill="var(--body,#FFF7EA)"
-      stroke="var(--ink,#74553B)"
-      stroke-width="3"/>
-
-    <ellipse
+      <ellipse
       cx="140"
       cy="210"
       rx="11"
@@ -66,6 +63,7 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="3"/>
+    </g>
 
   </g>
 

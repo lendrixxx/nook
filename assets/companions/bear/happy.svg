@@ -40,7 +40,7 @@
 
   <!-- legs -->
 
-  <path
+  <path class="leg leg-left legs"
     d="
       M103 150
       C102 174 101 190 104 201
@@ -51,8 +51,7 @@
     fill="var(--body,#C98F62)"
     stroke="var(--ink,#74553B)"
     stroke-width="4"/>
-
-  <path
+    <path class="leg leg-right legs"
     d="
       M131 150
       C130 164 128 182 129 200

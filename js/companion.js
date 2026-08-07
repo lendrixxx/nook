@@ -83,7 +83,7 @@ export async function drawCharacter(){
   } catch(e){ accSVG = ''; }
   if(myToken !== companionRenderToken) return;
 
-  charEl.innerHTML = '<svg viewBox="0 0 256 256" width="66" height="82">'
+  charEl.innerHTML = '<svg viewBox="0 0 256 218" width="66" height="82" preserveAspectRatio="xMidYMax meet">'
     + stripSvgWrapper(baseSVG)
     + (accSVG ? stripSvgWrapper(accSVG) : '')
     + '</svg>';
@@ -99,7 +99,7 @@ export async function setCompanionState(poseState){
   try{ svgText = await fetchAsset('assets/companions/'+c.species+'/'+poseState+'.svg'); }
   catch(e){ return; }
   if(myToken !== companionRenderToken) return;
-  charEl.innerHTML = '<svg viewBox="0 0 256 256" width="66" height="82">'+stripSvgWrapper(svgText)+'</svg>';
+  charEl.innerHTML = '<svg viewBox="0 0 256 218" width="66" height="82" preserveAspectRatio="xMidYMax meet">'+stripSvgWrapper(svgText)+'</svg>';
 }
 
 /* ---------------- Character sheet ---------------- */

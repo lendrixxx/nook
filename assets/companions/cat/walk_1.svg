@@ -17,9 +17,10 @@
     stroke-linecap="round"/>
 
   <!-- legs walk 1 -->
-  <g id="legs">
+  <g class="legs" id="legs">
 
-    <path
+    <g class="leg leg-left legs">
+      <path
       d="
         M103 160
         C100 175 96 191 99 201
@@ -30,8 +31,17 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="4"/>
-
-    <path
+      <ellipse
+      cx="108"
+      cy="210"
+      rx="11"
+      ry="6"
+      fill="var(--body,#FFF7EA)"
+      stroke="var(--ink,#74553B)"
+      stroke-width="3"/>
+    </g>
+    <g class="leg leg-right legs">
+      <path
       d="
         M132 160
         C136 176 143 190 151 198
@@ -42,17 +52,7 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="4"/>
-
-    <ellipse
-      cx="108"
-      cy="210"
-      rx="11"
-      ry="6"
-      fill="var(--body,#FFF7EA)"
-      stroke="var(--ink,#74553B)"
-      stroke-width="3"/>
-
-    <ellipse
+      <ellipse
       cx="159"
       cy="197"
       rx="11"
@@ -60,6 +60,7 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="3"/>
+    </g>
 
   </g>
 

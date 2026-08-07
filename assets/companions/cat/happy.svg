@@ -24,9 +24,10 @@
 
   <!-- legs -->
 
-  <g id="legs">
+  <g class="legs" id="legs">
 
-    <path
+    <g class="leg leg-left legs">
+      <path
       d="
         M103 160
         C102 174 101 190 104 201
@@ -37,8 +38,17 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="4"/>
-
-    <path
+      <ellipse
+      cx="116"
+      cy="210"
+      rx="11"
+      ry="6"
+      fill="var(--body,#FFF7EA)"
+      stroke="var(--ink,#74553B)"
+      stroke-width="3"/>
+    </g>
+    <g class="leg leg-right legs">
+      <path
       d="
         M131 160
         C130 174 128 188 129 200
@@ -49,17 +59,7 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="4"/>
-
-    <ellipse
-      cx="116"
-      cy="210"
-      rx="11"
-      ry="6"
-      fill="var(--body,#FFF7EA)"
-      stroke="var(--ink,#74553B)"
-      stroke-width="3"/>
-
-    <ellipse
+      <ellipse
       cx="140"
       cy="210"
       rx="11"
@@ -67,6 +67,7 @@
       fill="var(--body,#FFF7EA)"
       stroke="var(--ink,#74553B)"
       stroke-width="3"/>
+    </g>
 
   </g>
 
