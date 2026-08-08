@@ -113,12 +113,12 @@ function buildRoomStructure(){
    draw code. */
 export let ROOM_LAYOUT = [
   { asset:'shelf',     at:[3.7, 0, 3.05] },
-  { asset:'plant-pot', at:[4.45, 0.06, 3.17] },
-  { asset:'book',      at:[3.85, 0.05, 3.17] },
-  { asset:'desk',      at:[1.85, 0.55, 0] },
-  { asset:'lamp',      at:[2.13, 0.69, 0.58] },
-  { asset:'mug',       at:[3.02, 0.93, 0.58] },
-  { asset:'stool',     at:[2.4, 1.47, 0] }
+  { asset:'plant-pot', at:[4.38, 0.06, 3.14] },
+  { asset:'book',      at:[3.88, 0.05, 3.14] },
+  { asset:'desk',      at:[2.15, 0.55, 0] },
+  { asset:'lamp',      at:[2.43, 0.69, 0.58] },
+  { asset:'mug',       at:[2.95, 0.93, 0.58], scale:0.7 },
+  { asset:'stool',     at:[2.70, 1.47, 0] }
 ];
 
 async function loadRoomDecorations(){
@@ -129,10 +129,13 @@ async function loadRoomDecorations(){
     try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
     catch(e){ return ''; } // missing asset — skip it rather than break the room
     const p = iso(item.at[0], item.at[1], item.at[2]);
+    const scale = item.scale || 1;
+    const rotate = item.rotate || 0;
     // pull just the inner content of the fetched <svg> so we can wrap our
     // own positioned <g>, keeping data-role attributes (e.g. plant leaves) intact
     const inner = stripSvgWrapper(svgText);
-    return '<g class="deco" data-asset="'+item.asset+'" transform="translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+')">'+inner+'</g>';
+    const transform = 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') rotate('+rotate+') scale('+scale+')';
+    return '<g class="deco" data-asset="'+item.asset+'" transform="'+transform+'">'+inner+'</g>';
   }));
   host.innerHTML = placed.join('');
   updatePlantMood(); // re-apply leaf color now that the plant asset is in the DOM
