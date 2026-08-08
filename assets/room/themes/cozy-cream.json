@@ -40,12 +40,21 @@
     "--char-accent": "#C99A6E"
   },
   "roomLayout": [
-    { "asset": "shelf",     "at": [3.7, 0, 3.05] },
-    { "asset": "plant-pot", "at": [4.45, 0.06, 3.17] },
-    { "asset": "book",      "at": [3.85, 0.05, 3.17] },
-    { "asset": "desk",      "at": [1.85, 0.55, 0] },
-    { "asset": "lamp",      "at": [2.13, 0.69, 0.58] },
-    { "asset": "mug",       "at": [3.02, 0.93, 0.58] },
-    { "asset": "stool",     "at": [2.4, 1.47, 0] }
+    { "id": "shelf-1", "asset": "shelf", "at": [3.7, 0, 3.05], "rotate": 0, "dragInsetNear": 0.4, "dragInsetFar": 1.0,
+      "role": "surface", "surfaceTopZ": 3.17,
+      "surfaceBounds": { "minX": -0.05, "maxX": 0.95, "minY": -0.05, "maxY": 0.20 } },
+    { "id": "plant-pot-1", "asset": "plant-pot", "at": [4.45, 0.06, 3.17], "rotate": 0,
+      "role": "stackable", "parentId": "shelf-1" },
+    { "id": "book-1", "asset": "book", "at": [3.85, 0.05, 3.17], "rotate": 0,
+      "role": "stackable", "parentId": "shelf-1" },
+    { "id": "desk-1", "asset": "desk", "at": [1.85, 0.55, 0], "rotate": 0, "dragInsetNear": 0.4, "dragInsetFar": 1.6,
+      "role": "surface", "surfaceTopZ": 0.58,
+      "surfaceBounds": { "minX": -0.10, "maxX": 1.30, "minY": -0.10, "maxY": 0.60 } },
+    { "id": "lamp-1", "asset": "lamp", "at": [2.13, 0.69, 0.58], "rotate": 0, "scale": 0.75, "dragInsetNear": 0.4, "dragInsetFar": 0.6,
+      "role": "stackable", "parentId": "desk-1" },
+    { "id": "mug-1", "asset": "mug", "at": [3.02, 0.93, 0.58], "rotate": 0, "scale": 0.5, "dragInsetNear": 0.4, "dragInsetFar": 0.6,
+      "role": "stackable", "parentId": "desk-1" },
+    { "id": "stool-1", "asset": "stool", "at": [2.4, 1.47, 0], "rotate": 0, "scale": 1.5, "dragInsetNear": 0.4, "dragInsetFar": 0.6,
+      "role": "freestanding" }
   ]
 }

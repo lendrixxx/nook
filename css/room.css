@@ -93,3 +93,86 @@
 #stageChar.asleep .legs{ opacity:0; }
 #stageChar.asleep .charShadow{ opacity:0.5; width:34px; margin-left:-17px; }
 @keyframes breathe{ 0%,100%{ transform:rotate(-14deg) translateY(0); } 50%{ transform:rotate(-14deg) translateY(-2px); } }
+
+/* ---------- Furniture edit mode ---------- */
+
+/* Floor grid guide: invisible normally, fades in only while editing */
+.floor-grid{ opacity:0; pointer-events:none; transition:opacity .2s ease; }
+.room-edit-mode .floor-grid{ opacity:0.35; }
+
+/* Decorations don't intercept taps (tap-to-move needs to pass through
+   them) unless we're actively in edit mode */
+.deco{ pointer-events:none; touch-action:none; }
+.room-edit-mode .deco{
+  pointer-events:auto;
+  cursor:grab;
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+/* Belt-and-suspenders: the drag surface itself shouldn't let iOS treat
+   a held touch as the start of a page gesture (scroll/zoom/selection)
+   while in edit mode. */
+.room-edit-mode #roomSvg{
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.room-edit-mode .deco.dragging{
+  cursor:grabbing;
+  opacity:0.88;
+  filter:drop-shadow(0 8px 14px rgba(74,56,38,0.35));
+}
+
+/* Stackable item currently hovering somewhere with no supporting
+   surface underneath it — a clear "this won't land here" signal before
+   the item reverts on release. */
+.room-edit-mode .deco.invalid-drop{
+  saturate:0.5;
+  opacity:0.55;
+}
+
+/* A gentle tint over the whole stage while editing, so it's unmistakable
+   you're in "move stuff around" mode vs normal browsing */
+.room-edit-mode::after{
+  content:'';
+  position:absolute; inset:0;
+  background:rgba(126,155,126,0.06);
+  pointer-events:none;
+  z-index:3;
+}
+
+/* Edit/Save toggle button */
+#editRoomBtn.active{
+  background:var(--sage);
+  color:#fff;
+}
+
+/* Reset-in-progress-changes button: only shown while actively editing */
+#editResetBtn{ display:none; }
+#editResetBtn.visible{ display:flex; }
+
+/* Validation message banner, shown when Save is blocked */
+#roomEditStatus{
+  position:absolute;
+  left:50%;
+  bottom:78px;
+  transform:translateX(-50%) translateY(8px);
+  max-width:88%;
+  background:rgba(74,56,38,0.92);
+  color:#fff;
+  font-size:12.5px;
+  font-weight:700;
+  line-height:1.4;
+  padding:10px 14px;
+  border-radius:14px;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+  z-index:7;
+}
+#roomEditStatus.visible{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
