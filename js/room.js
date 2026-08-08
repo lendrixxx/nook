@@ -112,13 +112,13 @@ function buildRoomStructure(){
    editing this list or loading a different theme, not touching art or
    draw code. */
 export let ROOM_LAYOUT = [
-  { asset:'shelf',     at:[3.7, 0, 3.05] },
-  { asset:'plant-pot', at:[4.38, 0.06, 3.14] },
-  { asset:'book',      at:[3.88, 0.05, 3.14] },
-  { asset:'desk',      at:[2.15, 0.55, 0] },
-  { asset:'lamp',      at:[2.43, 0.69, 0.58] },
-  { asset:'mug',       at:[2.95, 0.93, 0.58], scale:0.7 },
-  { asset:'stool',     at:[2.70, 1.47, 0] }
+  { asset:'shelf',     at:[3.7, 0, 3.05], rotate:0 },
+  { asset:'plant-pot', at:[4.38, 0.06, 3.14], rotate:0 },
+  { asset:'book',      at:[3.88, 0.05, 3.14], rotate:0 },
+  { asset:'desk',      at:[2.15, 0.55, 0], rotate:30 },
+  { asset:'lamp',      at:[2.43, 0.69, 0.58], rotate:30 },
+  { asset:'mug',       at:[2.95, 0.93, 0.58], rotate:30, scale:0.7 },
+  { asset:'stool',     at:[2.70, 1.47, 0], rotate:30 }
 ];
 
 async function loadRoomDecorations(){
