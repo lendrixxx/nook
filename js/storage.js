@@ -7,6 +7,8 @@ const KEY_CHARACTER = 'nook_character';
 const KEY_FORECAST_MODE = 'nook_forecast_mode';
 const KEY_TODOS = 'nook_todos';
 const KEY_GCAL = 'nook_gcal';
+const KEY_FURNITURE_PREFIX = 'nook_furniture_'; // one key per theme, so switching
+                                                  // themes doesn't clobber other layouts
 
 export function loadSavedCharacter(){
   try{ return JSON.parse(localStorage.getItem(KEY_CHARACTER)); }
@@ -48,4 +50,19 @@ export function saveGcalState(gcal){
       events: gcal.events, lastUpdated: gcal.lastUpdated
     }));
   } catch(e){}
+}
+
+/* ---------------- Furniture layout (per theme) ---------------- */
+export function loadFurnitureLayout(themeId){
+  try{
+    const raw = localStorage.getItem(KEY_FURNITURE_PREFIX + themeId);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+export function saveFurnitureLayout(themeId, layout){
+  try{ localStorage.setItem(KEY_FURNITURE_PREFIX + themeId, JSON.stringify(layout)); }
+  catch(e){}
+}
+export function clearFurnitureLayout(themeId){
+  try{ localStorage.removeItem(KEY_FURNITURE_PREFIX + themeId); } catch(e){}
 }

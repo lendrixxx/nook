@@ -1,7 +1,8 @@
 import { $ } from './utils.js';
 import { state } from './state.js';
-import { iso, TILE, ORIGIN_X, ORIGIN_Y, VB_W, VB_H, ROOM_W, ROOM_D } from './room.js';
+import { iso, screenToIsoGrid, TILE, ORIGIN_X, ORIGIN_Y, VB_W, VB_H, ROOM_W, ROOM_D } from './room.js';
 import { getCharWrapEl, isCharAsleep, setCharAsleep, drawCharacter } from './companion.js';
+import { isEditMode } from './furniture.js';
 
 const stageEl = $('stage');
 const charWrapEl = getCharWrapEl();
@@ -18,6 +19,12 @@ const charWrapEl = getCharWrapEl();
    below (goToDesk, resolveIdleState, tap-to-move, future furniture taps)
    has to change, since it all reads from this registry rather than
    hardcoded spots of its own.
+
+   NOTE: these stand spots are independent of ROOM_LAYOUT in room.js, so
+   dragging the desk/bed via furniture.js's edit mode moves the art but
+   NOT where the character parks itself. Worth reconciling later if you
+   want drag to fully relocate a piece of furniture's function along
+   with its appearance.
    ========================================================================= */
 const FURNITURE = {
   desk:  { standSpot:{ x:2.53, y:1.55 }, activities:['todo','calendar'] },
@@ -81,18 +88,17 @@ export function leaveDesk(reason){
 }
 
 /* ---------------- Tap to move ---------------- */
-/* Inverts iso(gx,gy,0) to recover grid coordinates from a screen tap.
-   Rejects taps that clearly landed outside the room (e.g. on the sky
-   background), and clamps anything close to the edges so the character
-   can never be walked into a wall or off the visible floor. */
+/* Uses room.js's screenToIsoGrid (the same inverse-projection now shared
+   with furniture dragging) at gz=0, since the character always walks on
+   the floor plane. Rejects taps that clearly landed outside the room
+   (e.g. on the sky background), and clamps anything close to the edges
+   so the character can never be walked into a wall or off the visible
+   floor. */
 function screenToGrid(clientX, clientY){
   const rect = stageEl.getBoundingClientRect();
   const px = clientX - rect.left, py = clientY - rect.top;
   const X = px / rect.width * VB_W, Y = py / rect.height * VB_H;
-  const dx = X - ORIGIN_X, dy = Y - ORIGIN_Y;
-  const gx = (dx + 2*dy) / (2*TILE);
-  const gy = (2*dy - dx) / (2*TILE);
-  return { gx, gy };
+  return screenToIsoGrid(X, Y, 0);
 }
 let tapIdleTimer = null;
 function moveCharacterToTap(gx, gy){
@@ -113,6 +119,7 @@ export function initMovement(){
   stageEl.addEventListener('click', (e) => {
     if(document.querySelector('.sheet.open')) return; // don't fight with an open sheet
     if(e.target.closest('.scene-btn')) return; // the calendar/todo buttons handle their own taps
+    if(isEditMode()) return; // furniture drag mode owns taps on the room right now
     const { gx, gy } = screenToGrid(e.clientX, e.clientY);
     const margin = 0.5;
     if(gx < -margin || gx > ROOM_W+margin || gy < -margin || gy > ROOM_D+margin) return; // tapped outside the room entirely

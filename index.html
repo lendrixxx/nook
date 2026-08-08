@@ -48,7 +48,21 @@
       <button id="todoProp" class="scene-btn" title="To-dos">
         <svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>
       </button>
+
+      <button id="editRoomBtn" class="scene-btn" title="Move furniture">
+        <svg class="icon" viewBox="0 0 24 24" data-icon="move"></svg>
+      </button>
     </div>
+
+    <!-- Revert-in-progress-changes button: only visible while editing
+         (see #editResetBtn.visible in room.css, toggled by furniture.js) -->
+    <button id="editResetBtn" class="scene-btn" title="Undo changes since last save" style="right:auto; left:18px;">
+      <svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg>
+    </button>
+
+    <!-- Validation message banner, shown when Save is blocked -->
+    <div id="roomEditStatus"></div>
+
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -147,6 +161,19 @@
       <label>Calendars to show</label>
       <div id="gcalCalendarPicker"></div>
     </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>Room</h2>
+
+  <div class="field">
+    <button class="btn secondary" id="resetRoomLayoutBtn" style="margin-top:0;">
+      Reset room layout to theme default
+    </button>
+    <p class="hint">
+      Clears any furniture you've dragged around and restores the current theme's original layout.
+    </p>
   </div>
 
   <div class="divider"></div>

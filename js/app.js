@@ -29,6 +29,7 @@ import {
   fetchCalendarList, fetchCalendarEvents
 } from './calendar.js';
 import { initMovement, resolveIdleState } from './movement.js';
+import { initFurniture } from './furniture.js';
 import { initUI } from './ui.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
@@ -38,6 +39,7 @@ initWeatherUI();
 initTodos();
 initCalendar();
 initMovement();
+initFurniture();
 initUI();
 
 /* ---------------- Boot ---------------- */

@@ -12,7 +12,6 @@
     "--clay-dark": "#A85C34",
     "--card": "#FFFDF8",
     "--line": "#EEE0C4",
-
     "--room-wall-a": "#F3E6C9",
     "--room-wall-b": "#E7D2A2",
     "--room-floor": "#D8AE79",
@@ -33,19 +32,131 @@
     "--room-leaf-b": "#9DC79A",
     "--room-leaf-dull-a": "#C2A66B",
     "--room-leaf-dull-b": "#D4BC85",
-
     "--char-body": "#F6E9D3",
     "--char-belly": "#FFFBF2",
     "--char-cheek": "#F4A9A0",
     "--char-accent": "#C99A6E"
   },
   "roomLayout": [
-    { "asset": "shelf",     "at": [3.7, 0, 3.05] },
-    { "asset": "plant-pot", "at": [4.45, 0.06, 3.17] },
-    { "asset": "book",      "at": [3.85, 0.05, 3.17] },
-    { "asset": "desk",      "at": [1.85, 0.55, 0] },
-    { "asset": "lamp",      "at": [2.13, 0.69, 0.58] },
-    { "asset": "mug",       "at": [3.02, 0.93, 0.58] },
-    { "asset": "stool",     "at": [2.4, 1.47, 0] }
+    {
+      "id": "shelf-1",
+      "asset": "shelf",
+      "at": [
+        3.7,
+        0,
+        3.05
+      ],
+      "rotate": 0,
+      "dragInsetNear": 0.2,
+      "dragInsetFar": 0.6,
+      "role": "surface",
+      "surfaceTopZ": 3.17,
+      "surfaceBounds": {
+        "minX": -0.05,
+        "maxX": 0.95,
+        "minY": -0.05,
+        "maxY": 0.2
+      }
+    },
+    {
+      "id": "plant-pot-1",
+      "asset": "plant-pot",
+      "at": [
+        4.45,
+        0.06,
+        3.17
+      ],
+      "rotate": 0,
+      "role": "stackable",
+      "parentId": "shelf-1"
+    },
+    {
+      "id": "book-1",
+      "asset": "book",
+      "at": [
+        3.85,
+        0.05,
+        3.17
+      ],
+      "rotate": 0,
+      "role": "stackable",
+      "parentId": "shelf-1"
+    },
+    {
+      "id": "desk-1",
+      "asset": "desk",
+      "at": [
+        1.85,
+        0.55,
+        0
+      ],
+      "rotate": 0,
+      "dragInsetNear": 0.2,
+      "dragInsetFar": 0.8,
+      "role": "surface",
+      "surfaceTopZ": 0.58,
+      "surfaceBounds": {
+        "minX": -0.5,
+        "maxX": 0.5,
+        "minY": -0.3,
+        "maxY": 0.3
+      },
+      "anchor": [
+        32,
+        52
+      ]
+    },
+    {
+      "id": "lamp-1",
+      "asset": "lamp",
+      "at": [
+        1.85,
+        0.4,
+        0.58
+      ],
+      "rotate": 0,
+      "scale": 0.75,
+      "dragInsetNear": 0.2,
+      "dragInsetFar": 0.5,
+      "role": "stackable",
+      "parentId": "desk-1",
+      "anchor": [
+        32,
+        50
+      ]
+    },
+    {
+      "id": "mug-1",
+      "asset": "mug",
+      "at": [
+        2.05,
+        0.7,
+        0.58
+      ],
+      "rotate": 0,
+      "scale": 0.5,
+      "dragInsetNear": 0.2,
+      "dragInsetFar": 0.5,
+      "role": "stackable",
+      "parentId": "desk-1",
+      "anchor": [
+        35,
+        50
+      ]
+    },
+    {
+      "id": "stool-1",
+      "asset": "stool",
+      "at": [
+        2.4,
+        1.47,
+        0
+      ],
+      "rotate": 0,
+      "scale": 1.5,
+      "dragInsetNear": 0.2,
+      "dragInsetFar": 0.5,
+      "role": "freestanding"
+    }
   ]
 }
