@@ -24,6 +24,12 @@ if(saved){
 export const state = {
   lat:null, lon:null, locationName:'—', locationSub:'',
   weather:null, characterId: CHARACTERS[0].id,
+  /* IANA timezone name for the currently selected location (from
+     Open-Meteo's timezone=auto response) — used so "now", the hourly
+     forecast, and the "Updated" stamp all reflect the SELECTED place's
+     clock rather than the viewer's device clock. Null until the first
+     successful weather fetch. */
+  timezone:null,
   todos: []
 };
 

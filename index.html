@@ -22,20 +22,18 @@
 <body>
 <div id="app">
 
-  <header>
-    <div class="place">
-      <span class="name" id="placeName">Locating…</span>
-      <span class="sub" id="placeSub">&nbsp;</span>
-    </div>
-    <div class="header-actions">
-      <button class="iconbtn" id="settingsBtn" title="Settings"><svg class="icon" viewBox="0 0 24 24" data-icon="settings"></svg></button>
-    </div>
-  </header>
-
   <div class="stage" id="stage">
     <div id="skyBg"></div>
     <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
     <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
+
+    <!-- Settings now lives as a scene button in the room itself, rather
+         than a separate header bar — frees that vertical space up for
+         the room, which is why the stage reads bigger now. -->
+    <button id="settingsBtn" class="scene-btn scene-btn-settings" title="Settings">
+      <svg class="icon" viewBox="0 0 24 24" data-icon="settings"></svg>
+    </button>
+
     <div class="scene-actions">
       <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none;">
         <svg class="icon" viewBox="0 0 24 24" data-icon="calendar"></svg>
@@ -48,7 +46,6 @@
       <button id="todoProp" class="scene-btn" title="To-dos">
         <svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>
       </button>
-
       <button id="editRoomBtn" class="scene-btn" title="Move furniture">
         <svg class="icon" viewBox="0 0 24 24" data-icon="move"></svg>
       </button>
@@ -62,7 +59,6 @@
 
     <!-- Validation message banner, shown when Save is blocked -->
     <div id="roomEditStatus"></div>
-
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -73,19 +69,46 @@
   </div>
 
   <div class="infocard">
-    <div class="temp-row">
-      <div class="temp" id="tempVal">--<sup>°C</sup></div>
-      <div class="condition">
-        <div class="cond" id="condVal">—</div>
-        <div class="feel" id="feelVal">&nbsp;</div>
+    <!-- Location + current conditions + the local-time note all live in
+         one grouped section (no divider between them). The place name
+         now sits between the temperature and the condition text —
+         tappable, no chevron — and doubles as the entry point for
+         changing city; the fuller region/country line only shows inside
+         the search dropdown once tapped, so it never has to fight the
+         temperature and condition for space on the card itself. -->
+    <div class="weather-now">
+      <div class="temp-row">
+        <div class="temp" id="tempVal">--<sup>°C</sup></div>
+
+        <div class="place-mid">
+          <button class="place-btn" id="placeBtn" type="button">
+            <span class="name" id="placeName">Locating…</span>
+            <span class="sub" id="placeSub">&nbsp;</span>
+          </button>
+          <div class="place-search" id="placeSearch">
+            <div class="field" style="margin:0;">
+              <input type="text" id="citySearch" placeholder="Search a city…">
+            </div>
+            <div class="searchresults" id="cityResults"></div>
+          </div>
+        </div>
+
+        <div class="condition">
+          <div class="cond" id="condVal">—</div>
+          <div class="feel" id="feelVal">&nbsp;</div>
+        </div>
+      </div>
+
+      <p class="hint local-time-note">All times shown are local to the selected location.</p>
+
+      <div class="stat-row">
+        <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
+        <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
+        <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
+        <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
       </div>
     </div>
-    <div class="stat-row">
-      <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
-      <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
-      <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
-      <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
-    </div>
+
     <div class="forecast-header">
       <span class="forecast-toggle" data-mode="hourly">Hourly</span>
       <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
@@ -101,16 +124,6 @@
 <div class="sheet-backdrop" id="sheetBackdrop"></div>
 <div class="sheet" id="sheet">
   <div class="sheet-handle"></div>
-
-  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="sun-outline"></svg>Weather</h2>
-
-  <div class="field">
-    <label>Search a city</label>
-    <input type="text" id="citySearch" placeholder="e.g. Singapore, Kyoto, Lisbon">
-    <div class="searchresults" id="cityResults"></div>
-  </div>
-
-  <div class="divider"></div>
 
   <h2><svg class="icon" viewBox="0 0 24 24" data-icon="bell"></svg>Reminders</h2>
 

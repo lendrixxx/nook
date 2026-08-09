@@ -4,12 +4,66 @@
   padding:20px 22px 16px; box-shadow:var(--shadow-soft);
   border:1px solid rgba(238,224,196,0.7);
 }
-.temp-row{ display:flex; align-items:flex-end; justify-content:space-between; }
-.temp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:54px; line-height:1; letter-spacing:-1px; color:var(--ink); }
+
+/* ---------- "Now" section: location + current conditions + the
+   local-time note, grouped together with no divider between them, since
+   they're all describing the same thing — what it's like right now,
+   where. Only the forecast below gets its own separating border. ---------- */
+.weather-now{ margin-bottom:14px; padding-bottom:14px; border-bottom:1.5px solid var(--line); }
+
+/* Temperature (left) / place name (center) / condition (right), all
+   bottom-aligned so the three columns read as one cohesive line. Made
+   position:relative so the search dropdown below can span the FULL card
+   width rather than just the width of the narrow middle column. */
+.temp-row{ position:relative; display:flex; align-items:flex-end; justify-content:space-between; }
+.temp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:54px; line-height:1; letter-spacing:-1px; color:var(--ink); flex:0 0 auto; }
 .temp sup{ font-size:22px; font-weight:600; }
-.condition{ text-align:right; }
+.condition{ text-align:right; flex:0 0 auto; }
 .condition .cond{ font-weight:800; font-size:15px; text-transform:capitalize; }
 .condition .feel{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+
+/* Tapping the place name opens an inline search — no chevron or extra
+   icon, the dotted underline is the only affordance. Only the city name
+   shows here; the fuller "admin area, country" line (which can be long —
+   e.g. official ISO country names) is dropped from the card entirely and
+   only appears inside the search dropdown as a one-line "Currently: …"
+   reference once tapped, so it never competes with the temperature or
+   condition text for room in this tight middle column. */
+.place-mid{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  justify-content:center;
+  padding:0 8px 4px;
+}
+.place-btn{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:none; border:none; padding:2px 4px; cursor:pointer;
+  color:var(--ink);
+  max-width:100%;
+}
+.place-btn .name{
+  font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; color:var(--ink); letter-spacing:-0.2px;
+  border-bottom:1.5px dotted var(--ink-soft);
+  padding-bottom:1px;
+  white-space:nowrap;
+}
+.place-btn .sub{
+  font-size:10.5px; font-weight:700; color:var(--ink-soft);
+  line-height:1.25;
+  text-align:center;
+  max-width:150px;
+}
+.place-search{
+  display:none;
+  position:absolute; left:0; right:0; top:calc(100% + 6px);
+  background:#fff; border-radius:16px; padding:12px;
+  box-shadow:var(--shadow-soft); z-index:15;
+  border:1px solid var(--line);
+}
+.place-search.open{ display:block; }
+
+.local-time-note{ text-align:center; margin:10px 0 0; }
 .stat-row{ display:flex; gap:18px; margin-top:14px; padding-top:14px; border-top:1.5px solid var(--line); align-items:center; }
 .stat{ display:flex; flex-direction:column; gap:2px; }
 .stat .k{ font-size:10px; letter-spacing:.06em; color:var(--ink-soft); font-weight:700; text-transform:uppercase; }
@@ -44,7 +98,7 @@
 .forecast-day .fd-max{ font-size:12.5px; font-weight:800; }
 .forecast-day .fd-min{ font-size:11px; color:var(--ink-soft); font-weight:700; }
 .forecast-header{
-  display:flex; gap:14px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
+  display:flex; gap:14px; margin-top:0; padding-top:0;
 }
 .forecast-toggle{
   font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;

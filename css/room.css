@@ -2,7 +2,12 @@
 .stage{
   position:relative;
   flex:1;
-  margin:0 14px;
+  /* Top margin now carries the safe-area inset that used to live on the
+     header's padding — the header is gone, so the stage runs right up
+     to the notch/status bar, just inset enough not to sit under it.
+     This (plus the header's old vertical space) is what makes the room
+     read bigger now. */
+  margin:calc(env(safe-area-inset-top,0px) + 14px) 14px 0;
   border-radius:var(--radius);
   overflow:hidden;
   isolation:isolate;
@@ -67,6 +72,18 @@
   bottom:auto;
   right:auto;
 }
+/* Settings lives top-left of the room now (mirroring the to-do/calendar/
+   customize cluster bottom-right), a smaller, quieter chrome button
+   rather than one of the room's action props. */
+.scene-btn.scene-btn-settings{
+  bottom:auto;
+  right:auto;
+  top:14px;
+  left:14px;
+  width:44px;
+  height:44px;
+}
+.scene-btn.scene-btn-settings .icon{ width:19px; height:19px; }
 @keyframes btnPulse{
   0%{ box-shadow:0 0 0 0 rgba(231,111,81,0.55); }
   70%{ box-shadow:0 0 0 16px rgba(231,111,81,0); }

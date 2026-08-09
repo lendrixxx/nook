@@ -38,6 +38,43 @@ const WINDOW_SKY = {
 const FORECAST_GLYPH = { sunny:'sunny', partly:'partly', cloudy:'cloudy', foggy:'foggy', rainy:'rainy', snowy:'snowy', thunder:'thunder' };
 function weatherIconSVG(base, cls){ return '<svg class="'+(cls||'fd-icon')+'" viewBox="0 0 24 24" data-icon="weather/'+(FORECAST_GLYPH[base]||'cloudy')+'"></svg>'; }
 let forecastMode = loadForecastMode();
+
+/* ---------------- Location-local time helpers ----------------
+   Open-Meteo's timezone=auto param returns data already expressed in
+   the SELECTED location's own timezone (an IANA name in data.timezone,
+   e.g. "Asia/Singapore") — the hourly/daily timestamps that come back
+   are naive wall-clock strings with no UTC offset attached. Doing
+   `new Date(str)` on those and comparing against `new Date()` silently
+   reinterprets everything in the DEVICE's timezone instead, which is
+   wrong whenever you're looking at a location in a different zone.
+   These helpers instead ask Intl to tell us what "now" looks like IN
+   that location's timezone, so hourly bucketing, the "Now"/day label,
+   and the "Updated" stamp all track the place being viewed. */
+function locationDateKey(timezone){
+  return new Date().toLocaleDateString('en-CA', { timeZone: timezone || undefined });
+}
+function locationDateTimeKey(timezone){
+  // "YYYY-MM-DDTHH:MM" for the current instant, expressed in `timezone`.
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone || undefined,
+    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false
+  }).formatToParts(new Date());
+  const get = t => (parts.find(p=>p.type===t)||{}).value || '00';
+  let hour = get('hour');
+  if(hour === '24') hour = '00'; // some locales report midnight as 24:00 with hour12:false
+  return get('year')+'-'+get('month')+'-'+get('day')+'T'+hour+':'+get('minute');
+}
+function fmtHourLabel(timeStr){
+  // timeStr is a naive wall-clock string already in the location's own
+  // timezone (e.g. "2026-08-09T14:00") — read the digits directly rather
+  // than parsing as a Date, which would reinterpret them in the device's
+  // timezone.
+  const hh = parseInt(timeStr.slice(11,13), 10);
+  const period = hh >= 12 ? 'PM' : 'AM';
+  const h12 = ((hh + 11) % 12) + 1;
+  return h12 + ' ' + period;
+}
+
 export function renderForecast(){
   const el = $('forecastRow');
   if(!el) return;
@@ -48,7 +85,7 @@ export function renderForecast(){
 }
 function renderWeeklyForecast(el){
   if(!state.forecast) return;
-  const todayKey = localDateKey(new Date());
+  const todayKey = locationDateKey(state.timezone);
   el.innerHTML = state.forecast.map(d => {
     const isToday = d.date === todayKey;
     const label = isToday ? 'Today' : new Date(d.date+'T00:00:00').toLocaleDateString([], { weekday:'short' });
@@ -64,7 +101,7 @@ function renderHourlyForecast(el){
   if(!state.hourly || state.hourly.length === 0){ el.innerHTML = '<div class="todo-empty">Hourly data unavailable</div>'; return; }
   el.innerHTML = state.hourly.map((h, idx) => {
     const isNow = idx === 0;
-    const label = isNow ? 'Now' : new Date(h.time).toLocaleTimeString([], { hour:'numeric' });
+    const label = isNow ? 'Now' : fmtHourLabel(h.time);
     return '<div class="forecast-day'+(isNow?' fd-now':'')+'">'
       + '<span class="fd-name">'+label+'</span>'
       + weatherIconSVG(h.base)
@@ -98,7 +135,7 @@ export function renderScene(){
   $('tempVal').innerHTML = Math.round(w.temp) + '<sup>°C</sup>';
   $('windVal').textContent = Math.round(w.windKph) + ' km/h';
   $('humVal').textContent = w.humidity + '%';
-  $('updVal').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  $('updVal').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', timeZone: state.timezone || undefined});
   renderForecast();
 
   resolveIdleState();
@@ -126,6 +163,11 @@ export async function fetchWeather(lat, lon){
     + '&hourly=temperature_2m,weather_code&timezone=auto';
   const res = await fetch(url);
   const data = await res.json();
+  // Remember the SELECTED location's own IANA timezone (e.g.
+  // "Europe/Lisbon") so every "what time is it there" question downstream
+  // (hourly bucket, day label, Updated stamp) can be answered correctly
+  // regardless of what timezone the viewer's device is in.
+  state.timezone = data.timezone || null;
   const cur = data.current;
   const cls = classify(cur.weather_code, cur.wind_speed_10m);
   state.weather = {
@@ -141,16 +183,20 @@ export async function fetchWeather(lat, lon){
     }));
   }
   if(data.hourly){
-    const now = new Date();
+    const nowKey = locationDateTimeKey(state.timezone);
     const all = data.hourly.time.map((t,i) => ({
       time: t,
       base: classify(data.hourly.weather_code[i], 0).base,
       temp: data.hourly.temperature_2m[i]
     }));
-    // find the last hourly entry at/before now — that's the current hour's bucket
+    // find the last hourly entry at/before "now" IN THE LOCATION'S OWN
+    // TIMEZONE (not the device's) — that's the current hour's bucket.
+    // Both sides of this comparison are plain "YYYY-MM-DDTHH:MM" strings
+    // so lexicographic compare == chronological compare.
     let startIdx = 0;
     for(let i = 0; i < all.length; i++){
-      if(new Date(all[i].time) <= now) startIdx = i;
+      const key = all[i].time.length > 16 ? all[i].time.slice(0,16) : all[i].time;
+      if(key <= nowKey) startIdx = i;
       else break;
     }
     state.hourly = all.slice(startIdx, startIdx + 24);
@@ -185,27 +231,21 @@ function setLocationFromResult(r){
   $('placeName').textContent = state.locationName;
   $('placeSub').textContent = state.locationSub;
   fetchWeather(state.lat, state.lon);
-  closeSettingsSheet();
+  closePlaceSearch();
 }
 
-/* ---------------- Geolocation bootstrap ---------------- */
-export function locate(){
-  $('statusMsg').textContent = 'Finding your weather…';
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        state.lat = pos.coords.latitude; state.lon = pos.coords.longitude;
-        reverseGeocodeName(state.lat, state.lon);
-        fetchWeather(state.lat, state.lon).then(()=>{ $('statusMsg').textContent=''; });
-      },
-      err => {
-        $('statusMsg').textContent = 'Location off — search a city in Settings.';
-        $('placeName').textContent = 'Set a location';
-        $('placeSub').textContent = 'Tap settings to search';
-      },
-      { timeout:8000 }
-    );
-  } else { $('statusMsg').textContent = 'Search a city in Settings.'; }
+/* ---------------- Location bar (clickable place name + inline search) ----------------
+   Replaces the old "Search a city" field that used to live inside the
+   Settings sheet — the place name shown between the temperature and
+   condition text is now itself the entry point for changing location. */
+function openPlaceSearch(){
+  $('placeSearch').classList.add('open');
+  $('cityResults').innerHTML = '';
+  $('citySearch').value = '';
+  $('citySearch').focus();
+}
+function closePlaceSearch(){
+  $('placeSearch').classList.remove('open');
 }
 
 /* ---------------- Settings sheet ---------------- */
@@ -225,6 +265,14 @@ export function initWeatherUI(){
     };
   });
 
+  $('placeBtn').onclick = () => {
+    if($('placeSearch').classList.contains('open')) closePlaceSearch();
+    else openPlaceSearch();
+  };
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('.place-mid')) closePlaceSearch();
+  });
+
   let searchDebounce;
   $('citySearch').addEventListener('input', e=>{
     clearTimeout(searchDebounce);
@@ -241,6 +289,26 @@ export function initWeatherUI(){
       });
     }, 350);
   });
+}
+
+/* ---------------- Geolocation bootstrap ---------------- */
+export function locate(){
+  $('statusMsg').textContent = 'Finding your weather…';
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        state.lat = pos.coords.latitude; state.lon = pos.coords.longitude;
+        reverseGeocodeName(state.lat, state.lon);
+        fetchWeather(state.lat, state.lon).then(()=>{ $('statusMsg').textContent=''; });
+      },
+      err => {
+        $('statusMsg').textContent = 'Location off — tap the place name to search a city.';
+        $('placeName').textContent = 'Set a location';
+        $('placeSub').textContent = 'Tap to search';
+      },
+      { timeout:8000 }
+    );
+  } else { $('statusMsg').textContent = 'Tap the place name to search a city.'; }
 }
 
 /* Sets the initial active class on the Hourly/Weekly toggle at boot,

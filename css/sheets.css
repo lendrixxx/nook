@@ -36,6 +36,14 @@
   width:100%; padding:12px 14px; border-radius:14px; border:1.5px solid var(--line);
   background:#fff; font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; color:var(--ink);
 }
+/* Swaps the browser's default blue focus glow for one that matches the
+   app's own palette (sage), rather than removing focus styling outright
+   — the ring stays for accessibility/keyboard users, it's just on-brand. */
+.field input:focus, .field select:focus{
+  outline:none;
+  border-color:var(--sage);
+  box-shadow:0 0 0 3px rgba(126,155,126,0.25);
+}
 #todoDate {
   position: absolute;
   width: 1px;
