@@ -1,0 +1,29 @@
+/* ---------- Companion species-picker icon palette ----------
+   cat.svg / bear.svg / bunny.svg (assets/icons/) reference these
+   custom properties directly. They're kept separate from the core
+   room and character tokens in main.css since they're specific to the
+   flat species-picker glyphs, not the in-room companion rendering
+   (which is driven by real SVG art + --char- tokens instead, see
+   companion.js applyCompanionPalette()). ---------------------------- */
+:root{
+  --cat-fur:#E0A86A;
+  --cat-inner-ear:#F4B7C5;
+  --cat-muzzle:#FFF6EE;
+
+  --bunny-fur:#F4F0EB;
+  --bunny-inner-ear:#F6C5D7;
+  --bunny-muzzle:#FFF8F2;
+
+  --bear-fur:#A97855;
+  --bear-ear:#D9B08C;
+  --bear-muzzle:#F7EFE8;
+
+  --animal-eye:#35281F;
+  --animal-blush:#F5B5B5;
+}
+.species-option .icon{
+  stroke:none;
+}
+.species-option{
+  color: var(--ink);
+}
