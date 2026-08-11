@@ -117,6 +117,9 @@
 .floor-grid{ opacity:0; pointer-events:none; transition:opacity .2s ease; }
 .room-edit-mode .floor-grid{ opacity:0.35; }
 
+.floor-subgrid{ opacity:0; pointer-events:none; transition:opacity .2s ease; }
+.room-edit-mode .floor-subgrid{ opacity:0.35; }
+
 /* Decorations don't intercept taps (tap-to-move needs to pass through
    them) unless we're actively in edit mode */
 .deco{ pointer-events:none; touch-action:none; }

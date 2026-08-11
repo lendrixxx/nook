@@ -51,8 +51,14 @@ export function screenToIsoGrid(screenX, screenY, gz){
   return { gx, gy };
 }
 
-export function snapToGrid(v){
-  return Math.round(v / GRID_SNAP) * GRID_SNAP;
+export function snapToGrid(v, step = GRID_SNAP, offset = 0){
+  return Math.round((v - offset) / step) * step + offset;
+}
+
+export function clampSnappedToRoom(v, step, offset, margin, roomExtent){
+  const minValid = offset + Math.ceil((margin - offset) / step) * step;
+  const maxValid = offset + Math.floor((roomExtent - margin - offset) / step) * step;
+  return Math.min(Math.max(v, minValid), maxValid);
 }
 
 function roomPalette(){
@@ -125,6 +131,21 @@ function buildRoomStructure(){
   }
   svg += '</g>';
 
+  // Sub-grid guide (0.5-unit lines, dashed) — same fade-in-during-edit-
+  // mode pattern as floorGrid (see .floor-subgrid in room.css), just at
+  // the finer step furniture snaps to. Visualizes where quarter-cell
+  // positions actually land.
+  svg += '<g id="floorSubGrid" class="floor-subgrid">';
+  for(let gx=0.5; gx<ROOM_W; gx+=1){
+    const a = iso(gx,0,0), b = iso(gx,ROOM_D,0);
+    svg += '<line x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'" stroke="'+P.outline+'" stroke-width="0.75" stroke-dasharray="3 3"/>';
+  }
+  for(let gy=0.5; gy<ROOM_D; gy+=1){
+    const a = iso(0,gy,0), b = iso(ROOM_W,gy,0);
+    svg += '<line x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'" stroke="'+P.outline+'" stroke-width="0.75" stroke-dasharray="3 3"/>';
+  }
+  svg += '</g>';
+
   svg += '<g id="roomDecorations"></g>';
 
   svg += '<polygon id="windowPane" points="'+pts(windowQuad)+'" fill="url(#windowSkyGrad)"/>';
@@ -153,14 +174,16 @@ export let ROOM_LAYOUT = [
     role:'stackable', parentId:'shelf-1' },
   { id:'book-1', asset:'book', at:[3.88, 0.05, 3.14], rotate:0,
     role:'stackable', parentId:'shelf-1' },
-  { id:'desk-1', asset:'desk', at:[2.15, 0.55, 0], rotate:30,
+  { id:'desk-1', asset:'desk', at:[2.5, 0.5, 0], rotate:0,
+    snapStep:0.5, snapOffset:0, clampMargin:0.4,
     role:'surface', surfaceTopZ:0.58,
-    surfaceBounds:{ minX:-0.10, maxX:1.00, minY:-0.10, maxY:0.60 } },
-  { id:'lamp-1', asset:'lamp', at:[2.43, 0.69, 0.58], rotate:30,
-    role:'stackable', parentId:'desk-1' },
-  { id:'mug-1', asset:'mug', at:[2.95, 0.93, 0.58], rotate:30, scale:0.7,
-    role:'stackable', parentId:'desk-1' },
-  { id:'stool-1', asset:'stool', at:[2.70, 1.47, 0], rotate:30,
+    surfaceBounds:{ minX:-0.42, maxX:0.42, minY:-0.42, maxY:0.42 }, anchor:[22, 30] },
+  { id:'lamp-1', asset:'lamp', at:[2.3, 0.3, 0.58], rotate:0, anchor:[32,48],
+    role:'stackable', parentId:'desk-1', scale:0.55 },
+  { id:'mug-1', asset:'mug', at:[2.7, 0.3, 0.58], rotate:0, anchor:[29,50],
+    role:'stackable', parentId:'desk-1', scale:0.4 },
+  { id:'stool-1', asset:'stool', at:[3.5, 2.0, 0], rotate:0,
+    scale:1.5, snapStep:0.5, snapOffset:0, clampMargin:0.35,
     role:'freestanding' }
 ];
 
@@ -243,10 +266,8 @@ export function moveSurfaceGroup(surfaceId, gx, gy){
   if(!surface) return;
   const dx = gx - surface.at[0], dy = gy - surface.at[1];
   surface.at = [gx, gy, surface.at[2]];
-  const childInsetNear = 0.4, childInsetFar = 0.6; // small stackables still need more than the wall-side default for their own visible size
   getChildren(surfaceId).forEach(child => {
-    const moved = clampToRoom(child.at[0]+dx, child.at[1]+dy, childInsetNear, childInsetFar);
-    child.at = [moved.gx, moved.gy, child.at[2]];
+    child.at = [child.at[0]+dx, child.at[1]+dy, child.at[2]];
   });
 }
 

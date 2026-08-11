@@ -2,11 +2,13 @@ import { $ } from './utils.js';
 import { hydrateIcons } from './icons.js';
 import { clearFurnitureLayout } from './storage.js';
 import {
-  iso, screenToIsoGrid, snapToGrid, ROOM_LAYOUT, VB_W, VB_H,
+  iso, screenToIsoGrid, snapToGrid, clampSnappedToRoom, ROOM_LAYOUT, VB_W, VB_H,
+  ROOM_W, ROOM_D, GRID_SNAP,
   currentThemeId, findItem, getChildren, findSupportingSurface,
   updateItemPosition, moveSurfaceGroup, validateLayout, setRoomLayout,
-  persistRoomLayout, loadRoomDecorations, clampToRoom, getDragInsetNear, getDragInsetFar
+  persistRoomLayout, loadRoomDecorations, clampToRoom
 } from './room.js';
+
 
 /* =========================================================================
    FURNITURE — drag-to-place "edit room" mode.
@@ -89,7 +91,9 @@ function onPointerDown(e){
 
   dragging = {
     id, role: item.role, gz: item.at[2],
-    insetNear: getDragInsetNear(item), insetFar: getDragInsetFar(item),
+    snapStep: item.snapStep || GRID_SNAP,
+    snapOffset: item.snapOffset != null ? item.snapOffset : (item.snapStep || GRID_SNAP) / 2,
+    clampMargin: item.clampMargin != null ? item.clampMargin : (item.snapStep || GRID_SNAP) / 2,
     startGx: item.at[0], startGy: item.at[1],
     el: target, childEls,
     previewGx: item.at[0], previewGy: item.at[1],
@@ -103,28 +107,44 @@ function onPointerDown(e){
 function onPointerMove(e){
   if(!dragging) return;
   const pt = clientToViewBox(e.clientX, e.clientY);
-  const { gx, gy } = screenToIsoGrid(pt.x, pt.y, dragging.gz);
-  const clamped = clampToRoom(snapToGrid(gx), snapToGrid(gy), dragging.insetNear, dragging.insetFar);
+  const step = dragging.snapStep, offset = step/2;
+
+  function resolveClamped(gz){
+    const { gx, gy } = screenToIsoGrid(pt.x, pt.y, gz);
+    const step = dragging.snapStep, offset = dragging.snapOffset, margin = dragging.clampMargin;
+    return {
+      gx: clampSnappedToRoom(snapToGrid(gx, step, offset), step, offset, margin, ROOM_W),
+      gy: clampSnappedToRoom(snapToGrid(gy, step, offset), step, offset, margin, ROOM_D)
+    };
+  }
+
+  let clamped = resolveClamped(dragging.gz);
 
   if(dragging.role === 'stackable'){
-    const surface = findSupportingSurface(clamped.gx, clamped.gy);
+    let surface = findSupportingSurface(clamped.gx, clamped.gy);
+    const targetGz = surface.surfaceTopZ;
+    if(targetGz !== dragging.gz){
+      // crossed on/off a surface — recompute against the NEW height
+      // plane before rendering, instead of drawing at the stale
+      // height until drop (this is the fix you just tested)
+      dragging.gz = targetGz;
+      clamped = resolveClamped(dragging.gz);
+      surface = findSupportingSurface(clamped.gx, clamped.gy);
+    }
     dragging.validDrop = !!surface;
     dragging.resolvedParent = surface;
     dragging.el.classList.toggle('invalid-drop', !surface);
     applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
   } else if(dragging.role === 'surface'){
-    const dx = clamped.gx - dragging.startGx, dy = clamped.gy - dragging.startGy;
-    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
-    const childInsetNear = 0.4, childInsetFar = 0.6;
-    dragging.childEls.forEach(({ id: cid, el: cel }) => {
-      const child = findItem(cid);
-      // Clamp each child independently — don't just trust the surface's
-      // delta, since a child sitting far from the surface's anchor point
-      // (e.g. the mug relative to the desk) can overshoot the room
-      // bounds even when the surface itself is correctly clamped.
-      const childClamped = clampToRoom(child.at[0]+dx, child.at[1]+dy, childInsetNear, childInsetFar);
-      applyTransform(cel, childClamped.gx, childClamped.gy, child.at[2]);
-    });
+      const dx = clamped.gx - dragging.startGx, dy = clamped.gy - dragging.startGy;
+      applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
+      dragging.childEls.forEach(({ id: cid, el: cel }) => {
+        const child = findItem(cid);
+        // No independent clamp: the desk's own snap already keeps its
+        // whole footprint (and anything on it) inside the room, so
+        // children just rigidly follow the same delta.
+        applyTransform(cel, child.at[0]+dx, child.at[1]+dy, child.at[2]);
+      });
   } else {
     applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
   }
