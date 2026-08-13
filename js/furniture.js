@@ -104,6 +104,10 @@ function onPointerDown(e){
   e.preventDefault();
 }
 
+function cellsMatch(ax, ay, bx, by){
+  return Math.abs(ax - bx) < 0.01 && Math.abs(ay - by) < 0.01;
+}
+
 function onPointerMove(e){
   if(!dragging) return;
   const pt = clientToViewBox(e.clientX, e.clientY);
@@ -124,13 +128,25 @@ function onPointerMove(e){
     let surface = findSupportingSurface(clamped.gx, clamped.gy);
     const targetGz = surface.surfaceTopZ;
     if(targetGz !== dragging.gz){
-      // crossed on/off a surface — recompute against the NEW height
-      // plane before rendering, instead of drawing at the stale
-      // height until drop (this is the fix you just tested)
       dragging.gz = targetGz;
       clamped = resolveClamped(dragging.gz);
       surface = findSupportingSurface(clamped.gx, clamped.gy);
     }
+
+    // Reject landing on top of another item already on this surface.
+    // Snap the SIBLING's own position through the same grid the
+    // dragged item is using — comparing against its raw at[] would
+    // almost never match, since hand-placed default items (lamp, mug)
+    // aren't themselves sitting on grid-aligned coordinates.
+    const step = dragging.snapStep, offset = dragging.snapOffset;
+    const occupied = surface && getChildren(surface.id).some(sib => {
+      if(sib.id === dragging.id) return false;
+      const sibGx = snapToGrid(sib.at[0], step, offset);
+      const sibGy = snapToGrid(sib.at[1], step, offset);
+      return Math.abs(sibGx - clamped.gx) < 0.01 && Math.abs(sibGy - clamped.gy) < 0.01;
+    });
+    if(occupied) surface = null;
+
     dragging.validDrop = !!surface;
     dragging.resolvedParent = surface;
     dragging.el.classList.toggle('invalid-drop', !surface);
