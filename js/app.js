@@ -1,7 +1,15 @@
 // For debugging errors on mobile
 window.onerror = function(msg, url, line) {
+  // WebKit's share-sheet preview generation (and other cross-origin
+  // contexts) sometimes trips this with zero useful detail — genuine
+  // bugs in our own code always come with a real message + line number.
+  if (msg === 'Script error.' && line === 0) return;
   alert("ERROR:\n" + msg + "\nLine: " + line);
 };
+
+window.addEventListener('unhandledrejection', function(e) {
+  alert("PROMISE ERROR:\n" + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
 
 /* =========================================================================
    NOOK — a cozy weather companion, living in a small isometric room.
