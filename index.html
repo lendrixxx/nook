@@ -52,14 +52,36 @@
       </button>
     </div>
 
-    <!-- Revert-in-progress-changes button: only visible while editing
-         (see #editResetBtn.visible in room.css, toggled by furniture.js) -->
-    <button id="editResetBtn" class="scene-btn" title="Undo changes since last save" style="right:auto; left:18px;">
-      <svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg>
-    </button>
-
     <!-- Validation message banner, shown when Save is blocked -->
     <div id="roomEditStatus"></div>
+
+    <!-- Rotate / Move / Delete popup for a tapped placed item (edit mode
+         only). Tapping an item never moves it directly — this opens
+         first; "Move" is what actually arms dragging (see furniture.js). -->
+    <div id="itemPopup" class="item-popup">
+      <button class="popup-btn" id="itemPopupRotate">
+        <svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg>Rotate
+      </button>
+      <button class="popup-btn" id="itemPopupMove">
+        <svg class="icon" viewBox="0 0 24 24" data-icon="move"></svg>Move
+      </button>
+      <button class="popup-btn delete" id="itemPopupDelete">
+        <svg class="icon" viewBox="0 0 24 24" data-icon="trash"></svg>Delete
+      </button>
+    </div>
+
+    <!-- Confirm / cancel placement — appears once an item is armed for
+         Move (or is a brand-new not-yet-real item added from the
+         catalog). Dragging only previews a position now; confirm is the
+         only thing that actually commits it (see furniture.js
+         confirmPlacement()), and it's greyed out ("blocked") while the
+         current preview spot is invalid. Cancel discards the preview —
+         for a brand-new item that means it's simply never added. -->
+    <button id="itemConfirmBtn" class="item-confirm" title="Confirm placement">
+      <svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg>
+    </button>
+    <button id="itemCancelBtn" class="item-cancel" title="Cancel">✕</button>
+
     <div id="windowFog"></div>
     <canvas id="particles"></canvas>
     <div id="stageChar">
@@ -70,13 +92,6 @@
   </div>
 
   <div class="infocard">
-    <!-- Location + current conditions + the local-time note all live in
-         one grouped section (no divider between them). The place name
-         now sits between the temperature and the condition text —
-         tappable, no chevron — and doubles as the entry point for
-         changing city; the fuller region/country line only shows inside
-         the search dropdown once tapped, so it never has to fight the
-         temperature and condition for space on the card itself. -->
     <div class="weather-now">
       <div class="temp-row">
         <div class="temp" id="tempVal">--<sup>°C</sup></div>
@@ -115,6 +130,27 @@
       <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
     </div>
     <div class="forecast-row" id="forecastRow"></div>
+  </div>
+
+  <!-- Room edit panel — swaps in for the weather card above while
+       #editRoomBtn is active (see #app.room-editing in room.css). Owns
+       its own header controls (undo / cancel / save) since the weather
+       card's controls don't apply here. -->
+  <div class="infocard" id="roomEditPanel">
+    <div class="redit-header">
+      <div class="redit-title">Add to room</div>
+      <div class="redit-actions">
+        <button class="redit-icon-btn" id="reditResetBtn" title="Undo changes since last save">
+          <svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg>
+        </button>
+        <button class="redit-icon-btn" id="reditCancelBtn" title="Cancel">✕</button>
+        <button class="redit-icon-btn primary" id="reditSaveBtn" title="Save">
+          <svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg>
+        </button>
+      </div>
+    </div>
+    <div class="catalog-categories" id="catalogCategories"></div>
+    <div class="catalog-list" id="catalogList"></div>
   </div>
 
   <div class="switcher" id="switcher"></div>
@@ -183,10 +219,10 @@
 
   <div class="field">
     <button class="btn secondary" id="resetRoomLayoutBtn" style="margin-top:0;">
-      Reset room layout to theme default
+      Clear room
     </button>
     <p class="hint">
-      Clears any furniture you've dragged around and restores the current theme's original layout.
+      Removes every piece of furniture you've placed. There's no default layout to fall back to — this empties the room.
     </p>
   </div>
 

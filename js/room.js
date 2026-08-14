@@ -8,40 +8,12 @@ import { loadFurnitureLayout, saveFurnitureLayout } from './storage.js';
    A simple 2:1 grid projection. Everything (walls, floor, furniture, the
    window, and the character's walk path) is placed in "grid units" via
    iso(gx,gy,gz) and converted to the SVG's 400x380 viewBox.
-
-   Furniture placement is user-editable (see furniture.js). Every
-   ROOM_LAYOUT item has a `role`:
-     - 'surface'     — something other items can rest on (desk, shelf).
-                       Carries a `surfaceTopZ` (the height children sit
-                       at) and `surfaceBounds` (the placeable rectangle,
-                       as {minX,maxX,minY,maxY} offsets from the
-                       surface's own at[x,y]).
-     - 'stackable'   — sits on top of a surface via `parentId`. Can be
-                       re-parented by dragging it onto a different
-                       surface's footprint.
-     - 'freestanding'— sits on the floor on its own (stool), no parent,
-                       nothing rests on it.
-   This is what lets furniture.js guarantee a stackable can never be
-   saved floating in mid-air: moving a surface moves its children with
-   it, and a stackable dragged off every surface's footprint simply
-   reverts instead of landing somewhere invalid.
    ========================================================================= */
 export const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, ROOM_W=6, ROOM_D=6, WALL_H=5, VB_W=400, VB_H=380;
 export const GRID_SNAP = 0.5; // grid-unit increment furniture snaps to while dragging
 
 export function iso(gx,gy,gz){ return { x: ORIGIN_X+(gx-gy)*TILE, y: ORIGIN_Y+(gx+gy)*(TILE/2)-gz*ZSTEP }; }
 
-/* Inverse of iso() for a known height plane (gz). Screen-space Y depends
-   on both gx+gy AND gz, so gz has to be supplied — while dragging, we
-   hold the item's own current height fixed and only solve for gx/gy.
-   NOTE (known simplification): this means when a stackable is dragged
-   from one surface toward a differently-tall surface (e.g. desk-height
-   mug toward the higher shelf), the on-screen "aim point" is computed
-   using the mug's ORIGINAL height the whole time, not the shelf's — so
-   the drag can feel slightly off during the crossing, even though the
-   final snap (once dropped inside the shelf's footprint) is correct.
-   Recomputing against the hovered surface's height would fix this if
-   it bothers you in practice. */
 export function screenToIsoGrid(screenX, screenY, gz){
   const z = gz || 0;
   const adjX = screenX - ORIGIN_X;
@@ -61,6 +33,18 @@ export function clampSnappedToRoom(v, step, offset, margin, roomExtent){
   return Math.min(Math.max(v, minValid), maxValid);
 }
 
+/* Resolves an asset's effective snap step/offset/clamp margin, filling
+   in the same defaults furniture.js's drag logic has always used. Both
+   dragging AND building a new item's spawn point (buildNewItem, below)
+   go through this now, so a freshly-added item lands exactly where a
+   drag would have snapped it. */
+export function resolveSnapParams(def){
+  const snapStep = def.snapStep || GRID_SNAP;
+  const snapOffset = def.snapOffset != null ? def.snapOffset : snapStep / 2;
+  const clampMargin = def.clampMargin != null ? def.clampMargin : snapStep / 2;
+  return { snapStep, snapOffset, clampMargin };
+}
+
 function roomPalette(){
   return {
     wallA: cssVar('--room-wall-a'), wallB: cssVar('--room-wall-b'),
@@ -72,15 +56,6 @@ function roomPalette(){
     mug: cssVar('--room-mug'),
     leafA: cssVar('--room-leaf-a'), leafB: cssVar('--room-leaf-b')
   };
-}
-function isoBox(gx,gy,gz,w,d,h, baseColor, outline, strokeW){
-  const top   = [iso(gx,gy,gz+h), iso(gx+w,gy,gz+h), iso(gx+w,gy+d,gz+h), iso(gx,gy+d,gz+h)];
-  const right = [iso(gx+w,gy,gz), iso(gx+w,gy+d,gz), iso(gx+w,gy+d,gz+h), iso(gx+w,gy,gz+h)];
-  const front = [iso(gx,gy+d,gz), iso(gx+w,gy+d,gz), iso(gx+w,gy+d,gz+h), iso(gx,gy+d,gz+h)];
-  const so = outline ? ' stroke="'+outline+'" stroke-width="'+(strokeW||2.5)+'" stroke-linejoin="round"' : '';
-  return '<polygon points="'+pts(front)+'" fill="'+shade(baseColor,-16)+'"'+so+'/>'
-       + '<polygon points="'+pts(right)+'" fill="'+shade(baseColor,-7)+'"'+so+'/>'
-       + '<polygon points="'+pts(top)+'" fill="'+shade(baseColor,12)+'"'+so+'/>';
 }
 function boundingBox(quad){
   const xs=quad.map(p=>p.x), ys=quad.map(p=>p.y);
@@ -119,7 +94,6 @@ function buildRoomStructure(){
   svg += isoEllipse(3.05,2.55,0.02, 1.55,1.35, P.rug, ' stroke="'+shade(P.rug,-14)+'" stroke-width="2"');
   svg += isoEllipse(3.05,2.55,0.03, 1.05,0.9, 'none', ' stroke="'+P.rugLine+'" stroke-width="2.5" opacity="0.75"');
 
-  // Floor grid guide — invisible except during edit mode (room.css)
   svg += '<g id="floorGrid" class="floor-grid">';
   for(let gx=0; gx<=ROOM_W; gx++){
     const a = iso(gx,0,0), b = iso(gx,ROOM_D,0);
@@ -131,10 +105,6 @@ function buildRoomStructure(){
   }
   svg += '</g>';
 
-  // Sub-grid guide (0.5-unit lines, dashed) — same fade-in-during-edit-
-  // mode pattern as floorGrid (see .floor-subgrid in room.css), just at
-  // the finer step furniture snaps to. Visualizes where quarter-cell
-  // positions actually land.
   svg += '<g id="floorSubGrid" class="floor-subgrid">';
   for(let gx=0.5; gx<ROOM_W; gx+=1){
     const a = iso(gx,0,0), b = iso(gx,ROOM_D,0);
@@ -158,60 +128,98 @@ function buildRoomStructure(){
   return svg;
 }
 
-/* Default prop placement for the current room theme. Overwritten by
-   loadTheme() if the theme file defines its own roomLayout, then
-   overwritten AGAIN by any saved custom layout for that theme.
+/* =========================================================================
+   ITEM CATALOG — one entry per ASSET TYPE (not per placed item).
 
-   surfaceBounds are rough footprints estimated from the original static
-   offsets (e.g. plant-pot sat at +0.68/+0.06 relative to the shelf) —
-   tune these if they don't match your actual asset art once you see it
-   dragging in practice. */
-export let ROOM_LAYOUT = [
-  { id:'shelf-1', asset:'shelf', at:[3.7, 0, 3.05], rotate:0,
-    role:'surface', surfaceTopZ:3.14,
-    surfaceBounds:{ minX:-0.05, maxX:0.85, minY:-0.05, maxY:0.15 } },
-  { id:'plant-pot-1', asset:'plant-pot', at:[4.38, 0.06, 3.14], rotate:0,
-    role:'stackable', parentId:'shelf-1' },
-  { id:'book-1', asset:'book', at:[3.88, 0.05, 3.14], rotate:0,
-    role:'stackable', parentId:'shelf-1' },
-  { id:'desk-1', asset:'desk', at:[2.5, 0.5, 0], rotate:0,
-    snapStep:0.5, snapOffset:0, clampMargin:0.4,
-    role:'surface', surfaceTopZ:0.58,
-    surfaceBounds:{ minX:-0.42, maxX:0.42, minY:-0.42, maxY:0.42 }, anchor:[22, 30] },
-  { id:'lamp-1', asset:'lamp', at:[2.3, 0.3, 0.58], rotate:0, anchor:[32,48],
-    role:'stackable', parentId:'desk-1', scale:0.55 },
-  { id:'mug-1', asset:'mug', at:[2.7, 0.3, 0.58], rotate:0, anchor:[29,50],
-    role:'stackable', parentId:'desk-1', scale:0.4 },
-  { id:'stool-1', asset:'stool', at:[3.5, 2.0, 0], rotate:0,
+   `footprint` is the half-width/half-height (in grid units) of the
+   asset's actual floor footprint, used for real rectangle-overlap
+   collision (see isFloorSpotBlocked below).
+   ========================================================================= */
+export const ITEM_CATALOG = {
+  desk: {
+    label:'Desk', category:'furniture', role:'surface', defaultZ:0,
+    surfaceTopZ:0.58, surfaceBounds:{ minX:-0.42, maxX:0.42, minY:-0.42, maxY:0.42 },
+    snapStep:0.5, snapOffset:0, clampMargin:0.4, anchor:[22,30],
+    footprint:{ halfX:0.42, halfY:0.42 }
+  },
+  shelf: {
+    label:'Shelf', category:'furniture', role:'surface', defaultZ:3.05,
+    surfaceTopZ:3.17, surfaceBounds:{ minX:-0.05, maxX:0.95, minY:-0.05, maxY:0.2 },
+    footprint:{ halfX:0.5, halfY:0.25 }, // not currently checked — shelf is wall-mounted, see isFloorLevel()
+    // Locked to the back wall (gy=0, the wall WITHOUT the window — see
+    // buildRoomStructure()'s rightWall) rather than freely draggable
+    // across the floor like the desk/stool. Only gx varies.
+    wallLock:{ axis:'y', value:0 }
+  },
+  stool: {
+    label:'Stool', category:'seating', role:'freestanding', defaultZ:0,
     scale:1.5, snapStep:0.5, snapOffset:0, clampMargin:0.35,
-    role:'freestanding' }
+    footprint:{ halfX:0.3, halfY:0.3 }
+    // Anchor removed — [0,7], calculated from the legs' bottom points,
+    // made the actual on-screen position measurably worse rather than
+    // better. That means my read of what "anchor" means for this
+    // pipeline (bottom-most point of the geometry) doesn't match how it
+    // actually resolves in practice, and I don't have a way to verify
+    // a replacement value without seeing the live render. Back to no
+    // override (defaults to [0,0]) — the known, previously-reported
+    // "somewhat off" state rather than a worse, unverified guess.
+  },
+  'plant-pot': {
+    label:'Plant pot', category:'plants', role:'stackable',
+    scale:0.7,
+    footprint:{ halfX:0.22, halfY:0.22 }
+    // Same reasoning as the stool above — reverting the (0,8) guess
+    // rather than risk the same kind of regression here untested.
+  },
+  lamp: {
+    label:'Desk lamp', category:'decor', role:'stackable', anchor:[32,48], scale:0.55
+  },
+  mug: {
+    label:'Mug', category:'decor', role:'stackable', anchor:[29,50], scale:0.4
+  },
+  book: {
+    label:'Book', category:'decor', role:'stackable', scale:0.65,
+    // The source comment claims (0,0) is already correct, but the
+    // actual drawn geometry doesn't back that up: averaging the four
+    // corners of the book's own bottom-face polygon — (-7.2,3.6),
+    // (3.6,9.0), (10.8,5.4), (0,-0.8) — comes out to roughly (1.8,4.3),
+    // not (0,0). Trying that instead of the comment's claim. Given the
+    // stool result above, treat this as unconfirmed too until you've
+    // actually seen it.
+    anchor:[1.8,4.3]
+  }
+};
+
+export const ITEM_CATEGORIES = [
+  { key:'furniture', label:'Furniture' },
+  { key:'seating', label:'Seating' },
+  { key:'plants', label:'Plants' },
+  { key:'decor', label:'Decor' },
+  { key:'rugs', label:'Rugs' } // no catalog entries yet — the rug is still
+                                 // hardcoded geometry in buildRoomStructure()
 ];
 
-/* The room floor itself counts as an always-available surface at
-   ground level — this is what lets a stackable (lamp, mug, etc.) be
-   placed directly on the floor, not just on a piece of furniture. It's
-   a plain object, not a ROOM_LAYOUT entry (nothing drags "the floor"),
-   so validateLayout() and findSupportingSurface() special-case its id. */
+export function getItemDef(item){
+  return (item && ITEM_CATALOG[item.asset]) || {};
+}
+
+export const DEFAULT_FOOTPRINT = { halfX:0.18, halfY:0.18 };
+export function getFootprint(def){
+  return (def && def.footprint) || DEFAULT_FOOTPRINT;
+}
+
+/* Every player starts with a bare room — no default furniture. This is
+   also what "reset" now falls back to (see the settings-sheet button in
+   index.html): there's no separate "theme default" layout to restore
+   to anymore, so resetting and clearing are the same operation. */
+export let ROOM_LAYOUT = [];
+
 export const FLOOR_SURFACE = { id:'floor', surfaceTopZ:0 };
 
 export function findItem(id){ return ROOM_LAYOUT.find(i => i.id === id); }
-export function getSurfaces(){ return ROOM_LAYOUT.filter(i => i.role === 'surface'); }
+export function getSurfaces(){ return ROOM_LAYOUT.filter(i => getItemDef(i).role === 'surface'); }
 export function getChildren(surfaceId){ return ROOM_LAYOUT.filter(i => i.parentId === surfaceId); }
 
-/* Shared bounds clamp — used for freestanding/surface drags AND for
-   children being carried along by a surface drag.
-
-   The room is NOT symmetric: gx=0/gy=0 are backed by actual walls (an
-   item's edge can safely get quite close, since the wall visually
-   covers any slight overhang), while gx=ROOM_W/gy=ROOM_D are the OPEN
-   front of the room — the floor just ends into the exterior background
-   there, so a wide item needs a much bigger margin to avoid visually
-   hanging off the edge. A single symmetric inset was fighting itself:
-   loose enough to stop escape on the open side meant needlessly
-   trapping items far from the walls on the other side.
-
-   `insetNear` = margin from the wall-backed sides (gx=0, gy=0).
-   `insetFar`  = margin from the open front sides (gx=ROOM_W, gy=ROOM_D). */
 export function clampToRoom(gx, gy, insetNear = 0.35, insetFar = 0.35){
   return {
     gx: Math.min(Math.max(gx, insetNear), ROOM_W - insetFar),
@@ -219,37 +227,52 @@ export function clampToRoom(gx, gy, insetNear = 0.35, insetFar = 0.35){
   };
 }
 
-export const DEFAULT_DRAG_INSET = 0.35;
-export function getDragInsetNear(item){
-  return (item && item.dragInsetNear != null) ? item.dragInsetNear : DEFAULT_DRAG_INSET;
-}
-export function getDragInsetFar(item){
-  return (item && item.dragInsetFar != null) ? item.dragInsetFar : DEFAULT_DRAG_INSET;
-}
-
 export function isWithinSurface(surface, gx, gy){
-  const b = surface.surfaceBounds;
+  const b = getItemDef(surface).surfaceBounds;
   if(!b) return false;
   const dx = gx - surface.at[0], dy = gy - surface.at[1];
   return dx >= b.minX && dx <= b.maxX && dy >= b.minY && dy <= b.maxY;
 }
 
-/* Which surface a stackable dropped at (gx,gy) would rest on. A real
-   furniture surface (desk/shelf) wins if its footprint matches;
-   otherwise it always falls back to the floor, so a stackable is never
-   actually "invalid" to drop anywhere within the room bounds — the
-   room-bounds clamp (see furniture.js) is the only real constraint. */
 export function findSupportingSurface(gx, gy){
-  return getSurfaces().find(s => isWithinSurface(s, gx, gy)) || FLOOR_SURFACE;
+  const hit = getSurfaces().find(s => isWithinSurface(s, gx, gy));
+  if(!hit) return FLOOR_SURFACE;
+  return { id: hit.id, surfaceTopZ: getItemDef(hit).surfaceTopZ };
 }
 
-/* Repositions a freestanding/surface item, OR a stackable being
-   re-parented onto `newParent` (adopts newParent's surfaceTopZ so it
-   doesn't float at its old height on a new surface). */
+/* ---------------- floor-level collision (freestanding / surface items) ----------------
+   Real axis-aligned rectangle overlap, sized to each item's own
+   footprint. Scoped to floor-level items only (z ≈ 0) so a floor desk
+   under the wall-mounted shelf is never wrongly treated as colliding
+   with it. */
+function isFloorLevel(item){
+  return (item.at[2] || 0) < 0.1;
+}
+
+// Small extra buffer on top of the two items' combined footprint half-
+// extents, so a position right at the mathematical boundary reads as
+// blocked rather than just barely sneaking through.
+const COLLISION_PADDING = 0.05;
+
+export function isFloorSpotBlocked(movingDef, gx, gy, excludeId){
+  const fp = getFootprint(movingDef);
+  return ROOM_LAYOUT.some(i => {
+    if(i.id === excludeId) return false;
+    const otherDef = getItemDef(i);
+    if(otherDef.role !== 'freestanding' && otherDef.role !== 'surface') return false;
+    if(!isFloorLevel(i)) return false;
+    const otherFp = getFootprint(otherDef);
+    const dx = Math.abs(i.at[0] - gx);
+    const dy = Math.abs(i.at[1] - gy);
+    return dx < (fp.halfX + otherFp.halfX + COLLISION_PADDING) && dy < (fp.halfY + otherFp.halfY + COLLISION_PADDING);
+  });
+}
+
 export function updateItemPosition(id, gx, gy, newParent){
   const item = findItem(id);
   if(!item) return false;
-  if(item.role === 'stackable' && newParent){
+  const def = getItemDef(item);
+  if(def.role === 'stackable' && newParent){
     item.parentId = newParent.id;
     item.at = [gx, gy, newParent.surfaceTopZ];
   } else {
@@ -258,9 +281,6 @@ export function updateItemPosition(id, gx, gy, newParent){
   return true;
 }
 
-/* Moves a surface and carries every item resting on it along by the
-   same delta — this is what guarantees a plant/book/mug can never be
-   left floating after its desk or shelf gets dragged. */
 export function moveSurfaceGroup(surfaceId, gx, gy){
   const surface = findItem(surfaceId);
   if(!surface) return;
@@ -271,21 +291,24 @@ export function moveSurfaceGroup(surfaceId, gx, gy){
   });
 }
 
-/* Defensive check run right before persisting: every stackable must
-   actually sit within its declared parent's footprint. In normal use
-   furniture.js's drag logic never lets an invalid position happen in
-   the first place (see the revert-on-invalid-drop in onPointerUp), but
-   this is the hard backstop that guarantees a broken layout is never
-   the thing that gets written to storage. */
+/* Defensive check run right before persisting — the hard backstop that
+   guarantees a broken layout is never the thing that gets written to
+   storage, regardless of what the drag/drop UI already prevented. */
 export function validateLayout(layout){
   const problems = [];
   layout.forEach(item => {
-    if(item.role !== 'stackable') return;
-    if(item.parentId === FLOOR_SURFACE.id) return; // resting on the floor is always valid
-    const parent = layout.find(i => i.id === item.parentId);
-    if(!parent){ problems.push(item.id + ' has no parent surface'); return; }
-    if(!isWithinSurface(parent, item.at[0], item.at[1])){
-      problems.push(item.id + ' is not resting on ' + parent.id);
+    const def = getItemDef(item);
+    if(def.role === 'stackable'){
+      if(item.parentId === FLOOR_SURFACE.id) return; // resting on the floor is always valid
+      const parent = layout.find(i => i.id === item.parentId);
+      if(!parent){ problems.push(item.id + ' has no parent surface'); return; }
+      if(!isWithinSurface(parent, item.at[0], item.at[1])){
+        problems.push(item.id + ' is not resting on ' + parent.id);
+      }
+      return;
+    }
+    if((def.role === 'freestanding' || def.role === 'surface') && isFloorSpotBlocked(def, item.at[0], item.at[1], item.id)){
+      problems.push(item.id + ' is overlapping another item');
     }
   });
   return { valid: problems.length === 0, problems };
@@ -299,31 +322,97 @@ export function persistRoomLayout(){
   saveFurnitureLayout(currentThemeId, ROOM_LAYOUT);
 }
 
+/* ---------------- catalog operations: build (preview) / commit / remove / rotate ----------------
+   Adding an item is now two-phase: buildNewItem() only computes a
+   candidate object (id, asset, spawn position) — it does NOT touch
+   ROOM_LAYOUT. The candidate is rendered as a temporary "ghost" by
+   furniture.js and behaves exactly like any other armed item (drag to
+   reposition, confirm to place). Only commitNewItem() actually inserts
+   it into ROOM_LAYOUT, and that only happens if the person taps the
+   confirm checkmark. If they cancel instead, there's nothing to clean
+   up — the candidate was never real to begin with. (An earlier version
+   inserted immediately on add, which meant canceling could leave a
+   newly-added item permanently overlapping something else, since
+   "cancel" only reset the UI's armed state, not the underlying data.) */
+const SPAWN_BASE = { gx: 1.1, gy: 5.0 };
+const SPAWN_RADIUS = 0.5;
+const SPAWN_POSITIONS = 8;
+let spawnIndex = 0;
+
+/* For assets that only make sense mounted to a specific wall (the
+   shelf) rather than freely draggable across the whole floor like the
+   desk/stool. Pins one axis to a fixed value; the other stays free.
+   Applied both at spawn time (below) and continuously during drag (see
+   furniture.js's resolveClamped()). */
+export function applyWallLock(def, gx, gy){
+  if(!def.wallLock) return { gx, gy };
+  const { axis, value } = def.wallLock;
+  return axis === 'y' ? { gx, gy: value } : { gx: value, gy };
+}
+
+function nextSpawnPoint(def){
+  const angle = (spawnIndex % SPAWN_POSITIONS) / SPAWN_POSITIONS * Math.PI * 2;
+  spawnIndex++;
+  const rawGx = SPAWN_BASE.gx + Math.cos(angle) * SPAWN_RADIUS;
+  const rawGy = SPAWN_BASE.gy + Math.sin(angle) * SPAWN_RADIUS;
+  const { snapStep, snapOffset, clampMargin } = resolveSnapParams(def);
+  const gx = clampSnappedToRoom(snapToGrid(rawGx, snapStep, snapOffset), snapStep, snapOffset, clampMargin, ROOM_W);
+  const gy = clampSnappedToRoom(snapToGrid(rawGy, snapStep, snapOffset), snapStep, snapOffset, clampMargin, ROOM_D);
+  return applyWallLock(def, gx, gy);
+}
+
+export function buildNewItem(assetKey){
+  const def = ITEM_CATALOG[assetKey];
+  if(!def) return null;
+  const id = assetKey + '-' + crypto.randomUUID();
+  const { gx, gy } = nextSpawnPoint(def);
+  return def.role === 'stackable'
+    ? { id, asset:assetKey, at:[gx, gy, FLOOR_SURFACE.surfaceTopZ], rotate:0, parentId:FLOOR_SURFACE.id }
+    : { id, asset:assetKey, at:[gx, gy, def.defaultZ || 0], rotate:0 };
+}
+
+export function commitNewItem(item){
+  ROOM_LAYOUT = [...ROOM_LAYOUT, item];
+}
+
+export function removeItem(id){
+  const item = findItem(id);
+  if(!item) return false;
+  if(getItemDef(item).role === 'surface'){
+    getChildren(id).forEach(child => {
+      child.parentId = FLOOR_SURFACE.id;
+      child.at = [child.at[0], child.at[1], FLOOR_SURFACE.surfaceTopZ];
+    });
+  }
+  ROOM_LAYOUT = ROOM_LAYOUT.filter(i => i.id !== id);
+  return true;
+}
+
+export function rotateItem(id, deltaDeg = 90){
+  const item = findItem(id);
+  if(!item) return;
+  item.rotate = ((item.rotate || 0) + deltaDeg + 360) % 360;
+}
+
+export function countPlaced(assetKey){
+  return ROOM_LAYOUT.filter(i => i.asset === assetKey).length;
+}
+
+/* ---------------- rendering ---------------- */
+
 export async function loadRoomDecorations(){
   const host = $('roomDecorations');
   if(!host) return;
   const placed = await Promise.all(ROOM_LAYOUT.map(async item => {
+    const def = getItemDef(item);
     let svgText;
     try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
     catch(e){ return ''; }
     const p = iso(item.at[0], item.at[1], item.at[2]);
-    const scale = item.scale || 1;
+    const scale = def.scale || 1;
     const rotate = item.rotate || 0;
     const inner = stripSvgWrapper(svgText);
-    // `anchor` is the [x,y] point, in the asset's OWN raw SVG-unit
-    // coordinate space, that should land on the grid position — NOT
-    // necessarily the viewBox's (0,0). Decoration assets are typically
-    // hand-drawn somewhere in the middle of their viewBox rather than
-    // flush against its origin, so without this compensation the
-    // rendered artwork sits offset from where the anchor math thinks it
-    // is (by as much as a full grid unit) — this was the root cause
-    // behind furniture appearing to "escape" the clamped bounds and
-    // stackables looking misaligned on their surface: the ANCHOR was
-    // correctly positioned and correctly clamped the whole time, but
-    // the drawn PICTURE wasn't where the anchor was. Defaults to [0,0]
-    // (no compensation) for any asset that hasn't had its anchor
-    // measured yet.
-    const anchor = item.anchor || [0, 0];
+    const anchor = def.anchor || [0, 0];
     const transform = 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') rotate('+rotate+') scale('+scale+') translate('+(-anchor[0]).toFixed(1)+','+(-anchor[1]).toFixed(1)+')';
     return '<g class="deco" data-asset="'+item.asset+'" data-id="'+item.id+'" data-gz="'+item.at[2]+'" transform="'+transform+'">'+inner+'</g>';
   }));
@@ -355,8 +444,8 @@ export async function loadTheme(themeId){
   }
 
   const saved = loadFurnitureLayout(currentThemeId);
-  if(Array.isArray(saved) && saved.length){
-    ROOM_LAYOUT = saved;
+  if(Array.isArray(saved)){
+    ROOM_LAYOUT = saved; // includes an explicitly-saved EMPTY layout, not just a non-empty one
   }
 
   await initRoom();

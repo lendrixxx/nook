@@ -125,7 +125,7 @@
 .deco{ pointer-events:none; touch-action:none; }
 .room-edit-mode .deco{
   pointer-events:auto;
-  cursor:grab;
+  cursor:pointer; /* default is "tap to select" — only an armed item gets 'grab' below */
   -webkit-touch-callout:none;
   -webkit-user-select:none;
   user-select:none;
@@ -140,17 +140,56 @@
 }
 .room-edit-mode .deco.dragging{
   cursor:grabbing;
-  opacity:0.88;
   filter:drop-shadow(0 8px 14px rgba(74,56,38,0.35));
 }
 
-/* Stackable item currently hovering somewhere with no supporting
-   surface underneath it — a clear "this won't land here" signal before
-   the item reverts on release. */
-.room-edit-mode .deco.invalid-drop{
-  saturate:0.5;
-  opacity:0.55;
+/* Selected (menu open) highlight on the actual placed item — see
+   furniture.js reapplyEditHighlights().
+
+   NOTE: drop-shadow() only accepts x-offset, y-offset, blur-radius, then
+   color — unlike box-shadow it has NO spread argument. An earlier version
+   of these rules was written as drop-shadow(0 0 0 2.5px color), which is
+   4 length values + a color — invalid syntax, so the entire filter
+   declaration was silently dropped and nothing rendered. Stacking four
+   small directional shadows (one per side, 0 blur) approximates a ring
+   instead, and every individual drop-shadow() call here stays within the
+   3-length-values-then-color limit. */
+.room-edit-mode .deco.item-selected{
+  filter:
+    drop-shadow(1.5px 0 0 var(--clay))
+    drop-shadow(-1.5px 0 0 var(--clay))
+    drop-shadow(0 1.5px 0 var(--clay))
+    drop-shadow(0 -1.5px 0 var(--clay))
+    drop-shadow(0 6px 10px rgba(74,56,38,0.3));
 }
+
+/* Armed-for-move: steadily translucent for as long as it's armed (not
+   pulsing), so it's obvious at a glance which item — and, for a
+   surface, which whole group of items — a drag will actually move
+   right now. The green/red validity signal itself lives in
+   #dropIndicatorShape (below) — a solid shape drawn on the floor —
+   rather than as a filter/glow on the artwork, after two earlier
+   attempts at a colored outline turned out to be invalid CSS or just
+   too subtle to reliably see. */
+.room-edit-mode .deco.item-armed{
+  cursor:grab;
+  opacity:0.6;
+}
+
+/* ---------- Drop indicator ----------
+   A plain SVG polygon (see furniture.js ensureDropIndicator()), sized
+   to the armed item's real footprint and colored green/red via JS-set
+   fill/stroke attributes rather than CSS classes, since the color has
+   to change every drag frame. Created once and persists across
+   loadRoomDecorations() re-renders (that only touches #roomDecorations,
+   not its siblings). */
+.drop-indicator{
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .12s ease;
+  stroke-width:2.5;
+}
+.drop-indicator.visible{ opacity:1; }
 
 /* A gentle tint over the whole stage while editing, so it's unmistakable
    you're in "move stuff around" mode vs normal browsing */
@@ -161,16 +200,6 @@
   pointer-events:none;
   z-index:3;
 }
-
-/* Edit/Save toggle button */
-#editRoomBtn.active{
-  background:var(--sage);
-  color:#fff;
-}
-
-/* Reset-in-progress-changes button: only shown while actively editing */
-#editResetBtn{ display:none; }
-#editResetBtn.visible{ display:flex; }
 
 /* Validation message banner, shown when Save is blocked */
 #roomEditStatus{
@@ -196,3 +225,115 @@
   opacity:1;
   transform:translateX(-50%) translateY(0);
 }
+
+/* ---------- Rotate / Move / Delete popup for a tapped placed item ---------- */
+.item-popup{
+  position:absolute; display:none; flex-direction:column; gap:2px;
+  background:#fff; border-radius:14px; padding:6px;
+  box-shadow:0 12px 26px -10px rgba(74,56,38,0.45);
+  z-index:9; transform:translateX(-50%);
+}
+.item-popup.visible{ display:flex; }
+.item-popup .popup-btn{
+  display:flex; align-items:center; gap:7px;
+  border:none; background:none; cursor:pointer;
+  padding:8px 12px; border-radius:10px;
+  font-size:12.5px; font-weight:800; color:var(--ink);
+  white-space:nowrap;
+}
+.item-popup .popup-btn .icon{ width:14px; height:14px; }
+.item-popup .popup-btn:active{ background:#F1E6CE; }
+.item-popup .popup-btn.delete{ color:#C1512D; }
+
+/* ---------- Confirm / cancel placement buttons ----------
+   Shown as a pair once an item is armed for Move (or is a brand-new
+   ghost item just added from the catalog) — positioned well above the
+   item itself (see furniture.js positionPlacementControls()) so neither
+   is easy to hit by accident while interacting with the item. Dragging
+   only previews now; confirm is what actually commits the position.
+   "blocked" (muted colors, but still tappable so a tap can surface the
+   status message) reflects the live-computed validity of the current
+   preview spot. Cancel always works regardless of validity, and simply
+   discards the preview — for a brand-new item that means it's never
+   added at all. */
+.item-confirm, .item-cancel{
+  position:absolute; display:none;
+  width:38px; height:38px; border-radius:50%; border:none; cursor:pointer;
+  align-items:center; justify-content:center;
+  box-shadow:0 10px 22px -10px rgba(74,56,38,0.5);
+  z-index:10;
+  transform:translate(-50%, -50%);
+  transition:transform .12s ease;
+}
+.item-confirm{ background:var(--sage); color:#fff; }
+.item-cancel{ background:#fff; color:#C1512D; font-size:15px; font-weight:800; }
+.item-confirm .icon{ width:18px; height:18px; }
+.item-confirm.visible, .item-cancel.visible{ display:flex; }
+.item-confirm.blocked{ background:#D8C9AE; color:#8A7A5E; }
+.item-confirm:active, .item-cancel:active{ transform:translate(-50%, -50%) scale(0.88); }
+
+/* ---------- Room edit panel — replaces the weather card while editing
+   (see index.html #roomEditPanel; toggled via #app.room-editing) ----------
+
+   min-height matches roughly what the weather card normally occupies.
+   Without this, a short catalog list (e.g. the empty "Rugs" category)
+   makes this panel shrink well below the weather card's usual height,
+   which in turn lets .stage (flex:1, filling whatever's left over in
+   the #app column) balloon taller than its 400:380 artwork was ever
+   meant to fill — since #roomSvg uses preserveAspectRatio="none" so its
+   click/drag math stays linear, that extra height shows up as visible
+   vertical stretch rather than letterboxing. This keeps the overall
+   #app layout roughly stable across every state instead. */
+#roomEditPanel{ display:none; min-height:270px; }
+#app.room-editing .infocard:not(#roomEditPanel){ display:none; }
+#app.room-editing #roomEditPanel{ display:flex; flex-direction:column; }
+#app.room-editing #editRoomBtn{ display:none; }
+
+.redit-header{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
+}
+.redit-title{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; color:var(--ink); }
+.redit-actions{ display:flex; gap:8px; }
+.redit-icon-btn{
+  width:32px; height:32px; border-radius:50%; border:none; cursor:pointer;
+  background:#F1E6CE; color:var(--ink); font-size:14px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+.redit-icon-btn .icon{ width:15px; height:15px; }
+.redit-icon-btn.primary{ background:var(--sage); color:#fff; }
+.redit-icon-btn:active{ transform:scale(0.9); }
+
+.catalog-categories{
+  display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:10px; flex:none;
+}
+.catalog-categories::-webkit-scrollbar{ display:none; }
+.catalog-categories .cat-chip{
+  flex:0 0 auto; padding:6px 14px; border-radius:999px;
+  background:var(--card); border:2px solid var(--line);
+  font-weight:800; font-size:11.5px; color:var(--ink-soft); cursor:pointer;
+}
+.catalog-categories .cat-chip.active{ border-color:var(--sage); background:#F1F6F2; color:var(--sage-dark); }
+
+.catalog-list{ flex:1; min-height:0; overflow-y:auto; }
+.catalog-row{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 2px; border-bottom:1px solid var(--line);
+}
+.catalog-row:last-child{ border-bottom:none; }
+.catalog-thumb{
+  width:34px; height:34px; border-radius:10px; background:#F1E6CE;
+  display:flex; align-items:center; justify-content:center; padding:5px; flex:none;
+}
+.catalog-thumb svg{ width:100%; height:100%; }
+.catalog-name{ flex:1; font-size:12.5px; font-weight:800; color:var(--ink); }
+.catalog-count{
+  font-size:10px; font-weight:800; color:var(--sage-dark); background:#EAF2ED;
+  padding:2px 6px; border-radius:999px; margin-left:4px;
+}
+.catalog-add{
+  flex:none; width:28px; height:28px; border-radius:50%; border:none; cursor:pointer;
+  background:var(--sage); color:#fff; font-size:15px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+.catalog-add:active{ transform:scale(0.9); }
+.catalog-empty{ font-size:12px; color:var(--ink-soft); text-align:center; padding:16px 0; }
