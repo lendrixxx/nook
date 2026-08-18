@@ -10,6 +10,11 @@
    they're all describing the same thing — what it's like right now,
    where. Only the forecast below gets its own separating border. ---------- */
 .weather-now{ margin-bottom:14px; padding-bottom:14px; border-bottom:1.5px solid var(--line); }
+/* Hidden (not just visually) while the stats page is active — see
+   statsPanel.js goToPage() — so the card only ever shows one "mode"
+   worth of content at a time instead of weather-now + the full stats
+   panel stacking together. */
+.weather-now.is-hidden{ display:none; }
 
 /* Temperature (left) / place name (center) / condition (right), all
    bottom-aligned so the three columns read as one cohesive line. Made
