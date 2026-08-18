@@ -120,12 +120,14 @@ export function renderStatsPanel(){
   const moodEl = $('statsMood');
   if(moodEl) moodEl.textContent = stats.mood;
 
-  const flagEl = $('statFoodFlag');
-  if(flagEl){
-    flagEl.innerHTML = stats.overfull
-      ? '<span class="stat-flag"><img src="assets/icons/overfull.svg" alt="">overfull — bloated</span>'
-      : '';
-  }
+  // Toggling display on the pre-rendered span (rather than rebuilding
+  // it via innerHTML each call) means the <img> inside it is only ever
+  // created once — rebuilding it on every log tap was destroying and
+  // recreating that element each time, and tapping fast enough could
+  // catch it mid-recreation while the image was still decoding, making
+  // it flicker/disappear.
+  const flagInner = $('statFoodFlagInner');
+  if(flagInner) flagInner.style.display = stats.overfull ? '' : 'none';
 }
 
 /* ---------------- Quick-log buttons ---------------- */
