@@ -106,6 +106,82 @@
 }
 .forecast-toggle.active{ color:var(--sage-dark); border-bottom:2px solid var(--sage); }
 
+/* ---------- Weather-card swipe: forecast page <-> companion stats page ----------
+   Deliberately scoped to JUST this track, not the whole .infocard — the
+   .place-search dropdown above (position:absolute, overflows below the
+   temp row) must never end up inside an overflow-x:hidden ancestor,
+   since CSS silently turns overflow-y:visible into overflow-y:auto the
+   moment overflow-x is set to anything else on the SAME element, which
+   would clip that dropdown. Keeping the swipe container below/separate
+   from .weather-now avoids that entirely. */
+.infocard-swipe{
+  overflow-x:hidden;
+  overflow-y:visible;
+}
+.infocard-track{
+  display:flex;
+  width:200%;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.infocard-page{
+  width:50%;
+  flex:0 0 50%;
+  min-width:0;
+}
+.infocard-dots{
+  display:flex; justify-content:center; gap:6px; margin-top:12px;
+}
+.infocard-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--line); cursor:pointer;
+}
+.infocard-dot.active{ background:var(--ink-soft); }
+
+/* ---------- Companion stats page ---------- */
+.stats-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.stats-title{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; }
+.companion-mood{ font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:capitalize; }
+
+.meter-row{ margin-bottom:11px; }
+.meter-row:last-of-type{ margin-bottom:0; }
+.meter-label-row{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:4px;
+}
+.meter-label-row .name{ display:flex; align-items:center; gap:6px; color:var(--ink); }
+.meter-label-row .name img{ width:16px; height:16px; object-fit:contain; flex:0 0 auto; }
+.meter-track{ height:9px; border-radius:999px; overflow:hidden; background:var(--line); }
+.meter-fill{ height:100%; border-radius:999px; transition:width .4s ease; width:0; }
+
+.stat-food .meter-track{ background:var(--stat-food-track); }
+.stat-food .meter-fill{ background:var(--stat-food); }
+.stat-water .meter-track{ background:var(--stat-water-track); }
+.stat-water .meter-fill{ background:var(--stat-water); }
+.stat-energy .meter-track{ background:var(--stat-energy-track); }
+.stat-energy .meter-fill{ background:var(--stat-energy); }
+.stat-happiness .meter-track{ background:var(--stat-happiness-track); }
+.stat-happiness .meter-fill{ background:var(--stat-happiness); }
+
+.meter-fill.overfull{
+  background:repeating-linear-gradient(135deg, var(--stat-warn), var(--stat-warn) 6px, #E2A87C 6px, #E2A87C 12px);
+}
+.stat-flag{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-weight:800; color:var(--stat-warn);
+  background:#F7E4D4; padding:3px 8px; border-radius:999px; margin-top:4px;
+}
+.stat-flag img{ width:12px; height:12px; object-fit:contain; }
+
+.quick-actions{ display:flex; gap:8px; margin-top:12px; }
+.quick-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:9px 6px 10px; border-radius:14px; border:1.5px solid var(--line);
+  background:#fff; font-family:'Nunito',sans-serif; font-weight:700; font-size:11px;
+  color:var(--ink); cursor:pointer;
+}
+.quick-btn img{ width:24px; height:24px; object-fit:contain; }
+.quick-btn:active{ transform:scale(0.96); }
+
 /* ---------- Calendar switcher ---------- */
 .cal-switcher{
   display:flex;
