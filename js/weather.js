@@ -237,15 +237,47 @@ function setLocationFromResult(r){
 /* ---------------- Location bar (clickable place name + inline search) ----------------
    Replaces the old "Search a city" field that used to live inside the
    Settings sheet — the place name shown between the temperature and
-   condition text is now itself the entry point for changing location. */
+   condition text is now itself the entry point for changing location.
+
+   The dropdown (#placeSearch) is now reparented to <body> with
+   position:fixed while it's open, then moved back into .place-mid when
+   it closes. It used to just sit in .place-mid as position:absolute,
+   which worked fine as long as nothing between it and the viewport ever
+   clipped overflow — but .place-mid now lives inside the swipeable
+   weather/stats card (#infocardSwipe), which deliberately sets
+   overflow:hidden + a JS-managed height so the two pages don't leak
+   into each other's space. A plain absolute/fixed dropdown nested in
+   there would get silently clipped the moment it's taller than the
+   card's current height, regardless of z-index. Reparenting to <body>
+   sidesteps that entirely — nothing about its position is dependent on
+   any ancestor's overflow or transform once it lives there. */
 function openPlaceSearch(){
-  $('placeSearch').classList.add('open');
+  const dropdown = $('placeSearch');
+  const anchor = document.querySelector('.temp-row');
+  if(anchor && dropdown.parentElement !== document.body){
+    const rect = anchor.getBoundingClientRect();
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.width = rect.width + 'px';
+    dropdown.style.top = (rect.bottom + 6) + 'px';
+    document.body.appendChild(dropdown);
+    dropdown.classList.add('detached');
+  }
+  dropdown.classList.add('open');
   $('cityResults').innerHTML = '';
   $('citySearch').value = '';
   $('citySearch').focus();
 }
 function closePlaceSearch(){
-  $('placeSearch').classList.remove('open');
+  const dropdown = $('placeSearch');
+  dropdown.classList.remove('open');
+  if(dropdown.classList.contains('detached')){
+    dropdown.classList.remove('detached');
+    dropdown.style.left = '';
+    dropdown.style.width = '';
+    dropdown.style.top = '';
+    const placeMid = document.querySelector('.place-mid');
+    if(placeMid) placeMid.appendChild(dropdown);
+  }
 }
 
 /* ---------------- Settings sheet ---------------- */
@@ -270,7 +302,12 @@ export function initWeatherUI(){
     else openPlaceSearch();
   };
   document.addEventListener('click', (e) => {
-    if(!e.target.closest('.place-mid')) closePlaceSearch();
+    // .place-search no longer lives inside .place-mid while it's open
+    // (see openPlaceSearch above) — it's reparented to <body> — so a
+    // click on the dropdown itself (e.g. a search result) has to be
+    // excluded here too, or every click inside it would immediately
+    // close it before its own onclick handler had a chance to run.
+    if(!e.target.closest('.place-mid') && !e.target.closest('.place-search')) closePlaceSearch();
   });
 
   let searchDebounce;
