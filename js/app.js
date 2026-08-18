@@ -50,7 +50,18 @@ initCalendar();
 initMovement();
 initFurniture();
 initUI();
-initStatsPanel();
+// Isolated in its own try/catch: this is the newest, least battle-tested
+// part of the app, and everything below it in the boot sequence (theme
+// load, weather fetch, geolocation) is much more important to keep
+// running than this one feature. Re-alerting (rather than swallowing
+// silently) keeps this consistent with the alert-based error surfacing
+// above — a bug here should still be loud and visible on a device with
+// no console, just not able to take the rest of the app down with it.
+try{
+  initStatsPanel();
+} catch(e){
+  alert("STATS PANEL INIT ERROR:\n" + e.message + "\n" + (e.stack || ""));
+}
 
 // TODO: once todos.js's completion-rate shape is settled, wire the real
 // value in here instead of the neutral default stats.js falls back to —
@@ -76,7 +87,12 @@ setInterval(() => { if(gcal.connected) fetchCalendarEvents(); }, 15*60000);
 setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon); }, 30*60000);
 // Meters decay continuously — re-render every minute so the bars visibly
 // creep down even if you never touch the app, not just after a log/tap.
-setInterval(renderStatsPanel, 60000);
+// Same isolation as the init call above: a bug in this feature should
+// never be able to take the interval loop (or anything else) down.
+setInterval(() => {
+  try{ renderStatsPanel(); }
+  catch(e){ alert("STATS PANEL RENDER ERROR:\n" + e.message + "\n" + (e.stack || "")); }
+}, 60000);
 resolveIdleState();
 locate();
 
