@@ -31,7 +31,7 @@ document.addEventListener('gesturechange', e => e.preventDefault());
 
 import { $ } from './utils.js';
 import { state } from './state.js';
-import { initCompanion } from './companion.js';
+import { initCompanion, drawCharacter } from './companion.js';
 import { initIcons } from './icons.js';
 import { loadTheme, currentThemeId } from './room.js';
 import { resizeCanvas } from './particles.js';
@@ -95,10 +95,13 @@ setInterval(() => { if(gcal.connected) fetchCalendarEvents(); }, 15*60000);
 setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon); }, 30*60000);
 // Meters decay continuously — re-render every minute so the bars visibly
 // creep down even if you never touch the app, not just after a log/tap.
-// Same isolation as the init call above: a bug in this feature should
-// never be able to take the interval loop (or anything else) down.
+// drawCharacter() runs alongside it so mood (e.g. dropping out of
+// 'bloated' as food digests back under the threshold) stays in sync too,
+// not just right after a log button is tapped. Same isolation as the
+// init call above: a bug in this feature should never be able to take
+// the interval loop (or anything else) down.
 setInterval(() => {
-  try{ renderStatsPanel(); }
+  try{ renderStatsPanel(); drawCharacter(); }
   catch(e){ alert("STATS PANEL RENDER ERROR:\n" + e.message + "\n" + (e.stack || "")); }
 }, 60000);
 resolveIdleState();
