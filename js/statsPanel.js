@@ -1,13 +1,14 @@
 import { $ } from './utils.js';
 import { getStats, logFood, logWater, logWorkout, getGoals, setGoals } from './stats.js';
 
-/* ---------------- Swipeable forecast <-> stats page ----------------
-   Two pages live inside #infocardTrack (see index.html): page 0 is the
-   existing forecast, page 1 is this stats panel. The dots always work;
-   drag-to-swipe is suppressed while page 0 is showing AND the hourly
-   forecast's own horizontal scroller is active, since two nested
-   horizontal touch regions fighting for the same gesture is worse than
-   just falling back to the dots in that one case. */
+/* ---------------- Swipeable "now"+forecast <-> stats page ----------------
+   Two pages live inside #infocardTrack (see index.html): page 0 is
+   .weather-now (temp/place/condition) + the forecast, page 1 is this
+   stats panel. The dots always work; drag-to-swipe is suppressed while
+   page 0 is showing AND the hourly forecast's own horizontal scroller
+   is active, since two nested horizontal touch regions fighting for the
+   same gesture is worse than just falling back to the dots in that one
+   case. */
 const PAGE_FORECAST = 0;
 const PAGE_STATS = 1;
 let currentPage = PAGE_FORECAST;
@@ -27,15 +28,6 @@ function goToPage(i){
   document.querySelectorAll('.infocard-dot').forEach((dot, di) => {
     dot.classList.toggle('active', di === i);
   });
-  // Hide the temp/place/condition "Now" section while on the stats page
-  // so the card doesn't show weather info AND the full stats panel at
-  // once — this is kept as a simple show/hide rather than folding
-  // .weather-now into the sliding track itself, since the place-search
-  // dropdown inside it (position:absolute, overflows below the temp
-  // row) would get clipped the moment it's a descendant of the
-  // height-constrained, overflow:hidden .infocard-swipe.
-  const weatherNow = document.querySelector('.weather-now');
-  if(weatherNow) weatherNow.classList.toggle('is-hidden', i === PAGE_STATS);
   syncSwipeHeight();
 }
 
