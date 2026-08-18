@@ -11,6 +11,14 @@ import { getStats, logFood, logWater, logWorkout, getGoals, setGoals } from './s
 const PAGE_FORECAST = 0;
 const PAGE_STATS = 1;
 let currentPage = PAGE_FORECAST;
+let pageEls = [];
+
+function syncSwipeHeight(){
+  const swipeEl = $('infocardSwipe');
+  const activeEl = pageEls[currentPage];
+  if(!swipeEl || !activeEl) return;
+  swipeEl.style.height = activeEl.offsetHeight + 'px';
+}
 
 function goToPage(i){
   currentPage = i;
@@ -19,15 +27,31 @@ function goToPage(i){
   document.querySelectorAll('.infocard-dot').forEach((dot, di) => {
     dot.classList.toggle('active', di === i);
   });
+  syncSwipeHeight();
 }
 
 function initSwipe(){
   const swipeEl = $('infocardSwipe');
   if(!swipeEl) return;
 
+  pageEls = Array.from(document.querySelectorAll('.infocard-page'));
+
   document.querySelectorAll('.infocard-dot').forEach(dot => {
     dot.onclick = () => goToPage(Number(dot.dataset.page));
   });
+
+  // Both pages sit side-by-side in the track at all times (only
+  // translateX moves between them), so the inactive page's content can
+  // change size — e.g. the forecast row loading in, or the overfull
+  // flag appearing on the stats page — without ever being the active
+  // page. ResizeObserver catches that and keeps .infocard-swipe's
+  // height matched to whichever page is actually showing, instead of
+  // the height only updating on the next manual page switch.
+  if('ResizeObserver' in window){
+    const ro = new ResizeObserver(() => syncSwipeHeight());
+    pageEls.forEach(p => ro.observe(p));
+  }
+  syncSwipeHeight();
 
   let startX = null;
   swipeEl.addEventListener('touchstart', (e) => {
