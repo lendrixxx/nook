@@ -10,11 +10,6 @@
    they're all describing the same thing — what it's like right now,
    where. Only the forecast below gets its own separating border. ---------- */
 .weather-now{ margin-bottom:14px; padding-bottom:14px; border-bottom:1.5px solid var(--line); }
-/* Hidden (not just visually) while the stats page is active — see
-   statsPanel.js goToPage() — so the card only ever shows one "mode"
-   worth of content at a time instead of weather-now + the full stats
-   panel stacking together. */
-.weather-now.is-hidden{ display:none; }
 
 /* Temperature (left) / place name (center) / condition (right), all
    bottom-aligned so the three columns read as one cohesive line. Made
@@ -67,6 +62,17 @@
   border:1px solid var(--line);
 }
 .place-search.open{ display:block; }
+/* While open, weather.js reparents #placeSearch to <body> and switches
+   it to this state — left/top/width get set inline (computed from the
+   temp row's bounding rect) since it's no longer positioned relative to
+   .place-mid. This is what lets it escape the swipe track's
+   overflow:hidden + JS-managed height entirely, regardless of which
+   page is currently showing. */
+.place-search.detached{
+  position:fixed;
+  right:auto;
+  z-index:60;
+}
 
 .local-time-note{ text-align:center; margin:10px 0 0; }
 .stat-row{ display:flex; gap:18px; margin-top:14px; padding-top:14px; border-top:1.5px solid var(--line); align-items:center; }
@@ -111,21 +117,23 @@
 }
 .forecast-toggle.active{ color:var(--sage-dark); border-bottom:2px solid var(--sage); }
 
-/* ---------- Weather-card swipe: forecast page <-> companion stats page ----------
-   Deliberately scoped to JUST this track, not the whole .infocard — the
-   .place-search dropdown above (position:absolute, overflows below the
-   temp row) lives in .weather-now, a SIBLING of this block, not a
-   descendant of it, so clipping here has no effect on that dropdown.
+/* ---------- Weather-card swipe: "now"+forecast page <-> companion stats page ----------
+   Page 1 (.weather-now + forecast) and page 2 (companion stats) sit
+   side-by-side in the flex track at all times — only translateX moves
+   between them. Flexbox still lays out an off-screen flex item and
+   counts its height, so without an explicit height here the container
+   would size itself to the TALLER of the two pages even while showing
+   the shorter one. statsPanel.js sets height on .infocard-swipe (via
+   ResizeObserver, so it stays correct as content loads/changes) to
+   just the active page's height — overflow is hidden on both axes so
+   the other page's height never leaks through.
 
-   Both pages sit side-by-side in the flex track at all times (only
-   translateX moves between them) — flexbox still lays out an
-   off-screen flex item and counts its height, so without an explicit
-   height here the container would size itself to the TALLER of the two
-   pages even while showing the shorter one. #statsPanel.js sets
-   height on .infocard-swipe (via ResizeObserver, so it stays correct
-   as content loads/changes) to just the active page's height — overflow
-   here is hidden on both axes so the other page's height never leaks
-   through. */
+   .place-search (the city-search dropdown, position:absolute below the
+   temp row) lives inside page 1 in the markup, but reparents itself to
+   <body> with position:fixed while open — see openPlaceSearch in
+   weather.js and .place-search.detached below — specifically so it's
+   never subject to this clipping/height-management, regardless of
+   which page happens to be active. */
 .infocard-swipe{
   overflow:hidden;
   transition:height .3s ease;
