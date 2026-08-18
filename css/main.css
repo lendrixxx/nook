@@ -38,6 +38,20 @@
   --char-cheek:#F4A9A0;
   --char-accent:#C99A6E;
 
+  /* ---- Companion stat meters (food/water/energy/happiness panel) ----
+     food and energy reuse the existing clay/sage tokens above (they were
+     already close matches); water and happiness needed new tokens since
+     nothing in the existing palette covered teal or rose. */
+  --stat-food:var(--clay);
+  --stat-food-track:#F0DCC3;
+  --stat-water:#6FA8B5;
+  --stat-water-track:#D8E7EA;
+  --stat-energy:var(--sage);
+  --stat-energy-track:#DEE7D1;
+  --stat-happiness:#D98BA0;
+  --stat-happiness-track:#F1DAE0;
+  --stat-warn:var(--clay-dark);
+
   /* ---- Shape language ---- */
   --radius:28px;
   --radius-sm:16px;
