@@ -39,6 +39,7 @@ import {
 import { initMovement, resolveIdleState } from './movement.js';
 import { initFurniture } from './furniture.js';
 import { initUI } from './ui.js';
+import { initStatsPanel, renderStatsPanel } from './statsPanel.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
 initIcons();
@@ -49,6 +50,14 @@ initCalendar();
 initMovement();
 initFurniture();
 initUI();
+initStatsPanel();
+
+// TODO: once todos.js's completion-rate shape is settled, wire the real
+// value in here instead of the neutral default stats.js falls back to —
+// something like:
+//   import { setTodoCompletionRateProvider } from './stats.js';
+//   setTodoCompletionRateProvider(() => todaysDoneCount / todaysTotalCount);
+// Left as a stub for now so this feature doesn't block on that.
 
 /* ---------------- Boot ---------------- */
 applyInitialForecastToggleState();
@@ -65,6 +74,9 @@ if(gcal.connected){ fetchCalendarList(); fetchCalendarEvents(); }
 setInterval(evaluateCalendarBusy, 60000);
 setInterval(() => { if(gcal.connected) fetchCalendarEvents(); }, 15*60000);
 setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon); }, 30*60000);
+// Meters decay continuously — re-render every minute so the bars visibly
+// creep down even if you never touch the app, not just after a log/tap.
+setInterval(renderStatsPanel, 60000);
 resolveIdleState();
 locate();
 
