@@ -11,6 +11,14 @@ window.addEventListener('unhandledrejection', function(e) {
   alert("PROMISE ERROR:\n" + (e.reason && e.reason.message ? e.reason.message : e.reason));
 });
 
+// Belt-and-suspenders pinch-zoom prevention: the viewport meta's
+// user-scalable=no/maximum-scale=1 and the touch-action:pan-x pan-y in
+// main.css cover most cases, but Safari's own WebKit-specific gesture
+// events (fired for pinch regardless of touch-action) need to be
+// caught separately.
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+
 /* =========================================================================
    NOOK — a cozy weather companion, living in a small isometric room.
    No build step. Add to Home Screen on iPhone to use as an app.
@@ -39,6 +47,7 @@ import {
 import { initMovement, resolveIdleState } from './movement.js';
 import { initFurniture } from './furniture.js';
 import { initUI } from './ui.js';
+import { initStatsPanel, renderStatsPanel } from './statsPanel.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
 initIcons();
@@ -49,6 +58,25 @@ initCalendar();
 initMovement();
 initFurniture();
 initUI();
+// Isolated in its own try/catch: this is the newest, least battle-tested
+// part of the app, and everything below it in the boot sequence (theme
+// load, weather fetch, geolocation) is much more important to keep
+// running than this one feature. Re-alerting (rather than swallowing
+// silently) keeps this consistent with the alert-based error surfacing
+// above — a bug here should still be loud and visible on a device with
+// no console, just not able to take the rest of the app down with it.
+try{
+  initStatsPanel();
+} catch(e){
+  alert("STATS PANEL INIT ERROR:\n" + e.message + "\n" + (e.stack || ""));
+}
+
+// TODO: once todos.js's completion-rate shape is settled, wire the real
+// value in here instead of the neutral default stats.js falls back to —
+// something like:
+//   import { setTodoCompletionRateProvider } from './stats.js';
+//   setTodoCompletionRateProvider(() => todaysDoneCount / todaysTotalCount);
+// Left as a stub for now so this feature doesn't block on that.
 
 /* ---------------- Boot ---------------- */
 applyInitialForecastToggleState();
@@ -65,6 +93,14 @@ if(gcal.connected){ fetchCalendarList(); fetchCalendarEvents(); }
 setInterval(evaluateCalendarBusy, 60000);
 setInterval(() => { if(gcal.connected) fetchCalendarEvents(); }, 15*60000);
 setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon); }, 30*60000);
+// Meters decay continuously — re-render every minute so the bars visibly
+// creep down even if you never touch the app, not just after a log/tap.
+// Same isolation as the init call above: a bug in this feature should
+// never be able to take the interval loop (or anything else) down.
+setInterval(() => {
+  try{ renderStatsPanel(); }
+  catch(e){ alert("STATS PANEL RENDER ERROR:\n" + e.message + "\n" + (e.stack || "")); }
+}, 60000);
 resolveIdleState();
 locate();
 

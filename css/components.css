@@ -62,6 +62,17 @@
   border:1px solid var(--line);
 }
 .place-search.open{ display:block; }
+/* While open, weather.js reparents #placeSearch to <body> and switches
+   it to this state — left/top/width get set inline (computed from the
+   temp row's bounding rect) since it's no longer positioned relative to
+   .place-mid. This is what lets it escape the swipe track's
+   overflow:hidden + JS-managed height entirely, regardless of which
+   page is currently showing. */
+.place-search.detached{
+  position:fixed;
+  right:auto;
+  z-index:60;
+}
 
 .local-time-note{ text-align:center; margin:10px 0 0; }
 .stat-row{ display:flex; gap:18px; margin-top:14px; padding-top:14px; border-top:1.5px solid var(--line); align-items:center; }
@@ -105,6 +116,92 @@
   color:var(--ink-soft); cursor:pointer; padding-bottom:2px;
 }
 .forecast-toggle.active{ color:var(--sage-dark); border-bottom:2px solid var(--sage); }
+
+/* ---------- Weather-card swipe: "now"+forecast page <-> companion stats page ----------
+   Page 1 (.weather-now + forecast) and page 2 (companion stats) sit
+   side-by-side in the flex track at all times — only translateX moves
+   between them. Flexbox still lays out an off-screen flex item and
+   counts its height, so without an explicit height here the container
+   would size itself to the TALLER of the two pages even while showing
+   the shorter one. statsPanel.js sets height on .infocard-swipe (via
+   ResizeObserver, so it stays correct as content loads/changes) to
+   just the active page's height — overflow is hidden on both axes so
+   the other page's height never leaks through.
+
+   .place-search (the city-search dropdown, position:absolute below the
+   temp row) lives inside page 1 in the markup, but reparents itself to
+   <body> with position:fixed while open — see openPlaceSearch in
+   weather.js and .place-search.detached below — specifically so it's
+   never subject to this clipping/height-management, regardless of
+   which page happens to be active. */
+.infocard-swipe{
+  overflow:hidden;
+  transition:height .3s ease;
+}
+.infocard-track{
+  display:flex;
+  align-items:flex-start;
+  width:200%;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.infocard-page{
+  width:50%;
+  flex:0 0 50%;
+  min-width:0;
+}
+.infocard-dots{
+  display:flex; justify-content:center; gap:6px; margin-top:12px;
+}
+.infocard-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--line); cursor:pointer;
+}
+.infocard-dot.active{ background:var(--ink-soft); }
+
+/* ---------- Companion stats page ---------- */
+.stats-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.stats-title{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; }
+.companion-mood{ font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:capitalize; }
+
+.meter-row{ margin-bottom:11px; }
+.meter-row:last-of-type{ margin-bottom:0; }
+.meter-label-row{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:4px;
+}
+.meter-label-row .name{ display:flex; align-items:center; gap:6px; color:var(--ink); }
+.meter-label-row .name img{ width:16px; height:16px; object-fit:contain; flex:0 0 auto; }
+.meter-track{ height:9px; border-radius:999px; overflow:hidden; background:var(--line); }
+.meter-fill{ height:100%; border-radius:999px; transition:width .4s ease; width:0; }
+
+.stat-food .meter-track{ background:var(--stat-food-track); }
+.stat-food .meter-fill{ background:var(--stat-food); }
+.stat-water .meter-track{ background:var(--stat-water-track); }
+.stat-water .meter-fill{ background:var(--stat-water); }
+.stat-energy .meter-track{ background:var(--stat-energy-track); }
+.stat-energy .meter-fill{ background:var(--stat-energy); }
+.stat-happiness .meter-track{ background:var(--stat-happiness-track); }
+.stat-happiness .meter-fill{ background:var(--stat-happiness); }
+
+.meter-fill.overfull{
+  background:repeating-linear-gradient(135deg, var(--stat-warn), var(--stat-warn) 6px, #E2A87C 6px, #E2A87C 12px);
+}
+.stat-flag{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-weight:800; color:var(--stat-warn);
+  background:#F7E4D4; padding:3px 8px; border-radius:999px; margin-top:4px;
+}
+.stat-flag img{ width:12px; height:12px; object-fit:contain; }
+
+.quick-actions{ display:flex; gap:8px; margin-top:12px; }
+.quick-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:9px 6px 10px; border-radius:14px; border:1.5px solid var(--line);
+  background:#fff; font-family:'Nunito',sans-serif; font-weight:700; font-size:11px;
+  color:var(--ink); cursor:pointer;
+}
+.quick-btn img{ width:24px; height:24px; object-fit:contain; }
+.quick-btn:active{ transform:scale(0.96); }
 
 /* ---------- Calendar switcher ---------- */
 .cal-switcher{

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nook">
@@ -92,44 +92,123 @@
   </div>
 
   <div class="infocard">
-    <div class="weather-now">
-      <div class="temp-row">
-        <div class="temp" id="tempVal">--<sup>°C</sup></div>
 
-        <div class="place-mid">
-          <button class="place-btn" id="placeBtn" type="button">
-            <span class="name" id="placeName">Locating…</span>
-            <span class="sub" id="placeSub">&nbsp;</span>
-          </button>
-          <div class="place-search" id="placeSearch">
-            <div class="field" style="margin:0;">
-              <input type="text" id="citySearch" placeholder="Search a city…">
+    <!-- Swipeable: page 1 is "now" + forecast, page 2 is the companion
+         stats panel (food/water/energy/happiness) — the whole card
+         slides as one unit. The place-search dropdown (#placeSearch,
+         position:absolute below the temp row) lives inside page 1 here,
+         but it reparents itself to <body> with position:fixed while
+         open (see openPlaceSearch in weather.js) specifically so it's
+         never subject to this track's overflow:hidden/height clipping —
+         nesting an absolutely-positioned popup inside a clipped,
+         JS-sized swipe container doesn't work otherwise. -->
+    <div class="infocard-swipe" id="infocardSwipe">
+      <div class="infocard-track" id="infocardTrack">
+
+        <div class="infocard-page">
+          <div class="weather-now">
+            <div class="temp-row">
+              <div class="temp" id="tempVal">--<sup>°C</sup></div>
+
+              <div class="place-mid">
+                <button class="place-btn" id="placeBtn" type="button">
+                  <span class="name" id="placeName">Locating…</span>
+                  <span class="sub" id="placeSub">&nbsp;</span>
+                </button>
+                <div class="place-search" id="placeSearch">
+                  <div class="field" style="margin:0;">
+                    <input type="text" id="citySearch" placeholder="Search a city…">
+                  </div>
+                  <div class="searchresults" id="cityResults"></div>
+                </div>
+              </div>
+
+              <div class="condition">
+                <div class="cond" id="condVal">—</div>
+                <div class="feel" id="feelVal">&nbsp;</div>
+              </div>
             </div>
-            <div class="searchresults" id="cityResults"></div>
+
+            <p class="hint local-time-note">All times shown are local to the selected location.</p>
+
+            <div class="stat-row">
+              <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
+              <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
+              <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
+              <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
+            </div>
+          </div>
+
+          <div class="forecast-header">
+            <span class="forecast-toggle" data-mode="hourly">Hourly</span>
+            <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
+          </div>
+          <div class="forecast-row" id="forecastRow"></div>
+        </div>
+
+        <div class="infocard-page">
+          <div class="stats-header">
+            <div class="stats-title">Companion</div>
+            <div class="companion-mood" id="statsMood">content</div>
+          </div>
+
+          <div class="meter-row stat-food">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/food.svg" alt="">Food</span>
+              <span id="statFoodPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statFoodFill"></div></div>
+            <div id="statFoodFlag">
+              <span class="stat-flag" id="statFoodFlagInner" style="display:none;">
+                <img src="assets/icons/overfull.svg" alt="">overfull — bloated
+              </span>
+            </div>
+          </div>
+
+          <div class="meter-row stat-water">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/water.svg" alt="">Water</span>
+              <span id="statWaterPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statWaterFill"></div></div>
+          </div>
+
+          <div class="meter-row stat-energy">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/energy.svg" alt="">Energy</span>
+              <span id="statEnergyPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statEnergyFill"></div></div>
+          </div>
+
+          <div class="meter-row stat-happiness">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/happiness.svg" alt="">Happiness</span>
+              <span id="statHappyPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statHappyFill"></div></div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="quick-btn" id="logFoodBtn" type="button">
+              <img src="assets/icons/food-log.svg" alt="">Log food
+            </button>
+            <button class="quick-btn" id="logWaterBtn" type="button">
+              <img src="assets/icons/water-log.svg" alt="">Log water
+            </button>
+            <button class="quick-btn" id="logWorkoutBtn" type="button">
+              <img src="assets/icons/workout.svg" alt="">Log workout
+            </button>
           </div>
         </div>
 
-        <div class="condition">
-          <div class="cond" id="condVal">—</div>
-          <div class="feel" id="feelVal">&nbsp;</div>
-        </div>
-      </div>
-
-      <p class="hint local-time-note">All times shown are local to the selected location.</p>
-
-      <div class="stat-row">
-        <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
-        <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
-        <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
-        <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
       </div>
     </div>
 
-    <div class="forecast-header">
-      <span class="forecast-toggle" data-mode="hourly">Hourly</span>
-      <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
+    <div class="infocard-dots" id="infocardDots">
+      <span class="infocard-dot active" data-page="0"></span>
+      <span class="infocard-dot" data-page="1"></span>
     </div>
-    <div class="forecast-row" id="forecastRow"></div>
   </div>
 
   <!-- Room edit panel — swaps in for the weather card above while
@@ -225,6 +304,31 @@
       Removes every piece of furniture you've placed. There's no default layout to fall back to — this empties the room.
     </p>
   </div>
+
+  <div class="divider"></div>
+
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>Companion goals</h2>
+
+  <div class="row2">
+    <div class="field">
+      <label>Meals / day</label>
+      <input type="number" id="goalFood" min="1" max="10" step="1">
+    </div>
+    <div class="field">
+      <label>Glasses of water / day</label>
+      <input type="number" id="goalWater" min="1" max="20" step="1">
+    </div>
+  </div>
+  <div class="field">
+    <label>Workout minutes for a full recharge</label>
+    <input type="number" id="goalWorkout" min="5" max="120" step="5">
+  </div>
+  <button class="btn secondary" id="saveGoalsBtn" style="margin-top:10px;">
+    Save goals
+  </button>
+  <p class="hint">
+    These control how quickly the food/water/energy meters fill from a single log — they don't change how fast the meters drain.
+  </p>
 
   <div class="divider"></div>
 
