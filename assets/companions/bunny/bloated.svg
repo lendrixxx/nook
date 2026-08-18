@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nook cozy bunny: bloated -->
+  <defs>
+    <radialGradient id="blush">
+      <stop offset="0%" stop-color="#F3C6A7" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#F3C6A7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ears -->
+  <path d="M94 75 C84 49 85 17 101 11 C117 6 125 38 122 69 Z"
+    fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M162 75 C172 49 171 17 155 11 C139 6 131 38 134 69 Z"
+    fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- inner ears -->
+  <path d="M100 63 C95 42 96 25 102 22 C109 20 116 44 116 63 Z" fill="var(--earfill,#F2C8C1)"/>
+  <path d="M156 63 C161 42 160 25 154 22 C147 20 140 44 140 63 Z" fill="var(--earfill,#F2C8C1)"/>
+
+  <!-- tail -->
+  <circle cx="194" cy="171" r="18" fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4"/>
+
+  <!-- legs: same class structure as the neutral asset -->
+  <g class="leg leg-left legs">
+    <path d="M101 174 C99 188 100 201 104 208 C107 214 113 216 119 214 C125 212 128 207 127 201 C127 191 125 182 123 174 Z"
+      fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4"/>
+    <ellipse cx="116" cy="211" rx="12" ry="6" fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="3"/>
+  </g>
+
+  <g class="leg leg-right legs">
+    <path d="M133 174 C131 183 129 192 130 202 C130 209 134 214 140 215 C146 215 151 211 153 206 C156 198 156 186 154 174 Z"
+      fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4"/>
+    <ellipse cx="141" cy="212" rx="12" ry="6" fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="3"/>
+  </g>
+
+  <!-- wide bloated body -->
+  <path d="
+    M82 122
+    Q91 101 128 101
+    Q165 101 174 122
+    Q184 145 181 171
+    Q177 202 153 210
+    Q128 218 103 210
+    Q79 202 75 171
+    Q72 145 82 122 Z"
+    fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4"/>
+
+  <!-- large belly -->
+  <ellipse cx="128" cy="166" rx="43" ry="35" fill="var(--belly,#FFFDF7)"/>
+
+  <!-- head -->
+  <path d="
+    M69 83
+    C69 60 85 43 105 40
+    Q128 34 151 40
+    C171 43 187 60 187 83
+    C193 112 168 132 128 132
+    C88 132 63 112 69 83 Z"
+    fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- arms -->
+  <path d="
+    M83 130
+    C72 139 70 154 76 166
+    C80 175 88 179 96 175
+    C102 172 104 166 101 158
+    C98 146 91 136 83 130 Z"
+    fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="3.5"/>
+
+  <path d="
+    M173 130
+    C184 139 186 154 180 166
+    C176 175 168 179 160 175
+    C154 172 152 166 155 158
+    C158 146 165 136 173 130 Z"
+    fill="var(--body,#FFF7EA)" stroke="var(--ink,#74553B)" stroke-width="3.5"/>
+
+  <!-- cheeks -->
+  <circle cx="93" cy="102" r="12" fill="url(#blush)"/>
+  <circle cx="163" cy="102" r="12" fill="url(#blush)"/>
+
+  <!-- happy eyes -->
+  <path d="M104 94 Q111 88 118 94" fill="none" stroke="var(--ink,#74553B)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M138 94 Q145 88 152 94" fill="none" stroke="var(--ink,#74553B)" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- nose -->
+  <ellipse cx="128" cy="101" rx="4" ry="3" fill="var(--ink,#74553B)"/>
+
+  <!-- happy mouth -->
+  <path d="M128 104 V109 Q123 116 117 109 M128 109 Q133 116 139 109"
+    fill="none" stroke="var(--ink,#74553B)" stroke-width="2.8" stroke-linecap="round"/>
+
+  <!-- whiskers -->
+  <g stroke="var(--ink,#74553B)" stroke-width="2" stroke-linecap="round">
+    <line x1="88" y1="101" x2="66" y2="97"/>
+    <line x1="88" y1="107" x2="66" y2="111"/>
+    <line x1="168" y1="101" x2="190" y2="97"/>
+    <line x1="168" y1="107" x2="190" y2="111"/>
+  </g>
+</svg>

@@ -1,6 +1,7 @@
 import { $, cssVar, fetchAsset, stripSvgWrapper } from './utils.js';
 import { state, getCharacter, todosDueOrOverdue } from './state.js';
 import { saveCharacter as persistCharacter } from './storage.js';
+import { getStats } from './stats.js';
 
 /* ---------------- Companion rendering (asset-driven state engine) ----
    The companion is no longer drawn in JS. Each species/state pair is a
@@ -33,8 +34,14 @@ function saveCharacter(){
   persistCharacter(getCharacter());
 }
 
-function moodFor(base, todoLoad){
+// stats is optional (getStats() can't run before stats.js has loaded
+// its storage, but that's synchronous localStorage, so in practice it's
+// always available) — guarded so a missing/undefined stats object just
+// falls through to the existing weather/todo-based mood untouched.
+function moodFor(base, todoLoad, stats){
+  if(stats && stats.overfull) return 'bloated'; // fed too much — takes priority over everything else
   if(todoLoad >= 3) return 'sad'; // things are piling up, regardless of weather
+  if(stats && stats.happiness < 35) return 'sad'; // hungry/thirsty/rundown enough to drag mood down on its own
   if(base==='sunny' || base==='partly') return 'happy';
   if(base==='snowy') return 'cozy';
   if(base==='rainy' || base==='thunder') return 'sad';
@@ -68,8 +75,14 @@ export async function drawCharacter(){
   const w = state.weather;
   const base = w ? w.base : 'sunny';
   const todoLoad = todosDueOrOverdue().length;
-  const poseState = charAsleep ? 'asleep' : moodFor(base, todoLoad);
-  const accessory = charAsleep ? null : accessoryFor(base);
+  const stats = getStats();
+  const poseState = charAsleep ? 'asleep' : moodFor(base, todoLoad, stats);
+  // Skip layering a weather accessory (sunglasses/umbrella/scarf) on top
+  // of the bloated pose — same reasoning as skipping it while asleep,
+  // it's a distinct-enough body state that stacking an accessory on top
+  // risks looking wrong rather than additive. Easy to revisit if it
+  // turns out fine in practice.
+  const accessory = (charAsleep || (stats && stats.overfull)) ? null : accessoryFor(base);
 
   let baseSVG, accSVG = '';
   try{
