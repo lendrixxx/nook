@@ -1,5 +1,6 @@
 import { $ } from './utils.js';
 import { getStats, logFood, logWater, logWorkout, getGoals, setGoals } from './stats.js';
+import { drawCharacter } from './companion.js';
 
 /* ---------------- Swipeable "now"+forecast <-> stats page ----------------
    Two pages live inside #infocardTrack (see index.html): page 0 is
@@ -135,9 +136,13 @@ function initQuickActions(){
   const foodBtn = $('logFoodBtn');
   const waterBtn = $('logWaterBtn');
   const workoutBtn = $('logWorkoutBtn');
-  if(foodBtn) foodBtn.onclick = () => { logFood(); renderStatsPanel(); };
-  if(waterBtn) waterBtn.onclick = () => { logWater(); renderStatsPanel(); };
-  if(workoutBtn) workoutBtn.onclick = () => { logWorkout(); renderStatsPanel(); };
+  // drawCharacter() runs alongside renderStatsPanel() here rather than
+  // only from the periodic refresh in app.js, so mood (e.g. tipping
+  // into 'bloated') updates the moment you log, not up to a minute
+  // later on the next interval tick.
+  if(foodBtn) foodBtn.onclick = () => { logFood(); renderStatsPanel(); drawCharacter(); };
+  if(waterBtn) waterBtn.onclick = () => { logWater(); renderStatsPanel(); drawCharacter(); };
+  if(workoutBtn) workoutBtn.onclick = () => { logWorkout(); renderStatsPanel(); drawCharacter(); };
 }
 
 /* ---------------- Companion goals (Settings sheet) ---------------- */
