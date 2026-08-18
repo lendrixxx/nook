@@ -11,6 +11,14 @@ window.addEventListener('unhandledrejection', function(e) {
   alert("PROMISE ERROR:\n" + (e.reason && e.reason.message ? e.reason.message : e.reason));
 });
 
+// Belt-and-suspenders pinch-zoom prevention: the viewport meta's
+// user-scalable=no/maximum-scale=1 and the touch-action:pan-x pan-y in
+// main.css cover most cases, but Safari's own WebKit-specific gesture
+// events (fired for pinch regardless of touch-action) need to be
+// caught separately.
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+
 /* =========================================================================
    NOOK — a cozy weather companion, living in a small isometric room.
    No build step. Add to Home Screen on iPhone to use as an app.
