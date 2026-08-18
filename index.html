@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nook">
@@ -92,49 +92,53 @@
   </div>
 
   <div class="infocard">
-    <div class="weather-now">
-      <div class="temp-row">
-        <div class="temp" id="tempVal">--<sup>°C</sup></div>
 
-        <div class="place-mid">
-          <button class="place-btn" id="placeBtn" type="button">
-            <span class="name" id="placeName">Locating…</span>
-            <span class="sub" id="placeSub">&nbsp;</span>
-          </button>
-          <div class="place-search" id="placeSearch">
-            <div class="field" style="margin:0;">
-              <input type="text" id="citySearch" placeholder="Search a city…">
-            </div>
-            <div class="searchresults" id="cityResults"></div>
-          </div>
-        </div>
-
-        <div class="condition">
-          <div class="cond" id="condVal">—</div>
-          <div class="feel" id="feelVal">&nbsp;</div>
-        </div>
-      </div>
-
-      <p class="hint local-time-note">All times shown are local to the selected location.</p>
-
-      <div class="stat-row">
-        <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
-        <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
-        <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
-        <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
-      </div>
-    </div>
-
-    <!-- Swipeable: page 1 is the existing forecast, page 2 is the new
-         companion stats panel (food/water/energy/happiness). Kept
-         separate from .weather-now above so the place-search dropdown
-         (position:absolute, overflows below the temp row) never sits
-         inside an overflow-x:hidden ancestor — nesting it in here would
-         silently clip that dropdown in Safari. -->
+    <!-- Swipeable: page 1 is "now" + forecast, page 2 is the companion
+         stats panel (food/water/energy/happiness) — the whole card
+         slides as one unit. The place-search dropdown (#placeSearch,
+         position:absolute below the temp row) lives inside page 1 here,
+         but it reparents itself to <body> with position:fixed while
+         open (see openPlaceSearch in weather.js) specifically so it's
+         never subject to this track's overflow:hidden/height clipping —
+         nesting an absolutely-positioned popup inside a clipped,
+         JS-sized swipe container doesn't work otherwise. -->
     <div class="infocard-swipe" id="infocardSwipe">
       <div class="infocard-track" id="infocardTrack">
 
         <div class="infocard-page">
+          <div class="weather-now">
+            <div class="temp-row">
+              <div class="temp" id="tempVal">--<sup>°C</sup></div>
+
+              <div class="place-mid">
+                <button class="place-btn" id="placeBtn" type="button">
+                  <span class="name" id="placeName">Locating…</span>
+                  <span class="sub" id="placeSub">&nbsp;</span>
+                </button>
+                <div class="place-search" id="placeSearch">
+                  <div class="field" style="margin:0;">
+                    <input type="text" id="citySearch" placeholder="Search a city…">
+                  </div>
+                  <div class="searchresults" id="cityResults"></div>
+                </div>
+              </div>
+
+              <div class="condition">
+                <div class="cond" id="condVal">—</div>
+                <div class="feel" id="feelVal">&nbsp;</div>
+              </div>
+            </div>
+
+            <p class="hint local-time-note">All times shown are local to the selected location.</p>
+
+            <div class="stat-row">
+              <div class="stat"><span class="k">Wind</span><span class="v" id="windVal">—</span></div>
+              <div class="stat"><span class="k">Humidity</span><span class="v" id="humVal">—</span></div>
+              <div class="stat"><span class="k">Updated</span><span class="v" id="updVal">—</span></div>
+              <button class="stat-refresh" id="refreshBtn" title="Refresh"><svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg></button>
+            </div>
+          </div>
+
           <div class="forecast-header">
             <span class="forecast-toggle" data-mode="hourly">Hourly</span>
             <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
