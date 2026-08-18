@@ -27,12 +27,22 @@ function goToPage(i){
   document.querySelectorAll('.infocard-dot').forEach((dot, di) => {
     dot.classList.toggle('active', di === i);
   });
+  // Hide the temp/place/condition "Now" section while on the stats page
+  // so the card doesn't show weather info AND the full stats panel at
+  // once — this is kept as a simple show/hide rather than folding
+  // .weather-now into the sliding track itself, since the place-search
+  // dropdown inside it (position:absolute, overflows below the temp
+  // row) would get clipped the moment it's a descendant of the
+  // height-constrained, overflow:hidden .infocard-swipe.
+  const weatherNow = document.querySelector('.weather-now');
+  if(weatherNow) weatherNow.classList.toggle('is-hidden', i === PAGE_STATS);
   syncSwipeHeight();
 }
 
 function initSwipe(){
   const swipeEl = $('infocardSwipe');
-  if(!swipeEl) return;
+  const track = $('infocardTrack');
+  if(!swipeEl || !track) return;
 
   pageEls = Array.from(document.querySelectorAll('.infocard-page'));
 
@@ -53,7 +63,14 @@ function initSwipe(){
   }
   syncSwipeHeight();
 
+  // Live drag tracking — same shape as enableSwipeToClose in ui.js:
+  // transition off while dragging so the track follows the finger 1:1,
+  // then either commit to the other page or snap back, with the
+  // transition restored so that settling move is animated either way.
   let startX = null;
+  let dragDX = 0;
+  let dragging = false;
+
   swipeEl.addEventListener('touchstart', (e) => {
     const forecastEl = $('forecastRow');
     if(currentPage === PAGE_FORECAST && forecastEl && forecastEl.classList.contains('hourly-mode')){
@@ -61,14 +78,31 @@ function initSwipe(){
       return;
     }
     startX = e.touches[0].clientX;
+    dragging = true;
+    track.style.transition = 'none';
   }, { passive:true });
 
-  swipeEl.addEventListener('touchend', (e) => {
-    if(startX === null) return;
-    const dx = e.changedTouches[0].clientX - startX;
+  swipeEl.addEventListener('touchmove', (e) => {
+    if(!dragging || startX === null) return;
+    dragDX = e.touches[0].clientX - startX;
+    // No rubber-banding past either end of the track.
+    if(currentPage === PAGE_FORECAST && dragDX > 0) dragDX = 0;
+    if(currentPage === PAGE_STATS && dragDX < 0) dragDX = 0;
+    const basePercent = currentPage * -50;
+    const dragPercent = (dragDX / (swipeEl.offsetWidth || 1)) * 50;
+    track.style.transform = 'translateX(' + (basePercent + dragPercent) + '%)';
+  }, { passive:true });
+
+  swipeEl.addEventListener('touchend', () => {
+    if(!dragging){ startX = null; return; }
+    dragging = false;
+    track.style.transition = '';
+    const dx = dragDX;
     startX = null;
+    dragDX = 0;
     if(dx < -40 && currentPage === PAGE_FORECAST) goToPage(PAGE_STATS);
     else if(dx > 40 && currentPage === PAGE_STATS) goToPage(PAGE_FORECAST);
+    else goToPage(currentPage); // didn't clear the threshold — snap back
   });
 }
 
