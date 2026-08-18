@@ -125,11 +125,82 @@
       </div>
     </div>
 
-    <div class="forecast-header">
-      <span class="forecast-toggle" data-mode="hourly">Hourly</span>
-      <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
+    <!-- Swipeable: page 1 is the existing forecast, page 2 is the new
+         companion stats panel (food/water/energy/happiness). Kept
+         separate from .weather-now above so the place-search dropdown
+         (position:absolute, overflows below the temp row) never sits
+         inside an overflow-x:hidden ancestor — nesting it in here would
+         silently clip that dropdown in Safari. -->
+    <div class="infocard-swipe" id="infocardSwipe">
+      <div class="infocard-track" id="infocardTrack">
+
+        <div class="infocard-page">
+          <div class="forecast-header">
+            <span class="forecast-toggle" data-mode="hourly">Hourly</span>
+            <span class="forecast-toggle active" data-mode="weekly">Weekly</span>
+          </div>
+          <div class="forecast-row" id="forecastRow"></div>
+        </div>
+
+        <div class="infocard-page">
+          <div class="stats-header">
+            <div class="stats-title">Companion</div>
+            <div class="companion-mood" id="statsMood">content</div>
+          </div>
+
+          <div class="meter-row stat-food">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/food.svg" alt="">Food</span>
+              <span id="statFoodPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statFoodFill"></div></div>
+            <div id="statFoodFlag"></div>
+          </div>
+
+          <div class="meter-row stat-water">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/water.svg" alt="">Water</span>
+              <span id="statWaterPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statWaterFill"></div></div>
+          </div>
+
+          <div class="meter-row stat-energy">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/energy.svg" alt="">Energy</span>
+              <span id="statEnergyPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statEnergyFill"></div></div>
+          </div>
+
+          <div class="meter-row stat-happiness">
+            <div class="meter-label-row">
+              <span class="name"><img src="assets/icons/happiness.svg" alt="">Happiness</span>
+              <span id="statHappyPct">—</span>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="statHappyFill"></div></div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="quick-btn" id="logFoodBtn" type="button">
+              <img src="assets/icons/food-log.svg" alt="">Log food
+            </button>
+            <button class="quick-btn" id="logWaterBtn" type="button">
+              <img src="assets/icons/water-log.svg" alt="">Log water
+            </button>
+            <button class="quick-btn" id="logWorkoutBtn" type="button">
+              <img src="assets/icons/workout.svg" alt="">Log workout
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <div class="forecast-row" id="forecastRow"></div>
+
+    <div class="infocard-dots" id="infocardDots">
+      <span class="infocard-dot active" data-page="0"></span>
+      <span class="infocard-dot" data-page="1"></span>
+    </div>
   </div>
 
   <!-- Room edit panel — swaps in for the weather card above while
@@ -225,6 +296,31 @@
       Removes every piece of furniture you've placed. There's no default layout to fall back to — this empties the room.
     </p>
   </div>
+
+  <div class="divider"></div>
+
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>Companion goals</h2>
+
+  <div class="row2">
+    <div class="field">
+      <label>Meals / day</label>
+      <input type="number" id="goalFood" min="1" max="10" step="1">
+    </div>
+    <div class="field">
+      <label>Glasses of water / day</label>
+      <input type="number" id="goalWater" min="1" max="20" step="1">
+    </div>
+  </div>
+  <div class="field">
+    <label>Workout minutes for a full recharge</label>
+    <input type="number" id="goalWorkout" min="5" max="120" step="5">
+  </div>
+  <button class="btn secondary" id="saveGoalsBtn" style="margin-top:10px;">
+    Save goals
+  </button>
+  <p class="hint">
+    These control how quickly the food/water/energy meters fill from a single log — they don't change how fast the meters drain.
+  </p>
 
   <div class="divider"></div>
 
