@@ -109,17 +109,25 @@
 /* ---------- Weather-card swipe: forecast page <-> companion stats page ----------
    Deliberately scoped to JUST this track, not the whole .infocard — the
    .place-search dropdown above (position:absolute, overflows below the
-   temp row) must never end up inside an overflow-x:hidden ancestor,
-   since CSS silently turns overflow-y:visible into overflow-y:auto the
-   moment overflow-x is set to anything else on the SAME element, which
-   would clip that dropdown. Keeping the swipe container below/separate
-   from .weather-now avoids that entirely. */
+   temp row) lives in .weather-now, a SIBLING of this block, not a
+   descendant of it, so clipping here has no effect on that dropdown.
+
+   Both pages sit side-by-side in the flex track at all times (only
+   translateX moves between them) — flexbox still lays out an
+   off-screen flex item and counts its height, so without an explicit
+   height here the container would size itself to the TALLER of the two
+   pages even while showing the shorter one. #statsPanel.js sets
+   height on .infocard-swipe (via ResizeObserver, so it stays correct
+   as content loads/changes) to just the active page's height — overflow
+   here is hidden on both axes so the other page's height never leaks
+   through. */
 .infocard-swipe{
-  overflow-x:hidden;
-  overflow-y:visible;
+  overflow:hidden;
+  transition:height .3s ease;
 }
 .infocard-track{
   display:flex;
+  align-items:flex-start;
   width:200%;
   transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
