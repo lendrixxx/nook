@@ -2,18 +2,23 @@ import { $ } from './utils.js';
 import { getStats, logFood, logWater, logWorkout, getGoals, setGoals } from './stats.js';
 import { drawCharacter } from './companion.js';
 
-/* ---------------- Swipeable "now"+forecast <-> stats page ----------------
-   Two pages live inside #infocardTrack (see index.html): page 0 is
-   .weather-now (temp/place/condition) + the forecast, page 1 is this
-   stats panel. The dots always work; drag-to-swipe is suppressed while
-   page 0 is showing AND the hourly forecast's own horizontal scroller
-   is active, since two nested horizontal touch regions fighting for the
-   same gesture is worse than just falling back to the dots in that one
-   case. */
-const PAGE_FORECAST = 0;
-const PAGE_STATS = 1;
-let currentPage = PAGE_FORECAST;
+/* ---------------- Swipeable infocard pages ----------------
+   Pages live inside #infocardTrack (see index.html) in order: page 0 is
+   .weather-now (temp/place/condition) + forecast, page 1 is the
+   companion stats panel, page 2 is Daily Quests. Generalized to however
+   many .infocard-page elements actually exist rather than a hardcoded
+   pair, so adding/removing a page never requires touching this math —
+   just add/remove the markup + a matching .infocard-dot.
+
+   Drag-to-swipe is suppressed on page 0 while the hourly forecast's own
+   horizontal scroller is active, since two nested horizontal touch
+   regions fighting for the same gesture is worse than just falling back
+   to the dots in that one case. */
+let currentPage = 0;
 let pageEls = [];
+
+function pageCount(){ return pageEls.length || 1; }
+function pagePercent(){ return 100 / pageCount(); }
 
 function syncSwipeHeight(){
   const swipeEl = $('infocardSwipe');
@@ -23,11 +28,11 @@ function syncSwipeHeight(){
 }
 
 function goToPage(i){
-  currentPage = i;
+  currentPage = Math.max(0, Math.min(pageCount() - 1, i));
   const track = $('infocardTrack');
-  if(track) track.style.transform = 'translateX(-' + (i * 50) + '%)';
+  if(track) track.style.transform = 'translateX(-' + (currentPage * pagePercent()) + '%)';
   document.querySelectorAll('.infocard-dot').forEach((dot, di) => {
-    dot.classList.toggle('active', di === i);
+    dot.classList.toggle('active', di === currentPage);
   });
   syncSwipeHeight();
 }
@@ -39,17 +44,24 @@ function initSwipe(){
 
   pageEls = Array.from(document.querySelectorAll('.infocard-page'));
 
+  // Track/page widths are set here rather than relied on from CSS, so
+  // this stays correct no matter how many .infocard-page elements exist
+  // — a track sized for N pages needs to be N*100% wide with each page
+  // at 100/N% of the track.
+  track.style.width = (pageCount() * 100) + '%';
+  pageEls.forEach(p => { p.style.width = pagePercent() + '%'; });
+
   document.querySelectorAll('.infocard-dot').forEach(dot => {
     dot.onclick = () => goToPage(Number(dot.dataset.page));
   });
 
-  // Both pages sit side-by-side in the track at all times (only
-  // translateX moves between them), so the inactive page's content can
-  // change size — e.g. the forecast row loading in, or the overfull
-  // flag appearing on the stats page — without ever being the active
-  // page. ResizeObserver catches that and keeps .infocard-swipe's
-  // height matched to whichever page is actually showing, instead of
-  // the height only updating on the next manual page switch.
+  // All pages sit side-by-side in the track at all times (only
+  // translateX moves between them), so an inactive page's content can
+  // change size — e.g. the forecast row loading in, the overfull flag
+  // appearing, a quest completing — without ever being the active page.
+  // ResizeObserver catches that and keeps .infocard-swipe's height
+  // matched to whichever page is actually showing, instead of the
+  // height only updating on the next manual page switch.
   if('ResizeObserver' in window){
     const ro = new ResizeObserver(() => syncSwipeHeight());
     pageEls.forEach(p => ro.observe(p));
@@ -58,7 +70,7 @@ function initSwipe(){
 
   // Live drag tracking — same shape as enableSwipeToClose in ui.js:
   // transition off while dragging so the track follows the finger 1:1,
-  // then either commit to the other page or snap back, with the
+  // then either commit to the neighboring page or snap back, with the
   // transition restored so that settling move is animated either way.
   let startX = null;
   let dragDX = 0;
@@ -66,7 +78,7 @@ function initSwipe(){
 
   swipeEl.addEventListener('touchstart', (e) => {
     const forecastEl = $('forecastRow');
-    if(currentPage === PAGE_FORECAST && forecastEl && forecastEl.classList.contains('hourly-mode')){
+    if(currentPage === 0 && forecastEl && forecastEl.classList.contains('hourly-mode')){
       startX = null; // let the hourly row's own scroller have the gesture
       return;
     }
@@ -79,10 +91,11 @@ function initSwipe(){
     if(!dragging || startX === null) return;
     dragDX = e.touches[0].clientX - startX;
     // No rubber-banding past either end of the track.
-    if(currentPage === PAGE_FORECAST && dragDX > 0) dragDX = 0;
-    if(currentPage === PAGE_STATS && dragDX < 0) dragDX = 0;
-    const basePercent = currentPage * -50;
-    const dragPercent = (dragDX / (swipeEl.offsetWidth || 1)) * 50;
+    if(currentPage === 0 && dragDX > 0) dragDX = 0;
+    if(currentPage === pageCount() - 1 && dragDX < 0) dragDX = 0;
+    const pct = pagePercent();
+    const basePercent = currentPage * -pct;
+    const dragPercent = (dragDX / (swipeEl.offsetWidth || 1)) * pct;
     track.style.transform = 'translateX(' + (basePercent + dragPercent) + '%)';
   }, { passive:true });
 
@@ -93,8 +106,11 @@ function initSwipe(){
     const dx = dragDX;
     startX = null;
     dragDX = 0;
-    if(dx < -40 && currentPage === PAGE_FORECAST) goToPage(PAGE_STATS);
-    else if(dx > 40 && currentPage === PAGE_STATS) goToPage(PAGE_FORECAST);
+    // goToPage clamps at either end, so swiping past the first/last
+    // page just settles back in place — same as before, but no longer
+    // needs to know which page index happens to be "the last one".
+    if(dx < -40) goToPage(currentPage + 1);
+    else if(dx > 40) goToPage(currentPage - 1);
     else goToPage(currentPage); // didn't clear the threshold — snap back
   });
 }
