@@ -44,12 +44,26 @@ function initSwipe(){
 
   pageEls = Array.from(document.querySelectorAll('.infocard-page'));
 
-  // Track/page widths are set here rather than relied on from CSS, so
+  // Track/page sizing is set here rather than relied on from CSS, so
   // this stays correct no matter how many .infocard-page elements exist
   // — a track sized for N pages needs to be N*100% wide with each page
   // at 100/N% of the track.
+  //
+  // Setting `flex` (not just `width`) matters: the original 2-page CSS
+  // almost certainly pins each .infocard-page at a fixed flex-basis
+  // (e.g. "flex: 0 0 50%"), and flex-basis wins over width on a flex
+  // item. Overriding width alone left every page at 150% of the
+  // viewport once the track grew to 300% for 3 pages — pages overlapping
+  // and the wrong one showing per dot. Setting flex-basis explicitly
+  // here removes that dependency on whatever the stylesheet happens to
+  // hardcode.
+  track.style.display = 'flex';
   track.style.width = (pageCount() * 100) + '%';
-  pageEls.forEach(p => { p.style.width = pagePercent() + '%'; });
+  pageEls.forEach(p => {
+    p.style.flex = '0 0 ' + pagePercent() + '%';
+    p.style.width = pagePercent() + '%';
+    p.style.boxSizing = 'border-box';
+  });
 
   document.querySelectorAll('.infocard-dot').forEach(dot => {
     dot.onclick = () => goToPage(Number(dot.dataset.page));
