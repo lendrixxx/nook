@@ -151,13 +151,24 @@ function initSwipe(){
     }
     if(axis !== 'x') return;
 
+    // Locking to the horizontal swipe isn't enough on its own — the
+    // page's touch-action:pan-y still lets the browser start a native
+    // vertical scroll on the same gesture at the compositor level,
+    // independent of this handler. preventDefault() here is what
+    // actually cancels that once we've committed to horizontal; without
+    // it, the axis lock only ever controlled whether *our* transform
+    // moved, not whether the page scrolled too. This listener has to be
+    // non-passive for preventDefault to have any effect (see the
+    // addEventListener options below).
+    e.preventDefault();
+
     dragDX = dx;
     const step = layout.pageWidth + layout.gap;
     // No rubber-banding past either end of the track.
     if(currentPage === 0 && dragDX > 0) dragDX = 0;
     if(currentPage === pageCount() - 1 && dragDX < 0) dragDX = 0;
     track.style.transform = 'translateX(' + (-(currentPage * step) + dragDX) + 'px)';
-  }, { passive:true });
+  }, { passive:false });
 
   swipeEl.addEventListener('touchend', () => {
     const wasHorizontalDrag = dragging && axis === 'x';
