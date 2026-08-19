@@ -26,6 +26,7 @@ import {
   loadWorkoutLog, saveWorkoutLog,
   loadStatsGoals, saveStatsGoals
 } from './storage.js';
+import { evaluateQuests } from './quests.js';
 
 /* ---------------- Tunables ---------------- */
 
@@ -99,6 +100,27 @@ export function setTodoCompletionRateProvider(fn){
   todoCompletionRateProvider = fn;
 }
 
+/* ---------------- Daily Quests hook ----------------
+   Every log is a potential quest completion (Hydrated/Active/Well Fed
+   all read these same logs — see quests.js). evaluateQuests() is cheap
+   and idempotent (it no-ops for quests already paid out today), so it's
+   safe to call unconditionally on every log rather than threading a
+   "did this complete a quest" flag through every caller.
+
+   Quest XP awarding intentionally happens here, in the data layer, not
+   in whatever UI called logFood/logWater/logWorkout — that way XP is
+   granted the instant a quest is actually completed, even if the quests
+   panel isn't currently mounted. The DOM event is just so a mounted
+   panel can react immediately (progress bars, a completion toast)
+   instead of waiting for its next periodic render. */
+function notifyQuestsOfLog(){
+  const result = evaluateQuests();
+  try{
+    window.dispatchEvent(new CustomEvent('nook:quests-evaluated', { detail: result }));
+  } catch(e){}
+  return result;
+}
+
 /* ---------------- Public API ---------------- */
 
 export function getGoals(){
@@ -115,6 +137,7 @@ export function logFood(amount = 1){
   const log = pruneLog(loadFoodLog(), now);
   log.push({ timestamp: now, amount });
   saveFoodLog(log);
+  notifyQuestsOfLog();
   return getStats();
 }
 export function logWater(amount = 1){
@@ -122,6 +145,7 @@ export function logWater(amount = 1){
   const log = pruneLog(loadWaterLog(), now);
   log.push({ timestamp: now, amount });
   saveWaterLog(log);
+  notifyQuestsOfLog();
   return getStats();
 }
 export function logWorkout(durationMinutes){
@@ -130,6 +154,7 @@ export function logWorkout(durationMinutes){
   const log = pruneLog(loadWorkoutLog(), now);
   log.push({ timestamp: now, amount: durationMinutes != null ? durationMinutes : goals.workoutMinutesTarget });
   saveWorkoutLog(log);
+  notifyQuestsOfLog();
   return getStats();
 }
 

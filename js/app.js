@@ -48,6 +48,7 @@ import { initMovement, resolveIdleState } from './movement.js';
 import { initFurniture } from './furniture.js';
 import { initUI } from './ui.js';
 import { initStatsPanel, renderStatsPanel } from './statsPanel.js';
+import { initQuestsPanel, renderQuestsPanel } from './questsPanel.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
 initIcons();
@@ -69,6 +70,15 @@ try{
   initStatsPanel();
 } catch(e){
   alert("STATS PANEL INIT ERROR:\n" + e.message + "\n" + (e.stack || ""));
+}
+
+// Same isolation as the stats panel above — quests/XP is layered on top
+// of the stats logs and shouldn't be able to take down boot if something
+// here breaks.
+try{
+  initQuestsPanel();
+} catch(e){
+  alert("QUESTS PANEL INIT ERROR:\n" + e.message + "\n" + (e.stack || ""));
 }
 
 // TODO: once todos.js's completion-rate shape is settled, wire the real
@@ -100,9 +110,15 @@ setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon); }, 3
 // not just right after a log button is tapped. Same isolation as the
 // init call above: a bug in this feature should never be able to take
 // the interval loop (or anything else) down.
+//
+// renderQuestsPanel() rides the same tick — it's also what catches the
+// once-a-day quest reset if the app is just left open across midnight,
+// since evaluateQuests() re-derives the "today" record lazily on read.
 setInterval(() => {
   try{ renderStatsPanel(); drawCharacter(); }
   catch(e){ alert("STATS PANEL RENDER ERROR:\n" + e.message + "\n" + (e.stack || "")); }
+  try{ renderQuestsPanel(); }
+  catch(e){ alert("QUESTS PANEL RENDER ERROR:\n" + e.message + "\n" + (e.stack || "")); }
 }, 60000);
 resolveIdleState();
 locate();

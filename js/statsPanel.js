@@ -2,18 +2,71 @@ import { $ } from './utils.js';
 import { getStats, logFood, logWater, logWorkout, getGoals, setGoals } from './stats.js';
 import { drawCharacter } from './companion.js';
 
-/* ---------------- Swipeable "now"+forecast <-> stats page ----------------
-   Two pages live inside #infocardTrack (see index.html): page 0 is
-   .weather-now (temp/place/condition) + the forecast, page 1 is this
-   stats panel. The dots always work; drag-to-swipe is suppressed while
-   page 0 is showing AND the hourly forecast's own horizontal scroller
-   is active, since two nested horizontal touch regions fighting for the
-   same gesture is worse than just falling back to the dots in that one
-   case. */
-const PAGE_FORECAST = 0;
-const PAGE_STATS = 1;
-let currentPage = PAGE_FORECAST;
+/* ---------------- Swipeable infocard pages ----------------
+   Pages live inside #infocardTrack (see index.html) in order: page 0 is
+   .weather-now (temp/place/condition) + forecast, page 1 is the
+   companion stats panel, page 2 is Daily Quests. Generalized to however
+   many .infocard-page elements actually exist, so adding/removing a
+   page never requires touching this math — just add/remove the markup
+   + a matching .infocard-dot.
+
+   Sizing is pixel-based (not percentage) so a real gap can sit between
+   pages while dragging — percentage-based flex-basis math doesn't
+   compose cleanly with a CSS `gap`, pixels do.
+
+   Each .infocard-page is given its own max-height + overflow-y, capped
+   to whatever space is actually available below #stage, and scrolls
+   independently if its content is taller than that. This intentionally
+   is NOT handled by scrolling #infocardSwipe/#infocardTrack as a whole
+   — that would make the entire horizontally-swiping strip one shared
+   vertical scroll area, which mixes badly with the drag gesture (a
+   drag could show a blend of two pages' content, and .infocard-dots,
+   which sits right after the track, could scroll out of view with it).
+   Scoping the scroll to just the active page keeps the dots always
+   visible and keeps a vertical scroll from ever visually touching a
+   neighboring page.
+
+   Dragging is axis-locked: the first ~8px of movement decides whether
+   this gesture is a horizontal page-swipe or a vertical scroll, and it
+   commits to only one for the rest of the gesture. Without that, a
+   mostly-vertical touch could still nudge the track sideways (or vice
+   versa), which is what produced the "two pages blended together"
+   glitch. */
+let currentPage = 0;
 let pageEls = [];
+let layout = { pageWidth: 0, gap: 14 };
+
+const PAGE_GAP = 14;          // px of visible breathing room between pages while dragging
+const RESERVED_BELOW_PAGE = 48; // rough allowance for the dots row + a little padding
+const MIN_PAGE_HEIGHT = 160;
+
+function pageCount(){ return pageEls.length || 1; }
+
+function availablePageHeight(swipeEl){
+  const top = swipeEl.getBoundingClientRect().top;
+  return Math.max(MIN_PAGE_HEIGHT, window.innerHeight - top - RESERVED_BELOW_PAGE);
+}
+
+function applyPageLayout(swipeEl, track){
+  const pageWidth = swipeEl.offsetWidth;
+  const maxHeight = availablePageHeight(swipeEl);
+
+  track.style.display = 'flex';
+  track.style.gap = PAGE_GAP + 'px';
+  track.style.width = (pageEls.length * pageWidth + (pageEls.length - 1) * PAGE_GAP) + 'px';
+
+  pageEls.forEach(p => {
+    p.style.flex = '0 0 ' + pageWidth + 'px';
+    p.style.width = pageWidth + 'px';
+    p.style.boxSizing = 'border-box';
+    p.style.maxHeight = maxHeight + 'px';
+    p.style.overflowY = 'auto';
+    p.style.overscrollBehavior = 'contain';
+    p.style.touchAction = 'pan-y';
+  });
+
+  return { pageWidth, gap: PAGE_GAP };
+}
 
 function syncSwipeHeight(){
   const swipeEl = $('infocardSwipe');
@@ -23,11 +76,12 @@ function syncSwipeHeight(){
 }
 
 function goToPage(i){
-  currentPage = i;
+  currentPage = Math.max(0, Math.min(pageCount() - 1, i));
   const track = $('infocardTrack');
-  if(track) track.style.transform = 'translateX(-' + (i * 50) + '%)';
+  const step = layout.pageWidth + layout.gap;
+  if(track) track.style.transform = 'translateX(-' + (currentPage * step) + 'px)';
   document.querySelectorAll('.infocard-dot').forEach((dot, di) => {
-    dot.classList.toggle('active', di === i);
+    dot.classList.toggle('active', di === currentPage);
   });
   syncSwipeHeight();
 }
@@ -38,64 +92,94 @@ function initSwipe(){
   if(!swipeEl || !track) return;
 
   pageEls = Array.from(document.querySelectorAll('.infocard-page'));
+  layout = applyPageLayout(swipeEl, track);
 
   document.querySelectorAll('.infocard-dot').forEach(dot => {
     dot.onclick = () => goToPage(Number(dot.dataset.page));
   });
 
-  // Both pages sit side-by-side in the track at all times (only
-  // translateX moves between them), so the inactive page's content can
-  // change size — e.g. the forecast row loading in, or the overfull
-  // flag appearing on the stats page — without ever being the active
+  // All pages sit side-by-side in the track at all times (only
+  // translateX moves between them), so an inactive page's content can
+  // change size — e.g. the forecast row loading in, the overfull flag
+  // appearing, a quest completing — without ever being the active
   // page. ResizeObserver catches that and keeps .infocard-swipe's
-  // height matched to whichever page is actually showing, instead of
-  // the height only updating on the next manual page switch.
+  // height matched to whichever page is actually showing.
   if('ResizeObserver' in window){
     const ro = new ResizeObserver(() => syncSwipeHeight());
     pageEls.forEach(p => ro.observe(p));
   }
-  syncSwipeHeight();
 
-  // Live drag tracking — same shape as enableSwipeToClose in ui.js:
+  goToPage(currentPage); // apply the initial transform now that layout is pixel-based
+
+  // ---- Drag handling ----
   // transition off while dragging so the track follows the finger 1:1,
-  // then either commit to the other page or snap back, with the
+  // then either commit to the neighboring page or snap back, with the
   // transition restored so that settling move is animated either way.
-  let startX = null;
-  let dragDX = 0;
-  let dragging = false;
+  let startX = null, startY = null, dragDX = 0, dragging = false, axis = null;
+  const AXIS_THRESHOLD = 8; // px of movement before committing to an axis
 
   swipeEl.addEventListener('touchstart', (e) => {
     const forecastEl = $('forecastRow');
-    if(currentPage === PAGE_FORECAST && forecastEl && forecastEl.classList.contains('hourly-mode')){
+    if(currentPage === 0 && forecastEl && forecastEl.classList.contains('hourly-mode')){
       startX = null; // let the hourly row's own scroller have the gesture
       return;
     }
     startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
     dragging = true;
+    axis = null;
     track.style.transition = 'none';
   }, { passive:true });
 
   swipeEl.addEventListener('touchmove', (e) => {
     if(!dragging || startX === null) return;
-    dragDX = e.touches[0].clientX - startX;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+
+    if(axis === null){
+      if(Math.abs(dx) < AXIS_THRESHOLD && Math.abs(dy) < AXIS_THRESHOLD) return; // not enough movement to tell yet
+      axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      if(axis === 'y'){
+        // Vertical intent — hand this gesture entirely to the active
+        // page's own overflow-y:auto scroll and stop touching the
+        // track for the rest of it.
+        dragging = false;
+        track.style.transition = '';
+        return;
+      }
+    }
+    if(axis !== 'x') return;
+
+    dragDX = dx;
+    const step = layout.pageWidth + layout.gap;
     // No rubber-banding past either end of the track.
-    if(currentPage === PAGE_FORECAST && dragDX > 0) dragDX = 0;
-    if(currentPage === PAGE_STATS && dragDX < 0) dragDX = 0;
-    const basePercent = currentPage * -50;
-    const dragPercent = (dragDX / (swipeEl.offsetWidth || 1)) * 50;
-    track.style.transform = 'translateX(' + (basePercent + dragPercent) + '%)';
+    if(currentPage === 0 && dragDX > 0) dragDX = 0;
+    if(currentPage === pageCount() - 1 && dragDX < 0) dragDX = 0;
+    track.style.transform = 'translateX(' + (-(currentPage * step) + dragDX) + 'px)';
   }, { passive:true });
 
   swipeEl.addEventListener('touchend', () => {
-    if(!dragging){ startX = null; return; }
+    const wasHorizontalDrag = dragging && axis === 'x';
     dragging = false;
-    track.style.transition = '';
-    const dx = dragDX;
     startX = null;
+    startY = null;
+    axis = null;
+    track.style.transition = '';
+    if(!wasHorizontalDrag) return; // vertical gesture — nothing here to settle
+    const dx = dragDX;
     dragDX = 0;
-    if(dx < -40 && currentPage === PAGE_FORECAST) goToPage(PAGE_STATS);
-    else if(dx > 40 && currentPage === PAGE_STATS) goToPage(PAGE_FORECAST);
+    if(dx < -40) goToPage(currentPage + 1);
+    else if(dx > 40) goToPage(currentPage - 1);
     else goToPage(currentPage); // didn't clear the threshold — snap back
+  });
+
+  // Viewport can change (rotation, keyboard, iOS URL bar show/hide) —
+  // recompute pixel widths/heights and re-apply the current page's
+  // transform so it stays aligned rather than drifting off pixel-based
+  // math that was computed for a since-changed layout.
+  window.addEventListener('resize', () => {
+    layout = applyPageLayout(swipeEl, track);
+    goToPage(currentPage);
   });
 }
 

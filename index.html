@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="css/companion.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/quests.css">
 </head>
 <body>
 <div id="app">
@@ -202,14 +203,40 @@
           </div>
         </div>
 
+        <!-- Daily Quests + XP — predefined, not user-editable. Progress
+             is read from the same food/water/workout logs the
+             Companion page above uses; see quests.js. -->
+        <div class="infocard-page">
+          <div class="stats-header">
+            <div class="stats-title">Daily Quests</div>
+          </div>
+
+          <div class="xp-card">
+            <div class="xp-top">
+              <div class="xp-level">Lv. <span id="xpLevel">1</span></div>
+              <div class="xp-total"><span id="xpTotalVal">0</span> XP</div>
+            </div>
+            <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+            <div class="xp-remaining" id="xpRemaining"></div>
+          </div>
+
+          <div class="quest-list" id="questList"></div>
+        </div>
+
       </div>
     </div>
 
     <div class="infocard-dots" id="infocardDots">
       <span class="infocard-dot active" data-page="0"></span>
       <span class="infocard-dot" data-page="1"></span>
+      <span class="infocard-dot" data-page="2"></span>
     </div>
   </div>
+
+  <!-- Quest-completion toast — deliberately its own element rather than
+       reusing #statusMsg, which already has its own behavior elsewhere
+       (room-editing validation etc.). -->
+  <div id="questToast" class="quest-toast"></div>
 
   <!-- Room edit panel — swaps in for the weather card above while
        #editRoomBtn is active (see #app.room-editing in room.css). Owns
