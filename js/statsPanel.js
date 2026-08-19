@@ -120,7 +120,8 @@ function initSwipe(){
 
   swipeEl.addEventListener('touchstart', (e) => {
     const forecastEl = $('forecastRow');
-    if(currentPage === 0 && forecastEl && forecastEl.classList.contains('hourly-mode')){
+    const startedOnForecast = !!(forecastEl && forecastEl.contains(e.target));
+    if(currentPage === 0 && startedOnForecast && forecastEl.classList.contains('hourly-mode')){
       startX = null; // let the hourly row's own scroller have the gesture
       return;
     }
