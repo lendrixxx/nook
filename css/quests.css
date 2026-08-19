@@ -1,0 +1,198 @@
+/* =========================================================================
+   DAILY QUESTS + XP
+   Reuses Nook's existing fonts (Fredoka/Nunito, loaded in index.html) and
+   the app's cream/wood palette. Falls back to locally-scoped custom
+   properties (--quest-*) rather than assuming specific tokens exist in
+   main.css, so this file is safe to drop in without depending on exact
+   variable names elsewhere — replace the fallback values below with the
+   real tokens from main.css if you'd like a perfect match.
+   ========================================================================= */
+
+#questList,
+.xp-card{
+  --quest-cream: #FBF1DE;
+  --quest-card: #FFFBF3;
+  --quest-line: #E9DCC3;
+  --quest-ink: #4A3B2F;
+  --quest-ink-soft: #8A7A6A;
+  --quest-wood-hi: #C99A6A;
+  --quest-wood-lo: #8A6242;
+  --quest-sage: #8FA888;
+  --quest-sage-deep: #5F7A58;
+}
+
+/* ---------------- XP card ---------------- */
+.xp-card{
+  background: var(--quest-card);
+  border: 1px solid var(--quest-line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.xp-top{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.xp-level{
+  font-family: 'Fredoka', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--quest-ink);
+}
+.xp-total{
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  color: var(--quest-ink-soft);
+}
+.xp-track{
+  height: 9px;
+  background: var(--quest-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.xp-fill{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--quest-wood-hi), var(--quest-wood-lo));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.xp-remaining{
+  font-family: 'Nunito', sans-serif;
+  font-size: 11px;
+  color: var(--quest-ink-soft);
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* ---------------- Quest list ---------------- */
+.quest-list{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.quest{
+  background: var(--quest-card);
+  border: 1px solid var(--quest-line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.quest.done{
+  border-color: var(--quest-sage);
+  background: #F7FAF6;
+}
+.quest-icon{
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--quest-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quest.done .quest-icon{
+  background: var(--quest-sage);
+}
+.quest-icon img{
+  width: 18px;
+  height: 18px;
+}
+.quest-body{
+  flex: 1;
+  min-width: 0;
+}
+.quest-row1{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.quest-label{
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--quest-ink);
+}
+.quest-xp{
+  font-family: 'Nunito', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--quest-wood-lo);
+  background: #F1E4D1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.quest.done .quest-xp{
+  background: #E2EDE0;
+  color: var(--quest-sage-deep);
+}
+.quest-desc{
+  font-family: 'Nunito', sans-serif;
+  font-size: 11px;
+  color: var(--quest-ink-soft);
+  margin-bottom: 5px;
+}
+.quest-track{
+  height: 5px;
+  background: var(--quest-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.quest-fill{
+  height: 100%;
+  width: 0%;
+  background: var(--quest-wood-hi);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+.quest.done .quest-fill{
+  background: var(--quest-sage);
+}
+.quest-check{
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--quest-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: transparent;
+}
+.quest.done .quest-check{
+  background: var(--quest-sage);
+  border-color: var(--quest-sage);
+  color: white;
+}
+
+/* ---------------- Completion toast ---------------- */
+.quest-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(16px);
+  background: #4A3B2F;
+  color: #FBF1DE;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 50;
+  white-space: nowrap;
+}
+.quest-toast.show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
