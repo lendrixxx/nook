@@ -20,6 +20,15 @@ const KEY_WATER_LOG = 'nook_water_log';
 const KEY_WORKOUT_LOG = 'nook_workout_log';
 const KEY_STATS_GOALS = 'nook_stats_goals';
 
+/* Daily Quests + XP. XP total is permanent and never resets. The quest
+   awards record is the *only* piece of quest state that's actually
+   stored — everything else (today's progress) is recomputed on demand
+   from the logs above, same as stats.js does for the meters. See
+   quests.js for how the awards record resets at the calendar-day
+   boundary while xp_total is left untouched. */
+const KEY_XP_TOTAL = 'nook_xp_total';
+const KEY_QUEST_AWARDS = 'nook_quest_awards';
+
 export function loadSavedCharacter(){
   try{ return JSON.parse(localStorage.getItem(KEY_CHARACTER)); }
   catch(e){ return null; }
@@ -117,4 +126,26 @@ export function loadStatsGoals(defaults){
 }
 export function saveStatsGoals(goals){
   try{ localStorage.setItem(KEY_STATS_GOALS, JSON.stringify(goals)); } catch(e){}
+}
+
+/* ---------------- Daily Quests + XP ---------------- */
+export function loadXpTotal(){
+  try{
+    const raw = localStorage.getItem(KEY_XP_TOTAL);
+    const n = raw != null ? Number(raw) : 0;
+    return Number.isFinite(n) ? n : 0;
+  } catch(e){ return 0; }
+}
+export function saveXpTotal(total){
+  try{ localStorage.setItem(KEY_XP_TOTAL, String(total)); } catch(e){}
+}
+
+export function loadQuestAwards(){
+  try{
+    const raw = localStorage.getItem(KEY_QUEST_AWARDS);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+export function saveQuestAwards(record){
+  try{ localStorage.setItem(KEY_QUEST_AWARDS, JSON.stringify(record)); } catch(e){}
 }
