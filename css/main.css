@@ -93,12 +93,6 @@ body{
   max-width:480px;
   margin:0 auto;
   position:relative;
-  /* Fallback for a card page ever ending up taller than the space left
-     under the now fixed-size #stage below — normally a no-op since
-     everything fits, but this means that case degrades to "scroll a
-     bit" rather than clipping or squashing the room. See the #stage
-     comment further down for why it's no longer flexible. */
-  overflow-y:auto;
   /* No long-press text selection/callout menu anywhere in the app by
      default — this is a room/character/weather display, not a document,
      so the iOS "Copy" bubble popping up on a long-press was never
@@ -146,6 +140,32 @@ body{
   aspect-ratio:400 / 380 !important;
   width:100% !important;
   min-height:300px !important;
+}
+
+/* Scroll fallback for a card page that ends up taller than the space
+   left under the now fixed-size #stage above — lives here, on the card
+   itself, rather than on #app as a whole. #app's own overflow used to
+   host this instead, but that made the *entire app* — including the
+   card's horizontal swipe gesture area (#infocardSwipe, handled in JS)
+   — into a competing scroll container, so a horizontal swipe could
+   trigger the browser's native vertical scroll at the same time and
+   the whole screen would drift. Scoping it to .infocard (covers both
+   the normal card and #roomEditPanel, which shares the class) confines
+   any scrolling to content below the room, never the room itself.
+
+   flex:1 lets this region claim whatever's left after #stage;
+   min-height:0 is required for a flex child to actually shrink below
+   its content size rather than pushing #app taller than 100dvh, which
+   is what makes overflow-y only kick in when genuinely needed.
+   touch-action:pan-y restricts native gesture handling here to
+   vertical, so it can't compete with the horizontal drag the swipe
+   handler owns. Same !important + specific-selector approach as #stage
+   above, for the same cascade-independence reason. */
+.infocard{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  touch-action:pan-y !important;
 }
 
 #todoProp{ cursor:pointer; }
