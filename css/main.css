@@ -93,6 +93,12 @@ body{
   max-width:480px;
   margin:0 auto;
   position:relative;
+  /* Fallback for a card page ever ending up taller than the space left
+     under the now fixed-size #stage below — normally a no-op since
+     everything fits, but this means that case degrades to "scroll a
+     bit" rather than clipping or squashing the room. See the #stage
+     comment further down for why it's no longer flexible. */
+  overflow-y:auto;
   /* No long-press text selection/callout menu anywhere in the app by
      default — this is a room/character/weather display, not a document,
      so the iOS "Copy" bubble popping up on a long-press was never
@@ -117,19 +123,28 @@ body{
    in room.css) now reads noticeably bigger without any layout changes
    needed there. */
 
-/* The room stage is flex:1 in room.css (not edited here — this file
-   doesn't have that rule to modify directly), sharing #app's fixed
-   100dvh with the weather/stats card below it. Two things could squash
-   it below a usable size: (1) the card's height animates smoothly
-   between "now"+forecast and stats — since those are meaningfully
-   different heights, the stage visibly compresses and un-compresses
-   for the ~300ms of every swipe transition as flex:1 continuously
-   recalculates; (2) a short landscape viewport just leaves less total
-   height to go around. This min-height is a hard floor against both.
-   Targeted with an ID selector + !important since the actual flex:1
-   sizing rule's cascade position (room.css, loaded after this file)
-   isn't something this floor should have to depend on to win. */
+/* The room stage used to be flex:1 in room.css (not edited here — this
+   file doesn't have that rule to modify directly), sharing #app's fixed
+   100dvh with the weather/stats/quests card below it. That meant the
+   stage's actual size depended on how tall whichever card page was
+   currently showing — three meaningfully different heights (weather,
+   stats, quests) meant the room visibly compressed and un-compressed on
+   every swipe, and even the min-height floor below only ever guaranteed
+   a minimum, not a consistent size.
+
+   Fixed instead: the stage is pulled out of flex space-sharing (flex:0)
+   and sized directly from the room SVG's own proportions (viewBox
+   "0 0 400 380" in index.html) via aspect-ratio, so its height is a
+   pure function of its width — never of whatever's below it. Same
+   !important + ID-selector approach as before, so this doesn't depend
+   on winning a cascade-order fight with room.css (loaded after this
+   file). min-height stays on as a floor for very narrow/short viewports
+   where the aspect-ratio result would otherwise get uncomfortably
+   small. */
 #stage{
+  flex:0 0 auto !important;
+  aspect-ratio:400 / 380 !important;
+  width:100% !important;
   min-height:300px !important;
 }
 
