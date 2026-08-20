@@ -238,6 +238,13 @@
        (room-editing validation etc.). -->
   <div id="questToast" class="quest-toast"></div>
 
+  <!-- Part 2: unlock-notification toast (item/character unlocks, room
+       growth) — kept separate from #questToast so a rapid quest-
+       completion-then-unlock moment can't have one toast's timeout cut
+       the other short. Global (outside any single infocard page) since
+       an unlock can happen while any page is showing. -->
+  <div id="unlockToast" class="quest-toast"></div>
+
   <!-- Room edit panel — swaps in for the weather card above while
        #editRoomBtn is active (see #app.room-editing in room.css). Owns
        its own header controls (undo / cancel / save) since the weather
@@ -356,6 +363,30 @@
   <p class="hint">
     These control how quickly the food/water/energy meters fill from a single log — they don't change how fast the meters drain.
   </p>
+
+  <div class="divider"></div>
+
+  <h2><svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>Developer — Progression</h2>
+  <p class="hint">Testing tools only — not part of normal play. Every control here goes through the same unlock logic a real level-up would.</p>
+
+  <div class="row2">
+    <button class="btn secondary" id="devXpMinusBtn" style="margin-top:0;">−10 XP</button>
+    <button class="btn secondary" id="devXpPlusBtn" style="margin-top:0;">+10 XP</button>
+  </div>
+
+  <div class="row2">
+    <div class="field" style="flex:2; margin:12px 0 0;">
+      <input type="number" id="devLevelInput" placeholder="Level" min="1" step="1">
+    </div>
+    <button class="btn secondary" id="devSetLevelBtn" style="margin-top:12px; flex:1;">Set level</button>
+  </div>
+
+  <button class="btn secondary" id="devUnlockAllBtn" style="margin-top:10px;">
+    Unlock all items
+  </button>
+  <button class="btn secondary" id="devResetProgressBtn" style="margin-top:8px;">
+    Reset progression
+  </button>
 
   <div class="divider"></div>
 
