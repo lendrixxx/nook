@@ -2,13 +2,14 @@ import { $, fetchAsset, stripSvgWrapper, pts } from './utils.js';
 import { clearFurnitureLayout } from './storage.js';
 import {
   iso, screenToIsoGrid, snapToGrid, clampSnappedToRoom, ROOM_LAYOUT, VB_W, VB_H,
-  ROOM_W, ROOM_D, resolveSnapParams, getFootprint, applyWallLock,
+  ROOM_W, ROOM_D, resolveSnapParams, getFootprint, applyWallLock, currentRoomScale,
   currentThemeId, findItem, getChildren, findSupportingSurface, getItemDef,
   isFloorSpotBlocked, updateItemPosition, moveSurfaceGroup, validateLayout,
   setRoomLayout, persistRoomLayout, loadRoomDecorations,
   buildNewItem, commitNewItem, removeItem, rotateItem, countPlaced,
   ITEM_CATALOG, ITEM_CATEGORIES
 } from './room.js';
+import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
 
 /* =========================================================================
    FURNITURE — "edit room" mode.
@@ -39,6 +40,12 @@ import {
    matters: an earlier version inserted a new item into the real layout
    immediately on add, so canceling only reset the UI's "armed" state
    and left the (possibly overlapping) item permanently in the data.
+
+   Part 2: catalog entries not yet unlocked (see unlocks.js) render
+   greyed out with the level they unlock at, and have no "+" button —
+   they're visible (so there's something to look forward to) but not
+   addable. Nothing about placing/moving/deleting an *already-placed*
+   item changes; unlocking only gates adding new ones from the catalog.
    ========================================================================= */
 
 const stageEl = $('stage');
@@ -209,7 +216,10 @@ async function renderGhostItem(item){
   try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
   catch(e){ return; }
   const p = iso(item.at[0], item.at[1], item.at[2]);
-  const scale = def.scale || 1;
+  // Matches loadRoomDecorations()'s own scale math (room.js) — without
+  // the room-size multiplier here, a ghost preview would render at a
+  // different size than the real item does the instant it's confirmed.
+  const scale = (def.scale || 1) * currentRoomScale();
   const anchor = def.anchor || [0, 0];
   const transform = 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') rotate(0) scale('+scale+') translate('+(-anchor[0]).toFixed(1)+','+(-anchor[1]).toFixed(1)+')';
   let el = document.getElementById('ghostDeco');
@@ -385,6 +395,19 @@ function renderCatalogList(){
     return;
   }
   el.innerHTML = entries.map(([key, def]) => {
+    // Locked entries stay visible (so there's something to look forward
+    // to) but greyed out, with the level they unlock at instead of a
+    // "+" button — nothing about an already-placed instance of a since-
+    // relocked item (shouldn't normally happen, since unlocks never
+    // reverse — see unlocks.js) is affected by this, it only gates
+    // adding NEW ones.
+    if(!isItemUnlocked(key)){
+      return '<div class="catalog-row locked">'
+        + '<div class="catalog-thumb" data-thumb="'+key+'"></div>'
+        + '<div class="catalog-name">'+def.label+'</div>'
+        + '<div class="catalog-lock">🔒 Lv. '+getUnlockLevel(key)+'</div>'
+        + '</div>';
+    }
     const n = countPlaced(key);
     return '<div class="catalog-row">'
       + '<div class="catalog-thumb" data-thumb="'+key+'"></div>'
@@ -399,6 +422,13 @@ function renderCatalogList(){
     };
   });
   hydrateCatalogThumbs(el);
+}
+
+// Public: lets other modules (devTools.js, after a dev-triggered unlock)
+// refresh the visible catalog without needing to know about editMode or
+// activeCatalogCat internally. A no-op if the edit panel isn't open.
+export function refreshCatalog(){
+  if(editMode) renderCatalogList();
 }
 
 /* ---------------- drag handlers ---------------- */
