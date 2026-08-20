@@ -13,9 +13,9 @@ window.addEventListener('unhandledrejection', function(e) {
 
 // Belt-and-suspenders pinch-zoom prevention: the viewport meta's
 // user-scalable=no/maximum-scale=1 and the touch-action:pan-x pan-y in
-// main.css cover most cases, but Safari's own WebKit-specific gesture
-// events (fired for pinch regardless of touch-action) need to be
-// caught separately.
+// main.css cover most cases, but Safari's own WebKit-specific pinch
+// events (fired regardless of touch-action) need to be caught
+// separately.
 document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('gesturechange', e => e.preventDefault());
 
@@ -33,7 +33,7 @@ import { $ } from './utils.js';
 import { state } from './state.js';
 import { initCompanion, drawCharacter } from './companion.js';
 import { initIcons } from './icons.js';
-import { loadTheme, currentThemeId } from './room.js';
+import { loadTheme, currentThemeId, initRoom } from './room.js';
 import { resizeCanvas } from './particles.js';
 import {
   initWeatherUI, applyInitialForecastToggleState, locate, fetchWeather
@@ -49,6 +49,8 @@ import { initFurniture } from './furniture.js';
 import { initUI } from './ui.js';
 import { initStatsPanel, renderStatsPanel } from './statsPanel.js';
 import { initQuestsPanel, renderQuestsPanel } from './questsPanel.js';
+import { applyRoomSize, evaluateUnlocks } from './unlocks.js';
+import { initDevTools, initUnlockNotifications } from './devTools.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
 initIcons();
@@ -81,6 +83,15 @@ try{
   alert("QUESTS PANEL INIT ERROR:\n" + e.message + "\n" + (e.stack || ""));
 }
 
+// Same isolation again — Part 2's unlock notifications + dev tools sit
+// on top of everything above and shouldn't be able to take boot down.
+try{
+  initUnlockNotifications();
+  initDevTools();
+} catch(e){
+  alert("DEV TOOLS INIT ERROR:\n" + e.message + "\n" + (e.stack || ""));
+}
+
 // TODO: once todos.js's completion-rate shape is settled, wire the real
 // value in here instead of the neutral default stats.js falls back to —
 // something like:
@@ -90,7 +101,26 @@ try{
 
 /* ---------------- Boot ---------------- */
 applyInitialForecastToggleState();
-loadTheme(currentThemeId);
+
+// applyRoomSize() reads the permanently-recorded room-size level and
+// sets ROOM_W/ROOM_D/TILE (room.js) from it — this has to happen BEFORE
+// loadTheme() builds the room SVG for the first time, so it renders at
+// the right grid size from the very first paint instead of building
+// small and immediately resizing.
+applyRoomSize();
+loadTheme(currentThemeId).then(() => {
+  // ROOM_LAYOUT is populated by loadTheme() by this point, which
+  // evaluateUnlocks()'s one-time grandfathering (see unlocks.js) needs
+  // to see so anything already placed doesn't retroactively look
+  // locked. This also catches any level-based unlock that should
+  // already apply but hasn't been recorded yet (e.g. first boot after
+  // this feature shipped, for a player already past level 1).
+  const unlockResult = evaluateUnlocks();
+  if(unlockResult.roomGrew){
+    initRoom(); // the recorded room-size level just advanced past what applyRoomSize() applied above — rebuild at the new size
+  }
+});
+
 resizeCanvas();
 loadTodosAndRender();
 notifyDueTodos();
