@@ -9,7 +9,42 @@ import { loadFurnitureLayout, saveFurnitureLayout } from './storage.js';
    window, and the character's walk path) is placed in "grid units" via
    iso(gx,gy,gz) and converted to the SVG's 400x380 viewBox.
    ========================================================================= */
-export const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, ROOM_W=6, ROOM_D=6, WALL_H=5, VB_W=400, VB_H=380;
+export const ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, WALL_H=5, VB_W=400, VB_H=380;
+
+/* ROOM_W/ROOM_D/TILE are mutable — Part 2's level-based room-size
+   milestones (see unlocks.js) change them at runtime via setRoomSize().
+   BASE_TILE/BASE_ROOM_SIZE record what this whole isometric layout
+   (walls, floor, rug, window, and every ITEM_CATALOG entry's `scale`)
+   was originally hand-tuned against at the 6×6 size. TILE is always
+   recomputed as BASE_TILE * BASE_ROOM_SIZE / currentSize, which keeps
+   the room's total on-screen footprint constant as the grid gains more,
+   smaller cells — the room doesn't get visually bigger, it gets more
+   finely subdivided. That matters because #stage's aspect-ratio is
+   fixed in main.css independent of room size; growing the actual pixel
+   footprint here would either overflow that fixed box or require
+   touching main.css every time a milestone is added. setRoomSize() is
+   the only place ROOM_W/ROOM_D/TILE should ever be reassigned. */
+export const BASE_TILE = 30;
+export const BASE_ROOM_SIZE = 6;
+export let ROOM_W = BASE_ROOM_SIZE, ROOM_D = BASE_ROOM_SIZE;
+export let TILE = BASE_TILE;
+
+export function setRoomSize(cols, rows){
+  ROOM_W = cols;
+  ROOM_D = rows;
+  TILE = BASE_TILE * (BASE_ROOM_SIZE / Math.max(cols, rows));
+}
+
+// Multiplier every placed/ghost item's own `scale` gets multiplied by at
+// render time (see loadRoomDecorations below and furniture.js's
+// renderGhostItem), so furniture artwork shrinks in lockstep with the
+// grid. Without this, a bigger room — same visual footprint, but more
+// and smaller grid cells — would leave same-size furniture art looking
+// proportionally larger and more crowded than before.
+export function currentRoomScale(){
+  return TILE / BASE_TILE;
+}
+
 export const GRID_SNAP = 0.5; // grid-unit increment furniture snaps to while dragging
 
 export function iso(gx,gy,gz){ return { x: ORIGIN_X+(gx-gy)*TILE, y: ORIGIN_Y+(gx+gy)*(TILE/2)-gz*ZSTEP }; }
@@ -81,7 +116,14 @@ function buildRoomStructure(){
   const leftWall  = [iso(0,0,0), iso(0,ROOM_D,0), iso(0,ROOM_D,WALL_H), iso(0,0,WALL_H)];
   const floor     = [iso(0,0,0), iso(ROOM_W,0,0), iso(ROOM_W,ROOM_D,0), iso(0,ROOM_D,0)];
 
-  const winY0=0.85, winY1=3.35, winZ0=1.75, winZ1=4.0;
+  // winZ0/winZ1 (height) are untouched by room-size milestones — only
+  // the floor footprint (ROOM_W/ROOM_D) changes, wall height (WALL_H)
+  // never does. winY0/winY1 are expressed as a fraction of ROOM_D
+  // (matching the original hand-tuned 6-deep numbers: 0.85/6≈0.1417,
+  // 3.35/6≈0.5583) rather than fixed grid units, so the window keeps
+  // the same relative position/size on the back wall as the room grows,
+  // instead of shrinking toward one corner of a now-deeper wall.
+  const winY0=ROOM_D*0.1417, winY1=ROOM_D*0.5583, winZ0=1.75, winZ1=4.0;
   const windowQuad = [iso(0,winY0,winZ0), iso(0,winY1,winZ0), iso(0,winY1,winZ1), iso(0,winY0,winZ1)];
   WINDOW_VB = boundingBox(windowQuad);
 
@@ -91,8 +133,15 @@ function buildRoomStructure(){
   svg += '<polygon points="'+pts(floor)+'" fill="'+P.floor+'"/>';
   svg += '<polygon points="'+pts(floor)+'" fill="none" stroke="'+shade(P.floor,-20)+'" stroke-width="1.5" opacity="0.5"/>';
 
-  svg += isoEllipse(3.05,2.55,0.02, 1.55,1.35, P.rug, ' stroke="'+shade(P.rug,-14)+'" stroke-width="2"');
-  svg += isoEllipse(3.05,2.55,0.03, 1.05,0.9, 'none', ' stroke="'+P.rugLine+'" stroke-width="2.5" opacity="0.75"');
+  // Rug center/radii are likewise expressed as a fraction of ROOM_W/
+  // ROOM_D (matching the original hand-tuned 6×6 numbers — center
+  // 3.05,2.55 ≈ 0.508,0.425 of 6; outer radii 1.55,1.35 ≈ 0.258,0.225;
+  // inner radii 1.05,0.9 ≈ 0.175,0.15) so it stays centered and
+  // proportionally sized at any room size setRoomSize() sets, rather
+  // than drifting off-center as the room grows.
+  const rugCx = ROOM_W*0.508, rugCy = ROOM_D*0.425;
+  svg += isoEllipse(rugCx,rugCy,0.02, ROOM_W*0.258,ROOM_D*0.225, P.rug, ' stroke="'+shade(P.rug,-14)+'" stroke-width="2"');
+  svg += isoEllipse(rugCx,rugCy,0.03, ROOM_W*0.175,ROOM_D*0.15, 'none', ' stroke="'+P.rugLine+'" stroke-width="2.5" opacity="0.75"');
 
   svg += '<g id="floorGrid" class="floor-grid">';
   for(let gx=0; gx<=ROOM_W; gx++){
@@ -409,7 +458,7 @@ export async function loadRoomDecorations(){
     try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
     catch(e){ return ''; }
     const p = iso(item.at[0], item.at[1], item.at[2]);
-    const scale = def.scale || 1;
+    const scale = (def.scale || 1) * currentRoomScale();
     const rotate = item.rotate || 0;
     const inner = stripSvgWrapper(svgText);
     const anchor = def.anchor || [0, 0];
