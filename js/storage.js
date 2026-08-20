@@ -25,7 +25,13 @@ const KEY_STATS_GOALS = 'nook_stats_goals';
    stored — everything else (today's progress) is recomputed on demand
    from the logs above, same as stats.js does for the meters. See
    quests.js for how the awards record resets at the calendar-day
-   boundary while xp_total is left untouched. */
+   boundary while xp_total is left untouched.
+
+   Part 2 (level-based unlocks — see unlocks.js) deliberately persists
+   nothing of its own here: item/character unlock status and room size
+   are pure, live functions of this same XP total, recomputed on every
+   read rather than tracked as a separate record. That's what makes
+   clearProgressionStorage() below only need to touch these two keys. */
 const KEY_XP_TOTAL = 'nook_xp_total';
 const KEY_QUEST_AWARDS = 'nook_quest_awards';
 
@@ -148,4 +154,14 @@ export function loadQuestAwards(){
 }
 export function saveQuestAwards(record){
   try{ localStorage.setItem(KEY_QUEST_AWARDS, JSON.stringify(record)); } catch(e){}
+}
+
+// Dev-only "Reset progression" tool (unlocks.js). Deliberately does NOT
+// touch character/todos/furniture/weather/calendar state — this resets
+// *progression*, not the whole app.
+export function clearProgressionStorage(){
+  try{
+    localStorage.removeItem(KEY_XP_TOTAL);
+    localStorage.removeItem(KEY_QUEST_AWARDS);
+  } catch(e){}
 }

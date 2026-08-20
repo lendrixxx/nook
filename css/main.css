@@ -123,23 +123,50 @@ body{
    stage's actual size depended on how tall whichever card page was
    currently showing — three meaningfully different heights (weather,
    stats, quests) meant the room visibly compressed and un-compressed on
-   every swipe, and even the min-height floor below only ever guaranteed
-   a minimum, not a consistent size.
+   every swipe.
 
-   Fixed instead: the stage is pulled out of flex space-sharing (flex:0)
-   and sized directly from the room SVG's own proportions (viewBox
-   "0 0 400 380" in index.html) via aspect-ratio, so its height is a
-   pure function of its width — never of whatever's below it. Same
-   !important + ID-selector approach as before, so this doesn't depend
-   on winning a cascade-order fight with room.css (loaded after this
-   file). min-height stays on as a floor for very narrow/short viewports
-   where the aspect-ratio result would otherwise get uncomfortably
-   small. */
+   Fixed instead: the stage is pulled out of flex space-sharing
+   (flex:0 0 auto), so its height is never a function of whatever's
+   below it. The actual height value comes from room.js's
+   applyStageDimensions() instead of a fixed aspect-ratio here — Part 2
+   (level-based room-size milestones) means the room's natural height
+   now varies (it grows with the room, up to a cap, then the excess
+   scrolls — see room.css's .stage-viewport), so a single fixed ratio
+   can no longer describe it. Same !important + ID-selector approach as
+   before, so this doesn't depend on winning a cascade-order fight with
+   room.css (loaded after this file). min-height stays on as a floor for
+   very narrow/short viewports or before JS has run on first paint.
+
+   max-height is the cap that actually matters for a GROWN room: room.js
+   sets an explicit height matching the room's full natural size (no
+   cap of its own anymore — see the removed STAGE_MAX_HEIGHT there), and
+   this is what reins that in. It's deliberately a percentage of the
+   viewport (dvh, same unit #app already uses, for the same iOS-Safari-
+   URL-bar reason) rather than a fixed pixel number: a fixed number that
+   comfortably covered the built-in room-size milestones still wasn't
+   guaranteed to fit every device, and had no way to account for a
+   custom milestone added later (e.g. an 11×11 room) that needed more
+   room than that fixed number ever anticipated. A percentage scales
+   with however big the actual screen is, and always leaves the
+   remaining percentage for the infocard below — a big room's excess
+   height scrolls (see .stage-viewport) instead of pushing that card
+   further down the page or off-screen entirely. */
 #stage{
   flex:0 0 auto !important;
-  aspect-ratio:400 / 380 !important;
-  width:100% !important;
+  /* NOT width:100% — that, combined with the explicit 14px left/right
+     margins .stage also has (room.css), is an over-constrained CSS box
+     model (width AND both margins all specified as non-auto), which
+     doesn't resolve to the same effective width as .infocard just
+     below it (components.css: margin:14px with width left as auto, the
+     normal/unambiguous case) — the two ended up with visibly different
+     right edges, the stage cut short of where the infocard actually
+     ends. calc() bakes the exact same 28px (14+14 margin) directly into
+     the width instead of leaving it to any margin/width interaction,
+     which is mathematically identical to how .infocard's auto width
+     resolves — guaranteeing both share the same right edge. */
+  width:calc(100% - 28px) !important;
   min-height:300px !important;
+  max-height:55dvh !important;
 }
 
 /* Note: no scroll override lives on .infocard itself. An earlier

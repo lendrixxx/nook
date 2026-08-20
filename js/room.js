@@ -7,9 +7,96 @@ import { loadFurnitureLayout, saveFurnitureLayout } from './storage.js';
    ISOMETRIC ROOM
    A simple 2:1 grid projection. Everything (walls, floor, furniture, the
    window, and the character's walk path) is placed in "grid units" via
-   iso(gx,gy,gz) and converted to the SVG's 400x380 viewBox.
+   iso(gx,gy,gz) and converted to pixels.
+
+   Part 2 (room-size milestones — see unlocks.js): ROOM_W/ROOM_D are
+   mutable and grow via setRoomSize(). A grid cell's PIXEL size (TILE)
+   stays fixed once established, so furniture never changes size as the
+   room grows — but "once established" matters: before Part 2, the whole
+   400×380 canvas was stretched (preserveAspectRatio="none" + CSS
+   width:100%) to exactly fill whatever width the device's stage
+   happened to render at, meaning a tile's actual on-screen pixel size
+   always varied by device. Simply hardcoding TILE=30 broke that: on any
+   device narrower or wider than exactly 400px, the base (pre-growth)
+   room no longer filled the stage edge-to-edge, leaving a visible gap
+   of bare background down one side.
+
+   The fix: TILE (and everything measured in the same pixel space —
+   ORIGIN_X/ORIGIN_Y/ZSTEP/SIDE_MARGIN/BOTTOM_MARGIN) is computed ONCE,
+   at boot, scaled so the BASE room's natural width exactly matches the
+   real measured stage width on THIS device — see computeTileScale().
+   That reproduces the old edge-to-edge fit exactly. Once computed, the
+   scale is never revisited (no re-scaling on resize, no re-scaling as
+   the room grows) — growth past the base size only ever adds more
+   (already-scaled) grid cells, which is what keeps existing furniture
+   a stable size for the rest of the session, matching the original
+   Part 2 design intent.
    ========================================================================= */
-export const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, ROOM_W=6, ROOM_D=6, WALL_H=5, VB_W=400, VB_H=380;
+const BASE_TILE = 30, BASE_ZSTEP = 26, BASE_ORIGIN_X = 200, BASE_ORIGIN_Y = 150;
+const BASE_SIDE_MARGIN = 20, BASE_BOTTOM_MARGIN = 50;
+const BASE_NATURAL_WIDTH = 400; // the original hand-built room's width at TILE=30 — the scale reference point
+
+export let TILE = BASE_TILE, ZSTEP = BASE_ZSTEP, ORIGIN_X = BASE_ORIGIN_X, ORIGIN_Y = BASE_ORIGIN_Y;
+export const WALL_H = 5; // grid units, not a pixel length — never scales
+export const BASE_ROOM_SIZE = 6;
+
+// Fixed pixel margins around the floor's own bounding box — tuned so
+// that at the base 6×6 size (and BASE_TILE), VB_MIN_X/VB_MIN_Y/VB_W/VB_H
+// below reproduce exactly the original hand-built room (viewBox
+// "0 0 400 380"). Scale along with everything else in computeTileScale().
+let SIDE_MARGIN = BASE_SIDE_MARGIN;
+let BOTTOM_MARGIN = BASE_BOTTOM_MARGIN;
+
+let tileScaleComputed = false;
+// Called once, early in boot (see app.js), before the room is ever
+// built — measures the real available stage width on this device and
+// scales TILE (and its dependent constants) so the base room's natural
+// width matches it exactly, reproducing the old "always fills the
+// stage" fit. Safe to call more than once; only the first call (the one
+// that runs before anything's been drawn at the default scale) has any
+// effect, so an accidental duplicate call can't rescale an already-
+// visible room out from under the person.
+export function computeTileScale(stageWidthPx){
+  if(tileScaleComputed || !stageWidthPx) return;
+  const scale = stageWidthPx / BASE_NATURAL_WIDTH;
+  TILE = BASE_TILE * scale;
+  ZSTEP = BASE_ZSTEP * scale;
+  ORIGIN_X = BASE_ORIGIN_X * scale;
+  ORIGIN_Y = BASE_ORIGIN_Y * scale;
+  SIDE_MARGIN = BASE_SIDE_MARGIN * scale;
+  BOTTOM_MARGIN = BASE_BOTTOM_MARGIN * scale;
+  tileScaleComputed = true;
+}
+
+// The stage's visible height is capped in CSS now (main.css — a
+// viewport-relative max-height), not here. A fixed pixel number
+// couldn't account for how big a room might grow (a custom milestone
+// well past the built-in ones, e.g. 11×11) or how tall the actual
+// device viewport is — on a big room + a normal-height phone, a fixed
+// cap that was comfortably in bounds for the built-in milestones could
+// still end up taller than the visible screen, pushing the infocard
+// below it out of view entirely. A percentage-of-viewport CSS cap
+// degrades gracefully regardless of how big either number gets: the
+// stage always leaves room for the infocard, and anything beyond the
+// visible area simply scrolls (see #stageViewport) exactly like a
+// too-wide room already does horizontally.
+
+export let ROOM_W = BASE_ROOM_SIZE, ROOM_D = BASE_ROOM_SIZE;
+export let VB_MIN_X = 0, VB_MIN_Y = 0, VB_W = 400, VB_H = 380;
+
+export function setRoomSize(cols, rows){
+  ROOM_W = cols;
+  ROOM_D = rows;
+  // Leftmost floor point is corner (0, ROOM_D); rightmost is (ROOM_W, 0).
+  // Topmost point is always the wall-top corner at the origin (0,0,WALL_H)
+  // — constant, independent of room size, which is why VB_MIN_Y is
+  // always 0. Bottommost point is corner (ROOM_W, ROOM_D).
+  VB_MIN_X = ORIGIN_X - ROOM_D*TILE - SIDE_MARGIN;
+  VB_MIN_Y = 0;
+  VB_W = (ROOM_W + ROOM_D) * TILE + SIDE_MARGIN * 2;
+  VB_H = ORIGIN_Y + (ROOM_W + ROOM_D) * (TILE/2) + BOTTOM_MARGIN;
+}
+
 export const GRID_SNAP = 0.5; // grid-unit increment furniture snaps to while dragging
 
 export function iso(gx,gy,gz){ return { x: ORIGIN_X+(gx-gy)*TILE, y: ORIGIN_Y+(gx+gy)*(TILE/2)-gz*ZSTEP }; }
@@ -45,6 +132,131 @@ export function resolveSnapParams(def){
   return { snapStep, snapOffset, clampMargin };
 }
 
+/* ---------------- Stage sizing (Part 2) ----------------
+   Applies the current room's natural pixel size to the actual DOM.
+
+   #roomSvg keeps its existing CSS width:100%/height:100% (room.css) —
+   since its containing block (#stageScroll) is now explicitly sized to
+   VB_W×VB_H below, "100%" already resolves to exactly that, and because
+   the viewBox attribute set here declares the SAME VB_W×VB_H, the
+   SVG-to-box scale factor works out to exactly 1:1 with no stretching
+   needed — that's what keeps grid cells a fixed size as the room grows.
+
+   #bgScene is deliberately handled differently and its viewBox is
+   NEVER touched here. Its content (hills/sun/moon/clouds — see
+   background.js) is fixed, pre-authored artwork sized for a single
+   400×380 canvas, not something that gets redrawn per room size the
+   way buildRoomStructure() redraws walls/floor. If it were given the
+   same growing viewBox as #roomSvg, that artwork would only ever fill
+   a shrinking corner of an increasingly bigger box as the room grows
+   (exactly what happened before this comment was written). Instead it
+   keeps its static "0 0 400 380" viewBox (set once in index.html, with
+   preserveAspectRatio="none") and simply stretches to fill however big
+   #stageScroll currently is — a backdrop is fine to stretch slightly;
+   grid furniture is not, which is the whole reason #roomSvg is handled
+   the opposite way.
+
+   #stage's own visible height is capped in CSS (main.css) now, relative
+   to the viewport rather than a fixed pixel number — see the comment
+   above the old STAGE_MAX_HEIGHT constant (removed) for why. Its WIDTH
+   isn't set here either — it's already 100% of #app (capped by #app's
+   own max-width), so once the room's natural width exceeds that,
+   #stageViewport's horizontal scroll takes over on its own with no
+   extra math needed.
+
+   Because everything uses box-sizing:border-box (main.css), setting
+   #stage's height directly to VB_H would set its BORDER-BOX height —
+   its actual content area (where #stageViewport lives) would then be
+   VB_H minus its own border width, consistently a few pixels short of
+   the room's real natural size and cropping it by exactly that much.
+   #stage's width doesn't have this problem because computeTileScale()
+   above reads clientWidth (which already excludes border by
+   definition) rather than writing a raw value — but height is a write,
+   not a read, so it needs the same border compensation added back in
+   explicitly. Measured dynamically via getComputedStyle rather than a
+   hardcoded number so this can't quietly drift out of sync if the
+   border width in room.css ever changes.
+
+   Pinch-zoom (see pinchZoom.js): #stageScroll's OWN size here always
+   stays the natural, unscaled VB_W×VB_H — everything inside it (the
+   SVGs, the character, drop indicators, etc.) keeps working in plain
+   unscaled coordinates with zero awareness of zoom, exactly like it
+   has zero awareness of scrolling. Only #stageZoomSizer's size
+   reflects the current zoom level; it's what #stageViewport actually
+   measures for scroll bounds, while #stageScroll is visually stretched
+   to fill it via a CSS transform (applyZoom, below). #stage's own
+   height has to be finalized BEFORE applyZoom() runs, since it computes
+   its zoom-out floor from the viewport's actual visible size (see
+   computeMinZoom) — calling it any earlier would have it reading a
+   stale or not-yet-set height. Re-applying the current zoom here (not
+   just on an explicit pinch gesture) keeps #stageZoomSizer's size, and
+   the zoom-out floor itself, correct whenever the room changes size —
+   e.g. growing to a new milestone while already zoomed out. */
+function applyStageDimensions(){
+  const stageEl = $('stage');
+  const stageScrollEl = $('stageScroll');
+  const roomSvgEl = $('roomSvg');
+  const viewBoxAttr = VB_MIN_X+' '+VB_MIN_Y+' '+VB_W+' '+VB_H;
+
+  if(roomSvgEl) roomSvgEl.setAttribute('viewBox', viewBoxAttr);
+  if(stageScrollEl){
+    stageScrollEl.style.width = VB_W + 'px';
+    stageScrollEl.style.height = VB_H + 'px';
+  }
+  if(stageEl){
+    const cs = getComputedStyle(stageEl);
+    const borderVertical = (parseFloat(cs.borderTopWidth)||0) + (parseFloat(cs.borderBottomWidth)||0);
+    stageEl.style.height = (VB_H + borderVertical) + 'px'; // CSS max-height (main.css) is what actually caps this visually
+  }
+  applyZoom(zoomLevel);
+}
+
+const ABSOLUTE_MIN_ZOOM = 0.4, MAX_ZOOM = 2.2;
+let zoomLevel = 1;
+
+// Current zoom factor — 1 = natural size. Used by furniture.js/
+// movement.js to convert between screen pixels and the room's own
+// (always-unscaled) coordinate space.
+export function getZoom(){ return zoomLevel; }
+
+// The floor zoom is allowed to go to isn't a flat constant — it's
+// whatever scale keeps the room fully covering the visible viewport in
+// BOTH dimensions (the same math CSS background-size:cover uses).
+// Without this, zooming out on a room that's already at or near
+// viewport size (nothing grown yet, or not grown by much) could shrink
+// it small enough to reveal #stage's own background beyond its edges —
+// zooming out is only meaningful, and only ever allowed, in proportion
+// to how much BIGGER than the viewport the room currently is.
+// ABSOLUTE_MIN_ZOOM is just a last-resort floor for a degenerate read
+// (e.g. a 0-size viewport before first layout).
+function computeMinZoom(){
+  const stageViewportEl = $('stageViewport');
+  if(!stageViewportEl) return ABSOLUTE_MIN_ZOOM;
+  const vw = stageViewportEl.clientWidth, vh = stageViewportEl.clientHeight;
+  if(!vw || !vh) return ABSOLUTE_MIN_ZOOM;
+  return Math.max(ABSOLUTE_MIN_ZOOM, vw / VB_W, vh / VB_H);
+}
+
+// Applies a zoom level to the DOM (clamped between the dynamic
+// zoom-out floor above and MAX_ZOOM). Pure DOM application only — no
+// scroll-position adjustment, since only the caller knows what point
+// (if any) should stay visually anchored while zooming (see
+// pinchZoom.js). Returns the actual clamped value applied, since a
+// caller computing a scroll adjustment needs to know the REAL zoom that
+// took effect, not the raw value it asked for.
+export function applyZoom(z){
+  const minZoom = computeMinZoom();
+  zoomLevel = Math.min(MAX_ZOOM, Math.max(minZoom, z));
+  const stageScrollEl = $('stageScroll');
+  const zoomSizerEl = $('stageZoomSizer');
+  if(stageScrollEl) stageScrollEl.style.transform = 'scale('+zoomLevel+')';
+  if(zoomSizerEl){
+    zoomSizerEl.style.width = (VB_W * zoomLevel) + 'px';
+    zoomSizerEl.style.height = (VB_H * zoomLevel) + 'px';
+  }
+  return zoomLevel;
+}
+
 function roomPalette(){
   return {
     wallA: cssVar('--room-wall-a'), wallB: cssVar('--room-wall-b'),
@@ -73,6 +285,13 @@ function isoEllipse(cx,cy,z,rx,ry,fill,extra,segments){
   return '<polygon points="'+pts(isoEllipsePts(cx,cy,z,rx,ry,segments))+'" fill="'+fill+'"'+(extra||'')+'/>';
 }
 
+// WINDOW_VB stays permanently null now that the room no longer draws a
+// built-in window — kept exported (rather than removed outright) since
+// particles.js imports it and already has a graceful fallback for a
+// null value (rain/snow spans the whole visible room instead of being
+// clipped to a window-shaped area). If a window ever comes back as a
+// placeable catalog item instead, this is the hook a decoration-driven
+// version of it would need to set.
 export let WINDOW_VB = null;
 
 function buildRoomStructure(){
@@ -81,18 +300,11 @@ function buildRoomStructure(){
   const leftWall  = [iso(0,0,0), iso(0,ROOM_D,0), iso(0,ROOM_D,WALL_H), iso(0,0,WALL_H)];
   const floor     = [iso(0,0,0), iso(ROOM_W,0,0), iso(ROOM_W,ROOM_D,0), iso(0,ROOM_D,0)];
 
-  const winY0=0.85, winY1=3.35, winZ0=1.75, winZ1=4.0;
-  const windowQuad = [iso(0,winY0,winZ0), iso(0,winY1,winZ0), iso(0,winY1,winZ1), iso(0,winY0,winZ1)];
-  WINDOW_VB = boundingBox(windowQuad);
-
   let svg = '';
   svg += '<polygon points="'+pts(rightWall)+'" fill="'+P.wallB+'"/>';
   svg += '<polygon points="'+pts(leftWall)+'" fill="'+P.wallA+'"/>';
   svg += '<polygon points="'+pts(floor)+'" fill="'+P.floor+'"/>';
   svg += '<polygon points="'+pts(floor)+'" fill="none" stroke="'+shade(P.floor,-20)+'" stroke-width="1.5" opacity="0.5"/>';
-
-  svg += isoEllipse(3.05,2.55,0.02, 1.55,1.35, P.rug, ' stroke="'+shade(P.rug,-14)+'" stroke-width="2"');
-  svg += isoEllipse(3.05,2.55,0.03, 1.05,0.9, 'none', ' stroke="'+P.rugLine+'" stroke-width="2.5" opacity="0.75"');
 
   svg += '<g id="floorGrid" class="floor-grid">';
   for(let gx=0; gx<=ROOM_W; gx++){
@@ -117,13 +329,6 @@ function buildRoomStructure(){
   svg += '</g>';
 
   svg += '<g id="roomDecorations"></g>';
-
-  svg += '<polygon id="windowPane" points="'+pts(windowQuad)+'" fill="url(#windowSkyGrad)"/>';
-  svg += '<polygon points="'+pts(windowQuad)+'" fill="none" stroke="'+P.outline+'" stroke-width="7" stroke-linejoin="round"/>';
-  const midY=(winY0+winY1)/2, midZ=(winZ0+winZ1)/2;
-  const mv0=iso(0,midY,winZ0), mv1=iso(0,midY,winZ1), mh0=iso(0,winY0,midZ), mh1=iso(0,winY1,midZ);
-  svg += '<line x1="'+mv0.x+'" y1="'+mv0.y+'" x2="'+mv1.x+'" y2="'+mv1.y+'" stroke="'+P.outline+'" stroke-width="3.5" stroke-linecap="round"/>';
-  svg += '<line x1="'+mh0.x+'" y1="'+mh0.y+'" x2="'+mh1.x+'" y2="'+mh1.y+'" stroke="'+P.outline+'" stroke-width="3.5" stroke-linecap="round"/>';
 
   return svg;
 }
@@ -293,7 +498,13 @@ export function moveSurfaceGroup(surfaceId, gx, gy){
 
 /* Defensive check run right before persisting — the hard backstop that
    guarantees a broken layout is never the thing that gets written to
-   storage, regardless of what the drag/drop UI already prevented. */
+   storage, regardless of what the drag/drop UI already prevented.
+
+   Deliberately does NOT check "is this item within ROOM_W/ROOM_D" —
+   dev tools can shrink the room back down (see unlocks.js), and
+   existing furniture is intentionally left wherever it is rather than
+   deleted or flagged as broken; it just visually sits outside the
+   smaller floor until the room grows again. */
 export function validateLayout(layout){
   const problems = [];
   layout.forEach(item => {
@@ -421,6 +632,8 @@ export async function loadRoomDecorations(){
 }
 
 export async function initRoom(){
+  applyStageDimensions();
+
   const defs = '<defs><linearGradient id="windowSkyGrad" x1="0" y1="0" x2="0" y2="1">'
              + '<stop id="winStop0" offset="0" stop-color="#8FCBEA"/>'
              + '<stop id="winStop1" offset="1" stop-color="#FFE8B8"/>'

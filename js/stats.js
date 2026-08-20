@@ -27,6 +27,7 @@ import {
   loadStatsGoals, saveStatsGoals
 } from './storage.js';
 import { evaluateQuests } from './quests.js';
+import { getCurrentLevel, evaluateUnlocksSince } from './unlocks.js';
 
 /* ---------------- Tunables ---------------- */
 
@@ -100,25 +101,47 @@ export function setTodoCompletionRateProvider(fn){
   todoCompletionRateProvider = fn;
 }
 
-/* ---------------- Daily Quests hook ----------------
+/* ---------------- Daily Quests + unlocks hook ----------------
    Every log is a potential quest completion (Hydrated/Active/Well Fed
-   all read these same logs — see quests.js). evaluateQuests() is cheap
-   and idempotent (it no-ops for quests already paid out today), so it's
-   safe to call unconditionally on every log rather than threading a
-   "did this complete a quest" flag through every caller.
+   all read these same logs — see quests.js), and completing a quest
+   grants XP that can immediately cross a level-based unlock threshold
+   (Part 2 — see unlocks.js). Both evaluate calls are cheap and
+   idempotent (each no-ops for anything already awarded/unlocked), so
+   it's safe to call them unconditionally on every log rather than
+   threading "did this complete a quest" / "did this unlock something"
+   flags through every caller.
 
-   Quest XP awarding intentionally happens here, in the data layer, not
-   in whatever UI called logFood/logWater/logWorkout — that way XP is
-   granted the instant a quest is actually completed, even if the quests
-   panel isn't currently mounted. The DOM event is just so a mounted
-   panel can react immediately (progress bars, a completion toast)
-   instead of waiting for its next periodic render. */
+   Both XP awarding AND unlock evaluation intentionally happen here, in
+   the data layer, not in whatever UI called logFood/logWater/
+   logWorkout — that way they're granted the instant they're actually
+   earned, even if the quests panel or room-edit catalog isn't currently
+   mounted. The two separate DOM events are just so mounted UI can react
+   immediately (progress bars, toasts, refreshing the catalog) instead
+   of waiting for its next periodic render — kept as two events rather
+   than one so a listener that only cares about one side (e.g. the
+   catalog only caring about unlocks) doesn't have to filter the other
+   out.
+
+   Level has to be snapshotted BEFORE evaluateQuests() runs — that's the
+   call that actually awards XP (via saveXpTotal) — so
+   evaluateUnlocksSince() has something to compare the new level
+   against. Unlock status itself isn't stored anywhere (see unlocks.js);
+   only XP total is, so this snapshot-then-compare is the only way to
+   know whether this particular action was the one that crossed a
+   threshold. */
 function notifyQuestsOfLog(){
-  const result = evaluateQuests();
+  const beforeLevel = getCurrentLevel();
+  const questResult = evaluateQuests();
   try{
-    window.dispatchEvent(new CustomEvent('nook:quests-evaluated', { detail: result }));
+    window.dispatchEvent(new CustomEvent('nook:quests-evaluated', { detail: questResult }));
   } catch(e){}
-  return result;
+
+  const unlockResult = evaluateUnlocksSince(beforeLevel);
+  try{
+    window.dispatchEvent(new CustomEvent('nook:unlocks-evaluated', { detail: unlockResult }));
+  } catch(e){}
+
+  return questResult;
 }
 
 /* ---------------- Public API ---------------- */

@@ -173,7 +173,10 @@
   color: white;
 }
 
-/* ---------------- Completion toast ---------------- */
+/* ---------------- Completion toast ----------------
+   Shared by #questToast (text only) and #unlockToast (Part 2 — icon +
+   text). display:flex only matters for the latter; a text-only toast
+   with a single child renders identically either way. */
 .quest-toast{
   position: fixed;
   left: 50%;
@@ -191,8 +194,23 @@
   transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 50;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 .quest-toast.show{
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+.unlock-toast-icon{
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.unlock-toast-icon svg{
+  width: 100%;
+  height: 100%;
 }
