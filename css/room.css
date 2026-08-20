@@ -337,3 +337,16 @@
 }
 .catalog-add:active{ transform:scale(0.9); }
 .catalog-empty{ font-size:12px; color:var(--ink-soft); text-align:center; padding:16px 0; }
+
+/* ---------------- Part 2: locked catalog entries ----------------
+   A locked row shows the same thumb/name layout as an unlocked one
+   (so its shape in the list doesn't jump around once unlocked) but
+   greyed out, with the unlock level instead of a "+" button — visible
+   so there's something to look forward to, but not addable yet. */
+.catalog-row.locked{ opacity:0.55; }
+.catalog-row.locked .catalog-thumb{ filter:grayscale(1); }
+.catalog-lock{
+  flex:none; font-size:10.5px; font-weight:800; color:var(--ink-soft);
+  background:var(--cream); padding:4px 9px; border-radius:999px;
+  white-space:nowrap;
+}
