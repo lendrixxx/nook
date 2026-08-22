@@ -30,9 +30,20 @@
   position:absolute;
   inset:0;
   overflow:auto;
-  -webkit-overflow-scrolling:touch;
   touch-action:pan-x pan-y;
-  overscroll-behavior:contain;
+  /* `contain` (tried first, previous round) only stops scroll-chaining
+     to a PARENT scroller — it does nothing about this element's own
+     rubber-band/glow bounce past its own edges, which is exactly what
+     was revealing #stage's plain background color beyond the room.
+     `none` is the value that actually suppresses that local bounce
+     effect (MDN: "same as contain, but also prevents the browser's own
+     default overscroll behavior"). Dropping
+     -webkit-overflow-scrolling:touch too — that older WebKit property
+     is specifically what opts an overflow:auto element into iOS's
+     elastic/bouncy scroll style in the first place; without it, iOS
+     falls back to a plain clamped scroll (content just stops at its
+     real edges, no bounce, no momentum overshoot). */
+  overscroll-behavior:none;
   border-radius:inherit;
   scrollbar-width:none; /* Firefox */
 }
