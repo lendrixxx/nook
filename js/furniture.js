@@ -110,6 +110,26 @@ function applyTransform(el, gx, gy, gz){
   el.setAttribute('transform', 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') '+rest);
 }
 
+// Auto-scrolls #stageViewport so the given grid position sits centered
+// in view. Called whenever an item is selected or armed — with a room
+// that can now be bigger than the visible stage, an item (or the spot a
+// brand-new catalog item spawns at) can easily be off-screen, and
+// nothing else prompts the person to go find it. A smooth scroll here
+// composes naturally with the existing scroll listener (see
+// initFurniture) that keeps the popup/controls tracking the item's
+// screen position on every scroll frame, so the popup visibly glides
+// into view along with the room rather than just teleporting.
+function centerViewportOn(gx, gy, gz){
+  if(!stageViewportEl) return;
+  const p = iso(gx, gy, gz);
+  const localX = p.x - VB_MIN_X, localY = p.y - VB_MIN_Y;
+  const maxScrollLeft = Math.max(0, stageViewportEl.scrollWidth - stageViewportEl.clientWidth);
+  const maxScrollTop = Math.max(0, stageViewportEl.scrollHeight - stageViewportEl.clientHeight);
+  const targetLeft = Math.min(maxScrollLeft, Math.max(0, localX - stageViewportEl.clientWidth/2));
+  const targetTop = Math.min(maxScrollTop, Math.max(0, localY - stageViewportEl.clientHeight/2));
+  stageViewportEl.scrollTo({ left: targetLeft, top: targetTop, behavior: 'smooth' });
+}
+
 /* Unified accessor: the armed item's data, whether it's a real
    ROOM_LAYOUT entry or a not-yet-committed ghost candidate. */
 function armedItemSnapshot(){
@@ -288,6 +308,7 @@ function cancelPendingMove(){
   armedMoveId = null;
   pendingPlacement = null;
   pendingNewItem = null;
+  stageEl.classList.remove('item-arming');
   hidePlacementControls();
   hideDropIndicator();
   clearEditStatus();
@@ -303,6 +324,8 @@ function selectItem(id){
   cancelPendingMove();
   selectedItemId = id;
   openPopup(id);
+  const item = findItem(id);
+  if(item) centerViewportOn(item.at[0], item.at[1], item.at[2]);
 }
 
 /* Arms an EXISTING (already-real) item for repositioning. */
@@ -313,9 +336,10 @@ function armMove(id){
   selectedItemId = id;
   closeItemPopup();
   clearEditStatus();
+  stageEl.classList.add('item-arming');
 
   const item = findItem(id);
-  if(!item){ armedMoveId = null; return; }
+  if(!item){ armedMoveId = null; stageEl.classList.remove('item-arming'); return; }
   const def = getItemDef(item);
   const { valid } = computeDropValidity(id, def, item.at[0], item.at[1]);
   const parent = def.role === 'stackable' ? { id:item.parentId, surfaceTopZ:item.at[2] } : null;
@@ -324,6 +348,7 @@ function armMove(id){
   reapplyEditHighlights();
   updateDropIndicator();
   showPlacementControls();
+  centerViewportOn(item.at[0], item.at[1], item.at[2]);
 }
 
 /* Arms a brand-new candidate item that doesn't exist in ROOM_LAYOUT yet. */
@@ -333,6 +358,7 @@ function armNewItem(candidate){
   pendingNewItem = candidate;
   selectedItemId = candidate.id;
   clearEditStatus();
+  stageEl.classList.add('item-arming');
 
   const def = getItemDef(candidate);
   const { valid } = computeDropValidity(candidate.id, def, candidate.at[0], candidate.at[1]);
@@ -343,6 +369,7 @@ function armNewItem(candidate){
     reapplyEditHighlights();
     updateDropIndicator();
     showPlacementControls();
+    centerViewportOn(candidate.at[0], candidate.at[1], candidate.at[2]);
   });
 }
 
@@ -499,18 +526,22 @@ function onPointerDown(e){
   }
 
   const target = e.target.closest('.deco');
-  if(!target){ deselectAll(); return; }
-  const id = target.dataset.id;
-  if(!findItem(id)) return; // shouldn't happen (a ghost only exists while armed), but stay safe
-
-  // Not armed: a tap here only SELECTS (opens the Rotate/Move/Delete
-  // popup) — it never repositions anything directly.
+  const id = target ? target.dataset.id : null;
+  // Not armed: track the gesture regardless of whether it started on an
+  // item or on empty floor — deciding "tap" vs. "scroll-drag" happens on
+  // pointerup (see onPointerUp) rather than here. This matters now that
+  // the room can be scrolled (#stageViewport): a touch starting on empty
+  // floor that turns into a scroll-drag must NOT immediately close
+  // whatever popup/controls are open, which is what used to happen when
+  // this branch called deselectAll() the instant any touch landed
+  // without a target — before the browser (or this handler) had any
+  // chance to tell a scroll from a tap apart.
   dragging = {
-    id, moved:false, armed:false,
+    id: (id && findItem(id)) ? id : null, // a ghost only exists while armed, but stay safe
+    moved:false, armed:false,
     startClientX: e.clientX, startClientY: e.clientY,
     el: target
   };
-  e.preventDefault();
 }
 
 function onPointerMove(e){
@@ -572,11 +603,19 @@ function onPointerMove(e){
 
 function onPointerUp(){
   if(!dragging) return;
-  const { id, moved, armed } = dragging;
-  dragging.el.classList.remove('dragging');
+  const { id, moved, armed, el } = dragging;
+  el?.classList.remove('dragging');
 
   if(!armed){
     dragging = null;
+    if(!id){
+      // No item under the initial touch. If the gesture never moved, it
+      // was a genuine tap on empty floor — close whatever's open. If it
+      // DID move, it was a scroll-drag (see onPointerDown) and should
+      // leave the current selection/popup exactly as it was.
+      if(!moved) deselectAll();
+      return;
+    }
     selectItem(id);
     if(moved) showEditStatus('Choose "Move" from the menu, then drag to reposition.');
     return;
