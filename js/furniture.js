@@ -1,8 +1,8 @@
 import { $, fetchAsset, stripSvgWrapper, pts } from './utils.js';
 import { clearFurnitureLayout } from './storage.js';
 import {
-  iso, screenToIsoGrid, snapToGrid, clampSnappedToRoom, ROOM_LAYOUT, VB_W, VB_H,
-  ROOM_W, ROOM_D, resolveSnapParams, getFootprint, applyWallLock, currentRoomScale,
+  iso, screenToIsoGrid, snapToGrid, clampSnappedToRoom, ROOM_LAYOUT,
+  ROOM_W, ROOM_D, VB_MIN_X, VB_MIN_Y, resolveSnapParams, getFootprint, applyWallLock,
   currentThemeId, findItem, getChildren, findSupportingSurface, getItemDef,
   isFloorSpotBlocked, updateItemPosition, moveSurfaceGroup, validateLayout,
   setRoomLayout, persistRoomLayout, loadRoomDecorations,
@@ -46,9 +46,19 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
    they're visible (so there's something to look forward to) but not
    addable. Nothing about placing/moving/deleting an *already-placed*
    item changes; unlocking only gates adding new ones from the catalog.
+
+   Also Part 2: the room can now be bigger than the visible stage (see
+   room.js — grid cells stay a fixed size, so a bigger room is a bigger
+   canvas, not a zoomed-out one), scrollable via #stageViewport. Screen-
+   pixel↔viewBox conversions below (clientToViewBox, itemScreenPosition)
+   account for both the viewBox's own min-x/min-y (which shifts as the
+   room grows — see room.js's setRoomSize) and #stageViewport's current
+   scroll offset, so dragging/popups stay correctly aligned no matter
+   how big the room is or how far it's scrolled.
    ========================================================================= */
 
 const stageEl = $('stage');
+const stageViewportEl = $('stageViewport');
 const roomSvgEl = $('roomSvg');
 const appEl = $('app');
 
@@ -67,10 +77,30 @@ function cloneLayout(layout){
   return layout.map(item => ({ ...item, at: [...item.at] }));
 }
 
+// Pointer event (screen pixels) -> SVG viewBox coordinates. Has to
+// account for both #stageViewport's scroll offset (the room can be
+// panned) and the viewBox's own min-x/min-y (which shifts as the room
+// grows — see room.js's setRoomSize) since the SVG is no longer
+// stretched to fill the stage at a fixed 0,0 origin.
 function clientToViewBox(clientX, clientY){
-  const rect = stageEl.getBoundingClientRect();
-  const px = clientX - rect.left, py = clientY - rect.top;
-  return { x: px/rect.width*VB_W, y: py/rect.height*VB_H };
+  const rect = stageViewportEl.getBoundingClientRect();
+  const localX = clientX - rect.left + stageViewportEl.scrollLeft;
+  const localY = clientY - rect.top + stageViewportEl.scrollTop;
+  return { x: VB_MIN_X + localX, y: VB_MIN_Y + localY };
+}
+
+// The inverse direction: an item's grid position -> its current VISIBLE
+// screen position within #stage (for CSS-positioning the popup/confirm/
+// cancel controls, which live outside the scrollable area so they don't
+// scroll away with the room — see index.html). Directly in CSS pixels
+// since the room now renders at natural 1:1 scale, no percentage math
+// needed.
+function itemScreenPosition(gx, gy, gz){
+  const p = iso(gx, gy, gz);
+  return {
+    x: p.x - VB_MIN_X - stageViewportEl.scrollLeft,
+    y: p.y - VB_MIN_Y - stageViewportEl.scrollTop
+  };
 }
 
 function applyTransform(el, gx, gy, gz){
@@ -128,10 +158,9 @@ function positionPopup(itemId){
   const item = findItem(itemId);
   const popupEl = $('itemPopup');
   if(!item || !popupEl) return;
-  const p = iso(item.at[0], item.at[1], item.at[2]);
-  const stageRect = stageEl.getBoundingClientRect();
-  popupEl.style.left = ((p.x / VB_W) * stageRect.width) + 'px';
-  popupEl.style.top = (((p.y / VB_H) * stageRect.height) + 16) + 'px';
+  const pos = itemScreenPosition(item.at[0], item.at[1], item.at[2]);
+  popupEl.style.left = pos.x + 'px';
+  popupEl.style.top = (pos.y + 16) + 'px';
 }
 function openPopup(itemId){
   positionPopup(itemId);
@@ -149,10 +178,9 @@ function closeItemPopup(){
    stage near the top edge. */
 function positionPlacementControls(){
   if(!pendingPlacement) return;
-  const p = iso(pendingPlacement.gx, pendingPlacement.gy, pendingPlacement.gz);
-  const stageRect = stageEl.getBoundingClientRect();
-  const baseLeft = (p.x / VB_W) * stageRect.width;
-  const baseTop = Math.max(28, ((p.y / VB_H) * stageRect.height) - 76);
+  const pos = itemScreenPosition(pendingPlacement.gx, pendingPlacement.gy, pendingPlacement.gz);
+  const baseLeft = pos.x;
+  const baseTop = Math.max(28, pos.y - 76);
   const confirmBtn = $('itemConfirmBtn');
   const cancelBtn = $('itemCancelBtn');
   if(confirmBtn){ confirmBtn.style.left = (baseLeft + 30) + 'px'; confirmBtn.style.top = baseTop + 'px'; }
@@ -216,10 +244,7 @@ async function renderGhostItem(item){
   try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
   catch(e){ return; }
   const p = iso(item.at[0], item.at[1], item.at[2]);
-  // Matches loadRoomDecorations()'s own scale math (room.js) — without
-  // the room-size multiplier here, a ghost preview would render at a
-  // different size than the real item does the instant it's confirmed.
-  const scale = (def.scale || 1) * currentRoomScale();
+  const scale = def.scale || 1;
   const anchor = def.anchor || [0, 0];
   const transform = 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') rotate(0) scale('+scale+') translate('+(-anchor[0]).toFixed(1)+','+(-anchor[1]).toFixed(1)+')';
   let el = document.getElementById('ghostDeco');
@@ -397,10 +422,9 @@ function renderCatalogList(){
   el.innerHTML = entries.map(([key, def]) => {
     // Locked entries stay visible (so there's something to look forward
     // to) but greyed out, with the level they unlock at instead of a
-    // "+" button — nothing about an already-placed instance of a since-
-    // relocked item (shouldn't normally happen, since unlocks never
-    // reverse — see unlocks.js) is affected by this, it only gates
-    // adding NEW ones.
+    // "+" button. Unlock status is live (see unlocks.js) — lowering
+    // level via the dev tools relocks these on the very next render,
+    // with no effect on anything already placed in the room.
     if(!isItemUnlocked(key)){
       return '<div class="catalog-row locked">'
         + '<div class="catalog-thumb" data-thumb="'+key+'"></div>'
@@ -424,9 +448,10 @@ function renderCatalogList(){
   hydrateCatalogThumbs(el);
 }
 
-// Public: lets other modules (devTools.js, after a dev-triggered unlock)
-// refresh the visible catalog without needing to know about editMode or
-// activeCatalogCat internally. A no-op if the edit panel isn't open.
+// Public: lets other modules (devTools.js, after a dev-triggered level
+// change) refresh the visible catalog without needing to know about
+// editMode or activeCatalogCat internally. A no-op if the edit panel
+// isn't open.
 export function refreshCatalog(){
   if(editMode) renderCatalogList();
 }
@@ -642,6 +667,15 @@ export function initFurniture(){
     loadRoomDecorations();
     renderCatalogList();
   });
+
+  // Popups/controls track the item's on-screen position, which changes
+  // as the room is panned (see itemScreenPosition above) — reposition
+  // on scroll rather than leaving them pinned to wherever they were
+  // when the item was first selected/armed.
+  stageViewportEl?.addEventListener('scroll', () => {
+    if(selectedItemId && !armedMoveId) positionPopup(selectedItemId);
+    if(armedMoveId) positionPlacementControls();
+  }, { passive:true });
 
   $('resetRoomLayoutBtn')?.addEventListener('click', () => {
     if(!confirm('Clear everything from this room? This removes all placed furniture.')) return;
