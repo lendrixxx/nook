@@ -10,31 +10,72 @@ import { loadFurnitureLayout, saveFurnitureLayout } from './storage.js';
    iso(gx,gy,gz) and converted to pixels.
 
    Part 2 (room-size milestones — see unlocks.js): ROOM_W/ROOM_D are
-   mutable and grow via setRoomSize(). TILE stays fixed always — a grid
-   cell is exactly TILE px both before and after a room grows, so
-   furniture never changes size. What changes is the room's own natural
-   pixel footprint (VB_W/VB_H below), which grows right along with it —
-   the stage visibly gets bigger, up to a cap (see STAGE_MAX_HEIGHT),
-   past which the extra room becomes scrollable rather than the stage
-   growing indefinitely. See index.html's #stageViewport/#stageScroll
-   structure and applyStageDimensions() below for how that's wired up.
+   mutable and grow via setRoomSize(). A grid cell's PIXEL size (TILE)
+   stays fixed once established, so furniture never changes size as the
+   room grows — but "once established" matters: before Part 2, the whole
+   400×380 canvas was stretched (preserveAspectRatio="none" + CSS
+   width:100%) to exactly fill whatever width the device's stage
+   happened to render at, meaning a tile's actual on-screen pixel size
+   always varied by device. Simply hardcoding TILE=30 broke that: on any
+   device narrower or wider than exactly 400px, the base (pre-growth)
+   room no longer filled the stage edge-to-edge, leaving a visible gap
+   of bare background down one side.
+
+   The fix: TILE (and everything measured in the same pixel space —
+   ORIGIN_X/ORIGIN_Y/ZSTEP/SIDE_MARGIN/BOTTOM_MARGIN) is computed ONCE,
+   at boot, scaled so the BASE room's natural width exactly matches the
+   real measured stage width on THIS device — see computeTileScale().
+   That reproduces the old edge-to-edge fit exactly. Once computed, the
+   scale is never revisited (no re-scaling on resize, no re-scaling as
+   the room grows) — growth past the base size only ever adds more
+   (already-scaled) grid cells, which is what keeps existing furniture
+   a stable size for the rest of the session, matching the original
+   Part 2 design intent.
    ========================================================================= */
-export const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, WALL_H=5;
+const BASE_TILE = 30, BASE_ZSTEP = 26, BASE_ORIGIN_X = 200, BASE_ORIGIN_Y = 150;
+const BASE_SIDE_MARGIN = 20, BASE_BOTTOM_MARGIN = 50;
+const BASE_NATURAL_WIDTH = 400; // the original hand-built room's width at TILE=30 — the scale reference point
+
+export let TILE = BASE_TILE, ZSTEP = BASE_ZSTEP, ORIGIN_X = BASE_ORIGIN_X, ORIGIN_Y = BASE_ORIGIN_Y;
+export const WALL_H = 5; // grid units, not a pixel length — never scales
 export const BASE_ROOM_SIZE = 6;
 
 // Fixed pixel margins around the floor's own bounding box — tuned so
-// that at the base 6×6 size, VB_MIN_X/VB_MIN_Y/VB_W/VB_H below reproduce
-// exactly the original hand-built room (viewBox "0 0 400 380").
-const SIDE_MARGIN = 20;
-const BOTTOM_MARGIN = 50;
+// that at the base 6×6 size (and BASE_TILE), VB_MIN_X/VB_MIN_Y/VB_W/VB_H
+// below reproduce exactly the original hand-built room (viewBox
+// "0 0 400 380"). Scale along with everything else in computeTileScale().
+let SIDE_MARGIN = BASE_SIDE_MARGIN;
+let BOTTOM_MARGIN = BASE_BOTTOM_MARGIN;
+
+let tileScaleComputed = false;
+// Called once, early in boot (see app.js), before the room is ever
+// built — measures the real available stage width on this device and
+// scales TILE (and its dependent constants) so the base room's natural
+// width matches it exactly, reproducing the old "always fills the
+// stage" fit. Safe to call more than once; only the first call (the one
+// that runs before anything's been drawn at the default scale) has any
+// effect, so an accidental duplicate call can't rescale an already-
+// visible room out from under the person.
+export function computeTileScale(stageWidthPx){
+  if(tileScaleComputed || !stageWidthPx) return;
+  const scale = stageWidthPx / BASE_NATURAL_WIDTH;
+  TILE = BASE_TILE * scale;
+  ZSTEP = BASE_ZSTEP * scale;
+  ORIGIN_X = BASE_ORIGIN_X * scale;
+  ORIGIN_Y = BASE_ORIGIN_Y * scale;
+  SIDE_MARGIN = BASE_SIDE_MARGIN * scale;
+  BOTTOM_MARGIN = BASE_BOTTOM_MARGIN * scale;
+  tileScaleComputed = true;
+}
 
 // The stage visibly grows with the room up to this height; beyond it,
 // #stageViewport (index.html) scrolls instead of the stage growing
-// further. Comfortably covers every current room-size milestone (8×8 is
-// 440px) with room to spare for a couple more before scrolling actually
-// kicks in for height — width is already naturally bounded by #app's
-// max-width (480px in main.css), so it's the one more likely to need
-// scrolling first (8×8 is 520px wide).
+// further. Comfortably covers every current room-size milestone with
+// room to spare for a couple more before scrolling actually kicks in
+// for height — width is already naturally bounded by #app's max-width
+// (480px in main.css), so it's the one more likely to need scrolling
+// first. Not scaled by computeTileScale() — this is a cap on the
+// STAGE's own visible size, not a room-geometry measurement.
 const STAGE_MAX_HEIGHT = 480;
 
 export let ROOM_W = BASE_ROOM_SIZE, ROOM_D = BASE_ROOM_SIZE;
