@@ -33,7 +33,7 @@ import { $ } from './utils.js';
 import { state } from './state.js';
 import { initCompanion, drawCharacter } from './companion.js';
 import { initIcons } from './icons.js';
-import { loadTheme, currentThemeId, initRoom } from './room.js';
+import { loadTheme, currentThemeId } from './room.js';
 import { resizeCanvas } from './particles.js';
 import {
   initWeatherUI, applyInitialForecastToggleState, locate, fetchWeather
@@ -49,7 +49,7 @@ import { initFurniture } from './furniture.js';
 import { initUI } from './ui.js';
 import { initStatsPanel, renderStatsPanel } from './statsPanel.js';
 import { initQuestsPanel, renderQuestsPanel } from './questsPanel.js';
-import { applyRoomSize, evaluateUnlocks } from './unlocks.js';
+import { applyRoomSize } from './unlocks.js';
 import { initDevTools, initUnlockNotifications } from './devTools.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
@@ -102,24 +102,17 @@ try{
 /* ---------------- Boot ---------------- */
 applyInitialForecastToggleState();
 
-// applyRoomSize() reads the permanently-recorded room-size level and
-// sets ROOM_W/ROOM_D/TILE (room.js) from it — this has to happen BEFORE
-// loadTheme() builds the room SVG for the first time, so it renders at
-// the right grid size from the very first paint instead of building
-// small and immediately resizing.
+// applyRoomSize() (unlocks.js) sets ROOM_W/ROOM_D from the current XP
+// level — has to run before loadTheme() builds the room SVG for the
+// first time, so it renders at the right grid size from the very first
+// paint. Unlike Part 2's first draft, there's no separate "evaluate and
+// notify" step needed after loadTheme() anymore: unlock/room-size status
+// is purely live off current level now (see unlocks.js), so there's
+// nothing to catch up on at boot — only an actual XP change (a quest
+// completing, or a dev tool) ever needs the evaluate/notify pipeline,
+// and neither of those happens during boot itself.
 applyRoomSize();
-loadTheme(currentThemeId).then(() => {
-  // ROOM_LAYOUT is populated by loadTheme() by this point, which
-  // evaluateUnlocks()'s one-time grandfathering (see unlocks.js) needs
-  // to see so anything already placed doesn't retroactively look
-  // locked. This also catches any level-based unlock that should
-  // already apply but hasn't been recorded yet (e.g. first boot after
-  // this feature shipped, for a player already past level 1).
-  const unlockResult = evaluateUnlocks();
-  if(unlockResult.roomGrew){
-    initRoom(); // the recorded room-size level just advanced past what applyRoomSize() applied above — rebuild at the new size
-  }
-});
+loadTheme(currentThemeId);
 
 resizeCanvas();
 loadTodosAndRender();
