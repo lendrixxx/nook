@@ -7,42 +7,50 @@ import { loadFurnitureLayout, saveFurnitureLayout } from './storage.js';
    ISOMETRIC ROOM
    A simple 2:1 grid projection. Everything (walls, floor, furniture, the
    window, and the character's walk path) is placed in "grid units" via
-   iso(gx,gy,gz) and converted to the SVG's 400x380 viewBox.
-   ========================================================================= */
-export const ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, WALL_H=5, VB_W=400, VB_H=380;
+   iso(gx,gy,gz) and converted to pixels.
 
-/* ROOM_W/ROOM_D/TILE are mutable — Part 2's level-based room-size
-   milestones (see unlocks.js) change them at runtime via setRoomSize().
-   BASE_TILE/BASE_ROOM_SIZE record what this whole isometric layout
-   (walls, floor, rug, window, and every ITEM_CATALOG entry's `scale`)
-   was originally hand-tuned against at the 6×6 size. TILE is always
-   recomputed as BASE_TILE * BASE_ROOM_SIZE / currentSize, which keeps
-   the room's total on-screen footprint constant as the grid gains more,
-   smaller cells — the room doesn't get visually bigger, it gets more
-   finely subdivided. That matters because #stage's aspect-ratio is
-   fixed in main.css independent of room size; growing the actual pixel
-   footprint here would either overflow that fixed box or require
-   touching main.css every time a milestone is added. setRoomSize() is
-   the only place ROOM_W/ROOM_D/TILE should ever be reassigned. */
-export const BASE_TILE = 30;
+   Part 2 (room-size milestones — see unlocks.js): ROOM_W/ROOM_D are
+   mutable and grow via setRoomSize(). TILE stays fixed always — a grid
+   cell is exactly TILE px both before and after a room grows, so
+   furniture never changes size. What changes is the room's own natural
+   pixel footprint (VB_W/VB_H below), which grows right along with it —
+   the stage visibly gets bigger, up to a cap (see STAGE_MAX_HEIGHT),
+   past which the extra room becomes scrollable rather than the stage
+   growing indefinitely. See index.html's #stageViewport/#stageScroll
+   structure and applyStageDimensions() below for how that's wired up.
+   ========================================================================= */
+export const TILE=30, ZSTEP=26, ORIGIN_X=200, ORIGIN_Y=150, WALL_H=5;
 export const BASE_ROOM_SIZE = 6;
+
+// Fixed pixel margins around the floor's own bounding box — tuned so
+// that at the base 6×6 size, VB_MIN_X/VB_MIN_Y/VB_W/VB_H below reproduce
+// exactly the original hand-built room (viewBox "0 0 400 380").
+const SIDE_MARGIN = 20;
+const BOTTOM_MARGIN = 50;
+
+// The stage visibly grows with the room up to this height; beyond it,
+// #stageViewport (index.html) scrolls instead of the stage growing
+// further. Comfortably covers every current room-size milestone (8×8 is
+// 440px) with room to spare for a couple more before scrolling actually
+// kicks in for height — width is already naturally bounded by #app's
+// max-width (480px in main.css), so it's the one more likely to need
+// scrolling first (8×8 is 520px wide).
+const STAGE_MAX_HEIGHT = 480;
+
 export let ROOM_W = BASE_ROOM_SIZE, ROOM_D = BASE_ROOM_SIZE;
-export let TILE = BASE_TILE;
+export let VB_MIN_X = 0, VB_MIN_Y = 0, VB_W = 400, VB_H = 380;
 
 export function setRoomSize(cols, rows){
   ROOM_W = cols;
   ROOM_D = rows;
-  TILE = BASE_TILE * (BASE_ROOM_SIZE / Math.max(cols, rows));
-}
-
-// Multiplier every placed/ghost item's own `scale` gets multiplied by at
-// render time (see loadRoomDecorations below and furniture.js's
-// renderGhostItem), so furniture artwork shrinks in lockstep with the
-// grid. Without this, a bigger room — same visual footprint, but more
-// and smaller grid cells — would leave same-size furniture art looking
-// proportionally larger and more crowded than before.
-export function currentRoomScale(){
-  return TILE / BASE_TILE;
+  // Leftmost floor point is corner (0, ROOM_D); rightmost is (ROOM_W, 0).
+  // Topmost point is always the wall-top corner at the origin (0,0,WALL_H)
+  // — constant, independent of room size, which is why VB_MIN_Y is
+  // always 0. Bottommost point is corner (ROOM_W, ROOM_D).
+  VB_MIN_X = ORIGIN_X - ROOM_D*TILE - SIDE_MARGIN;
+  VB_MIN_Y = 0;
+  VB_W = (ROOM_W + ROOM_D) * TILE + SIDE_MARGIN * 2;
+  VB_H = ORIGIN_Y + (ROOM_W + ROOM_D) * (TILE/2) + BOTTOM_MARGIN;
 }
 
 export const GRID_SNAP = 0.5; // grid-unit increment furniture snaps to while dragging
@@ -78,6 +86,36 @@ export function resolveSnapParams(def){
   const snapOffset = def.snapOffset != null ? def.snapOffset : snapStep / 2;
   const clampMargin = def.clampMargin != null ? def.clampMargin : snapStep / 2;
   return { snapStep, snapOffset, clampMargin };
+}
+
+/* ---------------- Stage sizing (Part 2) ----------------
+   Applies the current room's natural pixel size to the actual DOM.
+   #bgScene/#roomSvg keep their existing CSS width:100%/height:100%
+   (room.css) — since their containing block (#stageScroll) is now
+   explicitly sized to VB_W×VB_H below, "100%" already resolves to
+   exactly that, and because the viewBox attribute set here declares
+   the SAME VB_W×VB_H, the SVG-to-box scale factor works out to exactly
+   1:1 with no stretching needed. #stage's own visible height grows
+   with the room up to STAGE_MAX_HEIGHT; its WIDTH isn't set here — it's
+   already 100% of #app (capped by #app's own max-width), so once the
+   room's natural width exceeds that, #stageViewport's horizontal scroll
+   takes over on its own with no extra math needed. */
+function applyStageDimensions(){
+  const stageEl = $('stage');
+  const stageScrollEl = $('stageScroll');
+  const roomSvgEl = $('roomSvg');
+  const bgSceneEl = $('bgScene');
+  const viewBoxAttr = VB_MIN_X+' '+VB_MIN_Y+' '+VB_W+' '+VB_H;
+
+  if(roomSvgEl) roomSvgEl.setAttribute('viewBox', viewBoxAttr);
+  if(bgSceneEl) bgSceneEl.setAttribute('viewBox', viewBoxAttr);
+  if(stageScrollEl){
+    stageScrollEl.style.width = VB_W + 'px';
+    stageScrollEl.style.height = VB_H + 'px';
+  }
+  if(stageEl){
+    stageEl.style.height = Math.min(VB_H, STAGE_MAX_HEIGHT) + 'px';
+  }
 }
 
 function roomPalette(){
@@ -342,7 +380,13 @@ export function moveSurfaceGroup(surfaceId, gx, gy){
 
 /* Defensive check run right before persisting — the hard backstop that
    guarantees a broken layout is never the thing that gets written to
-   storage, regardless of what the drag/drop UI already prevented. */
+   storage, regardless of what the drag/drop UI already prevented.
+
+   Deliberately does NOT check "is this item within ROOM_W/ROOM_D" —
+   dev tools can shrink the room back down (see unlocks.js), and
+   existing furniture is intentionally left wherever it is rather than
+   deleted or flagged as broken; it just visually sits outside the
+   smaller floor until the room grows again. */
 export function validateLayout(layout){
   const problems = [];
   layout.forEach(item => {
@@ -458,7 +502,7 @@ export async function loadRoomDecorations(){
     try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
     catch(e){ return ''; }
     const p = iso(item.at[0], item.at[1], item.at[2]);
-    const scale = (def.scale || 1) * currentRoomScale();
+    const scale = def.scale || 1;
     const rotate = item.rotate || 0;
     const inner = stripSvgWrapper(svgText);
     const anchor = def.anchor || [0, 0];
@@ -470,6 +514,8 @@ export async function loadRoomDecorations(){
 }
 
 export async function initRoom(){
+  applyStageDimensions();
+
   const defs = '<defs><linearGradient id="windowSkyGrad" x1="0" y1="0" x2="0" y2="1">'
              + '<stop id="winStop0" offset="0" stop-color="#8FCBEA"/>'
              + '<stop id="winStop1" offset="1" stop-color="#FFE8B8"/>'
