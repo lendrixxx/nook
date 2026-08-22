@@ -25,20 +25,15 @@ const KEY_STATS_GOALS = 'nook_stats_goals';
    stored — everything else (today's progress) is recomputed on demand
    from the logs above, same as stats.js does for the meters. See
    quests.js for how the awards record resets at the calendar-day
-   boundary while xp_total is left untouched. */
+   boundary while xp_total is left untouched.
+
+   Part 2 (level-based unlocks — see unlocks.js) deliberately persists
+   nothing of its own here: item/character unlock status and room size
+   are pure, live functions of this same XP total, recomputed on every
+   read rather than tracked as a separate record. That's what makes
+   clearProgressionStorage() below only need to touch these two keys. */
 const KEY_XP_TOTAL = 'nook_xp_total';
 const KEY_QUEST_AWARDS = 'nook_quest_awards';
-
-/* Part 2: level-based unlocks. Unlocked-item/character-part ids and the
-   room-size level are each permanent records, not values re-derived
-   live from current XP — same reasoning as quest awards: none of them
-   should be able to reverse if XP/level is later reduced (e.g. by the
-   dev "set level" tool), especially room size, since furniture may
-   already be placed in space that only exists because it unlocked. See
-   unlocks.js for the evaluate/persist logic that owns these keys. */
-const KEY_UNLOCKED_ITEMS = 'nook_unlocked_items';
-const KEY_UNLOCKED_CHARACTER = 'nook_unlocked_character';
-const KEY_ROOM_SIZE_LEVEL = 'nook_room_size_level';
 
 export function loadSavedCharacter(){
   try{ return JSON.parse(localStorage.getItem(KEY_CHARACTER)); }
@@ -161,57 +156,12 @@ export function saveQuestAwards(record){
   try{ localStorage.setItem(KEY_QUEST_AWARDS, JSON.stringify(record)); } catch(e){}
 }
 
-/* ---------------- Part 2: level-based unlocks ----------------
-   loadUnlockedItems()/loadUnlockedCharacterParts() return null (not [])
-   when the key has never been written — unlocks.js treats that as "pre-
-   Part-2 storage" and uses it as the one-time trigger to grandfather in
-   anything already placed in the room, so an existing player never sees
-   furniture they're already using suddenly show up locked. */
-export function loadUnlockedItems(){
-  try{
-    const raw = localStorage.getItem(KEY_UNLOCKED_ITEMS);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e){ return null; }
-}
-export function saveUnlockedItems(ids){
-  try{ localStorage.setItem(KEY_UNLOCKED_ITEMS, JSON.stringify(ids)); } catch(e){}
-}
-
-export function loadUnlockedCharacterParts(){
-  try{
-    const raw = localStorage.getItem(KEY_UNLOCKED_CHARACTER);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e){ return null; }
-}
-export function saveUnlockedCharacterParts(ids){
-  try{ localStorage.setItem(KEY_UNLOCKED_CHARACTER, JSON.stringify(ids)); } catch(e){}
-}
-
-// The highest room-size milestone level actually reached — permanent,
-// deliberately distinct from "current level" (see the comment above the
-// key constants). Defaults to 1 (the base 6×6 size) when never set.
-export function loadRoomSizeLevel(){
-  try{
-    const raw = localStorage.getItem(KEY_ROOM_SIZE_LEVEL);
-    const n = raw != null ? Number(raw) : 1;
-    return Number.isFinite(n) && n > 0 ? n : 1;
-  } catch(e){ return 1; }
-}
-export function saveRoomSizeLevel(level){
-  try{ localStorage.setItem(KEY_ROOM_SIZE_LEVEL, String(level)); } catch(e){}
-}
-
-// Dev-only "Reset progression" tool wipes every key this file has
-// touched above for XP/quests/unlocks in one place, rather than the
-// caller having to know and remove each one individually. Deliberately
-// does NOT touch character/todos/furniture/weather/calendar state —
-// this resets *progression*, not the whole app.
+// Dev-only "Reset progression" tool (unlocks.js). Deliberately does NOT
+// touch character/todos/furniture/weather/calendar state — this resets
+// *progression*, not the whole app.
 export function clearProgressionStorage(){
   try{
     localStorage.removeItem(KEY_XP_TOTAL);
     localStorage.removeItem(KEY_QUEST_AWARDS);
-    localStorage.removeItem(KEY_UNLOCKED_ITEMS);
-    localStorage.removeItem(KEY_UNLOCKED_CHARACTER);
-    localStorage.removeItem(KEY_ROOM_SIZE_LEVEL);
   } catch(e){}
 }
