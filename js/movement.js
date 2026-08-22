@@ -1,10 +1,11 @@
 import { $ } from './utils.js';
 import { state } from './state.js';
-import { iso, screenToIsoGrid, TILE, ORIGIN_X, ORIGIN_Y, VB_W, VB_H, ROOM_W, ROOM_D } from './room.js';
+import { iso, screenToIsoGrid, TILE, ORIGIN_X, ORIGIN_Y, VB_MIN_X, VB_MIN_Y, VB_H, ROOM_W, ROOM_D } from './room.js';
 import { getCharWrapEl, isCharAsleep, setCharAsleep, drawCharacter } from './companion.js';
 import { isEditMode } from './furniture.js';
 
 const stageEl = $('stage');
+const stageViewportEl = $('stageViewport');
 const charWrapEl = getCharWrapEl();
 
 /* ---------------- Character wandering (walks the open floor area) ---------------- */
@@ -41,8 +42,14 @@ function placeCharAt(gx, gy){
   const p = iso(gx, gy, 0);
   charWrapEl.classList.toggle('facing-left', gx < lastGX);
   charWrapEl.classList.add('walking');
-  charWrapEl.style.left = (p.x/VB_W*100) + '%';
-  charWrapEl.style.top = Math.min(p.y/VB_H*100, 78) + '%'; // never past the room's visible floor edge
+  // Direct pixel positioning within #stageScroll (the character lives
+  // there now, not directly in #stage — see index.html) rather than a
+  // percentage of the stage's own box, since the room can be bigger
+  // than the visible stage and scrollable (Part 2). VB_MIN_X/VB_MIN_Y
+  // convert from iso()'s raw viewBox-space coordinate to a position
+  // relative to #stageScroll's own (0,0) corner.
+  charWrapEl.style.left = (p.x - VB_MIN_X) + 'px';
+  charWrapEl.style.top = Math.min(p.y - VB_MIN_Y, VB_H*0.78) + 'px'; // never past the room's visible floor edge
   lastGX = gx;
 }
 charWrapEl.addEventListener('transitionend', (e) => {
@@ -95,10 +102,10 @@ export function leaveDesk(reason){
    so the character can never be walked into a wall or off the visible
    floor. */
 function screenToGrid(clientX, clientY){
-  const rect = stageEl.getBoundingClientRect();
-  const px = clientX - rect.left, py = clientY - rect.top;
-  const X = px / rect.width * VB_W, Y = py / rect.height * VB_H;
-  return screenToIsoGrid(X, Y, 0);
+  const rect = stageViewportEl.getBoundingClientRect();
+  const localX = clientX - rect.left + stageViewportEl.scrollLeft;
+  const localY = clientY - rect.top + stageViewportEl.scrollTop;
+  return screenToIsoGrid(VB_MIN_X + localX, VB_MIN_Y + localY, 0);
 }
 let tapIdleTimer = null;
 function moveCharacterToTap(gx, gy){
