@@ -62,7 +62,11 @@ export const CHARACTER_UNLOCKS = [];
 export const ROOM_SIZE_MILESTONES = [
   { level:1, cols:6, rows:6 },
   { level:10, cols:7, rows:7 },
-  { level:20, cols:8, rows:8 }
+  { level:20, cols:8, rows:8 },
+  { level:30, cols:9, rows:9 },
+  { level:40, cols:10, rows:10 },
+  { level:50, cols:11, rows:11 },
+  { level:60, cols:12, rows:12 }
 ];
 
 function currentLevel(){
