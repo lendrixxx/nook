@@ -34,7 +34,9 @@
   touch-action:pan-x pan-y;
   overscroll-behavior:contain;
   border-radius:inherit;
+  scrollbar-width:none; /* Firefox */
 }
+.stage-viewport::-webkit-scrollbar{ display:none; } /* Safari/Chrome */
 .stage-scroll{
   position:relative;
   /* width/height set via JS to match the room's current natural pixel
