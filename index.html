@@ -25,9 +25,28 @@
 <div id="app">
 
   <div class="stage" id="stage">
-    <div id="skyBg"></div>
-    <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
-    <svg id="roomSvg" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
+    <!-- Part 2: the room can be bigger than the visible stage now (see
+         room.js — grid cells stay a fixed size, so a bigger room is a
+         bigger canvas). #stageViewport is the actual scroll container;
+         #stageScroll is sized to the room's full natural pixel size and
+         holds every visual layer that should pan together. Buttons/
+         popups stay OUTSIDE both, as direct children of .stage, so they
+         stay pinned to the same corner of the visible stage rather than
+         scrolling away with the room. -->
+    <div class="stage-viewport" id="stageViewport">
+      <div class="stage-scroll" id="stageScroll">
+        <div id="skyBg"></div>
+        <svg id="bgScene" viewBox="0 0 400 380"></svg>
+        <svg id="roomSvg" viewBox="0 0 400 380"></svg>
+        <div id="windowFog"></div>
+        <canvas id="particles"></canvas>
+        <div id="stageChar">
+          <div class="charInner"></div>
+          <div class="charShadow"></div>
+        </div>
+        <div id="flash"></div>
+      </div>
+    </div>
 
     <!-- Settings now lives as a scene button in the room itself, rather
          than a separate header bar — frees that vertical space up for
@@ -82,14 +101,6 @@
       <svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg>
     </button>
     <button id="itemCancelBtn" class="item-cancel" title="Cancel">✕</button>
-
-    <div id="windowFog"></div>
-    <canvas id="particles"></canvas>
-    <div id="stageChar">
-      <div class="charInner"></div>
-      <div class="charShadow"></div>
-    </div>
-    <div id="flash"></div>
   </div>
 
   <div class="infocard">
@@ -367,7 +378,7 @@
   <div class="divider"></div>
 
   <h2><svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>Developer — Progression</h2>
-  <p class="hint">Testing tools only — not part of normal play. Every control here goes through the same unlock logic a real level-up would.</p>
+  <p class="hint">Testing tools only — not part of normal play. Every control here goes through the same unlock logic a real level-up would, including relocking anything above the level you set (existing placed furniture is never deleted).</p>
 
   <div class="row2">
     <button class="btn secondary" id="devXpMinusBtn" style="margin-top:0;">−10 XP</button>
