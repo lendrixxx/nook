@@ -123,21 +123,21 @@ body{
    stage's actual size depended on how tall whichever card page was
    currently showing — three meaningfully different heights (weather,
    stats, quests) meant the room visibly compressed and un-compressed on
-   every swipe, and even the min-height floor below only ever guaranteed
-   a minimum, not a consistent size.
+   every swipe.
 
-   Fixed instead: the stage is pulled out of flex space-sharing (flex:0)
-   and sized directly from the room SVG's own proportions (viewBox
-   "0 0 400 380" in index.html) via aspect-ratio, so its height is a
-   pure function of its width — never of whatever's below it. Same
-   !important + ID-selector approach as before, so this doesn't depend
-   on winning a cascade-order fight with room.css (loaded after this
-   file). min-height stays on as a floor for very narrow/short viewports
-   where the aspect-ratio result would otherwise get uncomfortably
-   small. */
+   Fixed instead: the stage is pulled out of flex space-sharing
+   (flex:0 0 auto), so its height is never a function of whatever's
+   below it. The actual height value comes from room.js's
+   applyStageDimensions() instead of a fixed aspect-ratio here — Part 2
+   (level-based room-size milestones) means the room's natural height
+   now varies (it grows with the room, up to a cap, then the excess
+   scrolls — see room.css's .stage-viewport), so a single fixed ratio
+   can no longer describe it. Same !important + ID-selector approach as
+   before, so this doesn't depend on winning a cascade-order fight with
+   room.css (loaded after this file). min-height stays on as a floor for
+   very narrow/short viewports or before JS has run on first paint. */
 #stage{
   flex:0 0 auto !important;
-  aspect-ratio:400 / 380 !important;
   width:100% !important;
   min-height:300px !important;
 }
