@@ -33,7 +33,7 @@ import { $ } from './utils.js';
 import { state } from './state.js';
 import { initCompanion, drawCharacter } from './companion.js';
 import { initIcons } from './icons.js';
-import { loadTheme, currentThemeId } from './room.js';
+import { loadTheme, currentThemeId, computeTileScale } from './room.js';
 import { resizeCanvas } from './particles.js';
 import {
   initWeatherUI, applyInitialForecastToggleState, locate, fetchWeather
@@ -101,6 +101,18 @@ try{
 
 /* ---------------- Boot ---------------- */
 applyInitialForecastToggleState();
+
+// computeTileScale() has to run before ANYTHING about the room is
+// built (setRoomSize/applyStageDimensions/buildRoomStructure all read
+// TILE and its dependents) — it measures #stage's actual rendered
+// width on this device and scales the whole grid to match, so the base
+// room fills the stage edge-to-edge exactly like it did before Part 2,
+// regardless of device width. #stage's width comes purely from CSS
+// (100% of #app, set unconditionally, independent of any JS) so by the
+// time this module runs its clientWidth already reflects its final
+// layout width — only its HEIGHT is still pending (that's set by
+// applyStageDimensions() a moment later, inside loadTheme()).
+computeTileScale($('stage').clientWidth);
 
 // applyRoomSize() (unlocks.js) sets ROOM_W/ROOM_D from the current XP
 // level — has to run before loadTheme() builds the room SVG for the
