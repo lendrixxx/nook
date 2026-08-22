@@ -1,24 +1,35 @@
 import { $ } from './utils.js';
-import { VB_W, VB_H, WINDOW_VB } from './room.js';
+import { VB_MIN_X, VB_MIN_Y, VB_W, VB_H, WINDOW_VB } from './room.js';
 
-const stageEl = $('stage');
 const windowFogEl = $('windowFog');
 const particlesCanvas = $('particles');
 const ctx = particlesCanvas.getContext('2d');
 
-/* ---------------- Particle system (rain/snow fall past the window) ---------------- */
+/* ---------------- Particle system (rain/snow fall past the window) ----------------
+   Part 2: the canvas (and #windowFog) now live inside #stageScroll (see
+   index.html), sized to the room's full natural pixel footprint
+   (VB_W×VB_H) rather than just the visible #stage viewport — the room
+   can be bigger than the stage and scrollable now, and this way rain
+   stays correctly aligned with the window regardless of scroll
+   position, instead of needing to track scroll offset separately.
+
+   WINDOW_VB (room.js) is already in that same natural-pixel space, so
+   positioning it is just a min-x/min-y offset — no more scaleX/scaleY
+   stretch factor, since nothing here is stretched to fit a differently-
+   sized box anymore (that stretching is exactly what used to make grid
+   cells resize with the room, which Part 2 deliberately moved away
+   from). */
 let particles = [];
 let particleMode = 'none';
 let WINDOW_PX = null;
 
 export function resizeCanvas(){
-  particlesCanvas.width = stageEl.clientWidth * devicePixelRatio;
-  particlesCanvas.height = stageEl.clientHeight * devicePixelRatio;
-  particlesCanvas.style.width = stageEl.clientWidth+'px';
-  particlesCanvas.style.height = stageEl.clientHeight+'px';
+  particlesCanvas.width = VB_W * devicePixelRatio;
+  particlesCanvas.height = VB_H * devicePixelRatio;
+  particlesCanvas.style.width = VB_W+'px';
+  particlesCanvas.style.height = VB_H+'px';
   if(WINDOW_VB){
-    const scaleX = stageEl.clientWidth/VB_W, scaleY = stageEl.clientHeight/VB_H;
-    WINDOW_PX = { x:WINDOW_VB.x*scaleX, y:WINDOW_VB.y*scaleY, w:WINDOW_VB.w*scaleX, h:WINDOW_VB.h*scaleY };
+    WINDOW_PX = { x:WINDOW_VB.x-VB_MIN_X, y:WINDOW_VB.y-VB_MIN_Y, w:WINDOW_VB.w, h:WINDOW_VB.h };
     windowFogEl.style.left = WINDOW_PX.x+'px';
     windowFogEl.style.top = WINDOW_PX.y+'px';
     windowFogEl.style.width = WINDOW_PX.w+'px';
@@ -30,7 +41,7 @@ window.addEventListener('resize', resizeCanvas);
 
 export function seedParticles(mode){
   particleMode = mode;
-  const rect = WINDOW_PX || {x:0,y:0,w:stageEl.clientWidth,h:stageEl.clientHeight};
+  const rect = WINDOW_PX || {x:0,y:0,w:VB_W,h:VB_H};
   const count = mode==='rain' ? 26 : mode==='snow' ? 20 : 0;
   particles = [];
   for(let i=0;i<count;i++){
@@ -45,7 +56,7 @@ function animateParticles(){
   requestAnimationFrame(animateParticles);
   const rect = WINDOW_PX;
   ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-  ctx.clearRect(0,0,stageEl.clientWidth,stageEl.clientHeight);
+  ctx.clearRect(0,0,VB_W,VB_H);
   if(!rect || particleMode==='none') return;
   ctx.save();
   ctx.beginPath();
