@@ -90,25 +90,40 @@ export function resolveSnapParams(def){
 
 /* ---------------- Stage sizing (Part 2) ----------------
    Applies the current room's natural pixel size to the actual DOM.
-   #bgScene/#roomSvg keep their existing CSS width:100%/height:100%
-   (room.css) — since their containing block (#stageScroll) is now
-   explicitly sized to VB_W×VB_H below, "100%" already resolves to
-   exactly that, and because the viewBox attribute set here declares
-   the SAME VB_W×VB_H, the SVG-to-box scale factor works out to exactly
-   1:1 with no stretching needed. #stage's own visible height grows
-   with the room up to STAGE_MAX_HEIGHT; its WIDTH isn't set here — it's
-   already 100% of #app (capped by #app's own max-width), so once the
-   room's natural width exceeds that, #stageViewport's horizontal scroll
-   takes over on its own with no extra math needed. */
+
+   #roomSvg keeps its existing CSS width:100%/height:100% (room.css) —
+   since its containing block (#stageScroll) is now explicitly sized to
+   VB_W×VB_H below, "100%" already resolves to exactly that, and because
+   the viewBox attribute set here declares the SAME VB_W×VB_H, the
+   SVG-to-box scale factor works out to exactly 1:1 with no stretching
+   needed — that's what keeps grid cells a fixed size as the room grows.
+
+   #bgScene is deliberately handled differently and its viewBox is
+   NEVER touched here. Its content (hills/sun/moon/clouds — see
+   background.js) is fixed, pre-authored artwork sized for a single
+   400×380 canvas, not something that gets redrawn per room size the
+   way buildRoomStructure() redraws walls/floor/window. If it were
+   given the same growing viewBox as #roomSvg, that artwork would only
+   ever fill a shrinking corner of an increasingly bigger box as the
+   room grows (exactly what happened before this comment was written).
+   Instead it keeps its static "0 0 400 380" viewBox (set once in
+   index.html, with preserveAspectRatio="none") and simply stretches to
+   fill however big #stageScroll currently is — a backdrop is fine to
+   stretch slightly; grid furniture is not, which is the whole reason
+   #roomSvg is handled the opposite way.
+
+   #stage's own visible height grows with the room up to
+   STAGE_MAX_HEIGHT; its WIDTH isn't set here — it's already 100% of
+   #app (capped by #app's own max-width), so once the room's natural
+   width exceeds that, #stageViewport's horizontal scroll takes over on
+   its own with no extra math needed. */
 function applyStageDimensions(){
   const stageEl = $('stage');
   const stageScrollEl = $('stageScroll');
   const roomSvgEl = $('roomSvg');
-  const bgSceneEl = $('bgScene');
   const viewBoxAttr = VB_MIN_X+' '+VB_MIN_Y+' '+VB_W+' '+VB_H;
 
   if(roomSvgEl) roomSvgEl.setAttribute('viewBox', viewBoxAttr);
-  if(bgSceneEl) bgSceneEl.setAttribute('viewBox', viewBoxAttr);
   if(stageScrollEl){
     stageScrollEl.style.width = VB_W + 'px';
     stageScrollEl.style.height = VB_H + 'px';
