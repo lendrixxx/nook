@@ -32,6 +32,7 @@
   overflow:auto;
   -webkit-overflow-scrolling:touch;
   touch-action:pan-x pan-y;
+  overscroll-behavior:contain;
   border-radius:inherit;
 }
 .stage-scroll{
@@ -155,13 +156,22 @@
   -webkit-user-select:none;
   user-select:none;
 }
-/* Belt-and-suspenders: the drag surface itself shouldn't let iOS treat
-   a held touch as the start of a page gesture (scroll/zoom/selection)
-   while in edit mode. */
+/* The drag surface shouldn't let iOS treat a held touch as the start of
+   a page gesture (scroll/zoom/selection) — but only while something is
+   actually ARMED (mid-drag), where the position has to be fully
+   JS-driven. Plain edit-mode browsing (selecting an item, or just
+   scrolling around a room bigger than the stage) needs native scroll
+   to keep working, so touch-action:none is scoped to .item-arming
+   (added to #stage only while armMove/armNewItem has something armed —
+   see furniture.js) rather than all of .room-edit-mode. Without this
+   distinction, scrolling to reach an off-screen item was impossible in
+   edit mode at all. */
 .room-edit-mode #roomSvg{
-  touch-action:none;
   -webkit-user-select:none;
   user-select:none;
+}
+.room-edit-mode.item-arming #roomSvg{
+  touch-action:none;
 }
 .room-edit-mode .deco.dragging{
   cursor:grabbing;
