@@ -59,27 +59,45 @@
       </div>
     </div>
 
-    <!-- Settings now lives as a scene button in the room itself, rather
-         than a separate header bar — frees that vertical space up for
-         the room, which is why the stage reads bigger now. -->
+    <!-- Settings lives as a scene button in the room itself. Hidden
+         entirely while in room-edit mode (see .scene-btn-settings rule
+         in room.css) — the edit-mode controls take over the chrome. -->
     <button id="settingsBtn" class="scene-btn scene-btn-settings" title="Settings">
       <svg class="icon" viewBox="0 0 24 24" data-icon="settings"></svg>
     </button>
 
+    <!-- Bottom-right action cluster. Two groups of buttons live here:
+         the normal set (.scene-btn-normal — calendar/customize/todo/
+         edit-room) and the room-edit set (.scene-btn-edit — confirm/
+         cancel/reset). Only one group is visible at a time, toggled
+         purely by #app.room-editing in room.css, so there's no JS
+         needed to show/hide either group beyond entering/leaving edit
+         mode itself. -->
     <div class="scene-actions">
-      <button id="calProp" class="scene-btn" title="Today's schedule" style="display:none;">
+      <button id="calProp" class="scene-btn scene-btn-normal" title="Today's schedule" style="display:none;">
         <svg class="icon" viewBox="0 0 24 24" data-icon="calendar"></svg>
       </button>
 
-      <button id="customizeProp" class="scene-btn" title="Customize">
+      <button id="customizeProp" class="scene-btn scene-btn-normal" title="Customize">
         <svg class="icon" viewBox="0 0 24 24" data-icon="mirror"></svg>
       </button>
 
-      <button id="todoProp" class="scene-btn" title="To-dos">
+      <button id="todoProp" class="scene-btn scene-btn-normal" title="To-dos">
         <svg class="icon" viewBox="0 0 24 24" data-icon="notebook"></svg>
       </button>
-      <button id="editRoomBtn" class="scene-btn" title="Move furniture">
+      <button id="editRoomBtn" class="scene-btn scene-btn-normal" title="Move furniture">
         <svg class="icon" viewBox="0 0 24 24" data-icon="move"></svg>
+      </button>
+
+      <!-- Room-edit controls — only visible while #app.room-editing is
+           set. Replaces the old header buttons that used to live on
+           #roomEditPanel itself. -->
+      <button id="editConfirmBtn" class="scene-btn scene-btn-edit" title="Save room">
+        <svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg>
+      </button>
+      <button id="editCancelBtn" class="scene-btn scene-btn-edit" title="Cancel">✕</button>
+      <button id="editResetBtn" class="scene-btn scene-btn-edit" title="Undo changes since last save">
+        <svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg>
       </button>
     </div>
 
@@ -268,21 +286,13 @@
   <div id="unlockToast" class="quest-toast"></div>
 
   <!-- Room edit panel — swaps in for the weather card above while
-       #editRoomBtn is active (see #app.room-editing in room.css). Owns
-       its own header controls (undo / cancel / save) since the weather
-       card's controls don't apply here. -->
+       #editRoomBtn is active (see #app.room-editing in room.css). The
+       undo/cancel/save controls used to live in this header — they now
+       live as scene buttons on the stage itself (see .scene-btn-edit
+       above), so this panel is just the catalog now. -->
   <div class="infocard" id="roomEditPanel">
     <div class="redit-header">
       <div class="redit-title">Add to room</div>
-      <div class="redit-actions">
-        <button class="redit-icon-btn" id="reditResetBtn" title="Undo changes since last save">
-          <svg class="icon" viewBox="0 0 24 24" data-icon="refresh"></svg>
-        </button>
-        <button class="redit-icon-btn" id="reditCancelBtn" title="Cancel">✕</button>
-        <button class="redit-icon-btn primary" id="reditSaveBtn" title="Save">
-          <svg class="icon" viewBox="0 0 24 24" data-icon="check"></svg>
-        </button>
-      </div>
     </div>
     <div class="catalog-categories" id="catalogCategories"></div>
     <div class="catalog-list" id="catalogList"></div>
