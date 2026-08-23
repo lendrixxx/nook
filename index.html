@@ -27,24 +27,35 @@
   <div class="stage" id="stage">
     <!-- Part 2: the room can be bigger than the visible stage now (see
          room.js — grid cells stay a fixed size, so a bigger room is a
-         bigger canvas). #stageViewport is the actual scroll container;
-         #stageScroll is sized to the room's full natural pixel size and
-         holds every visual layer that should pan together. Buttons/
-         popups stay OUTSIDE both, as direct children of .stage, so they
-         stay pinned to the same corner of the visible stage rather than
-         scrolling away with the room. -->
+         bigger canvas). #stageViewport is the actual scroll container.
+
+         #stageZoomSizer sits between the viewport and the content
+         specifically for pinch-to-zoom (see pinchZoom.js): its own size
+         is set in JS to the room's natural size × the current zoom
+         level, which is what #stageViewport actually measures for
+         scroll bounds. #stageScroll itself always stays at its natural,
+         UNSCALED size and is visually stretched to fill that box via a
+         CSS transform — so everything inside it keeps working in plain
+         unscaled coordinates with zero awareness of zoom, the same way
+         it already has zero awareness of scrolling.
+
+         Buttons/popups stay OUTSIDE all three, as direct children of
+         .stage, so they stay pinned to the same corner of the visible
+         stage rather than scrolling or zooming away with the room. -->
     <div class="stage-viewport" id="stageViewport">
-      <div class="stage-scroll" id="stageScroll">
-        <div id="skyBg"></div>
-        <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
-        <svg id="roomSvg" viewBox="0 0 400 380"></svg>
-        <div id="windowFog"></div>
-        <canvas id="particles"></canvas>
-        <div id="stageChar">
-          <div class="charInner"></div>
-          <div class="charShadow"></div>
+      <div class="stage-zoom-sizer" id="stageZoomSizer">
+        <div class="stage-scroll" id="stageScroll">
+          <div id="skyBg"></div>
+          <svg id="bgScene" viewBox="0 0 400 380" preserveAspectRatio="none"></svg>
+          <svg id="roomSvg" viewBox="0 0 400 380"></svg>
+          <div id="windowFog"></div>
+          <canvas id="particles"></canvas>
+          <div id="stageChar">
+            <div class="charInner"></div>
+            <div class="charShadow"></div>
+          </div>
+          <div id="flash"></div>
         </div>
-        <div id="flash"></div>
       </div>
     </div>
 
