@@ -153,7 +153,18 @@ body{
    further down the page or off-screen entirely. */
 #stage{
   flex:0 0 auto !important;
-  width:100% !important;
+  /* NOT width:100% — that, combined with the explicit 14px left/right
+     margins .stage also has (room.css), is an over-constrained CSS box
+     model (width AND both margins all specified as non-auto), which
+     doesn't resolve to the same effective width as .infocard just
+     below it (components.css: margin:14px with width left as auto, the
+     normal/unambiguous case) — the two ended up with visibly different
+     right edges, the stage cut short of where the infocard actually
+     ends. calc() bakes the exact same 28px (14+14 margin) directly into
+     the width instead of leaving it to any margin/width interaction,
+     which is mathematically identical to how .infocard's auto width
+     resolves — guaranteeing both share the same right edge. */
+  width:calc(100% - 28px) !important;
   min-height:300px !important;
   max-height:55dvh !important;
 }
