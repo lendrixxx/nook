@@ -1,6 +1,6 @@
 import { $ } from './utils.js';
 import { state } from './state.js';
-import { iso, screenToIsoGrid, TILE, ORIGIN_X, ORIGIN_Y, VB_MIN_X, VB_MIN_Y, VB_H, ROOM_W, ROOM_D } from './room.js';
+import { iso, screenToIsoGrid, TILE, ORIGIN_X, ORIGIN_Y, VB_MIN_X, VB_MIN_Y, VB_H, ROOM_W, ROOM_D, getZoom } from './room.js';
 import { getCharWrapEl, isCharAsleep, setCharAsleep, drawCharacter } from './companion.js';
 import { isEditMode } from './furniture.js';
 
@@ -103,8 +103,9 @@ export function leaveDesk(reason){
    floor. */
 function screenToGrid(clientX, clientY){
   const rect = stageViewportEl.getBoundingClientRect();
-  const localX = clientX - rect.left + stageViewportEl.scrollLeft;
-  const localY = clientY - rect.top + stageViewportEl.scrollTop;
+  const zoom = getZoom();
+  const localX = (clientX - rect.left + stageViewportEl.scrollLeft) / zoom;
+  const localY = (clientY - rect.top + stageViewportEl.scrollTop) / zoom;
   return screenToIsoGrid(VB_MIN_X + localX, VB_MIN_Y + localY, 0);
 }
 let tapIdleTimer = null;
