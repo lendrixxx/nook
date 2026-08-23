@@ -7,7 +7,7 @@ import {
   isFloorSpotBlocked, updateItemPosition, moveSurfaceGroup, validateLayout,
   setRoomLayout, persistRoomLayout, loadRoomDecorations,
   buildNewItem, commitNewItem, removeItem, rotateItem, countPlaced,
-  ITEM_CATALOG, ITEM_CATEGORIES
+  ITEM_CATALOG, ITEM_CATEGORIES, getZoom
 } from './room.js';
 import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
 
@@ -78,28 +78,32 @@ function cloneLayout(layout){
 }
 
 // Pointer event (screen pixels) -> SVG viewBox coordinates. Has to
-// account for both #stageViewport's scroll offset (the room can be
-// panned) and the viewBox's own min-x/min-y (which shifts as the room
-// grows — see room.js's setRoomSize) since the SVG is no longer
-// stretched to fill the stage at a fixed 0,0 origin.
+// account for #stageViewport's scroll offset (the room can be panned),
+// the viewBox's own min-x/min-y (which shifts as the room grows — see
+// room.js's setRoomSize), and now the current pinch-zoom level (see
+// pinchZoom.js) — since #stageScroll is visually scaled by that factor,
+// a screen pixel corresponds to 1/zoom natural-coordinate units, not a
+// flat 1:1 mapping.
 function clientToViewBox(clientX, clientY){
   const rect = stageViewportEl.getBoundingClientRect();
-  const localX = clientX - rect.left + stageViewportEl.scrollLeft;
-  const localY = clientY - rect.top + stageViewportEl.scrollTop;
+  const zoom = getZoom();
+  const localX = (clientX - rect.left + stageViewportEl.scrollLeft) / zoom;
+  const localY = (clientY - rect.top + stageViewportEl.scrollTop) / zoom;
   return { x: VB_MIN_X + localX, y: VB_MIN_Y + localY };
 }
 
 // The inverse direction: an item's grid position -> its current VISIBLE
 // screen position within #stage (for CSS-positioning the popup/confirm/
 // cancel controls, which live outside the scrollable area so they don't
-// scroll away with the room — see index.html). Directly in CSS pixels
-// since the room now renders at natural 1:1 scale, no percentage math
-// needed.
+// scroll away with the room — see index.html). Natural coordinates are
+// multiplied by the current zoom level before subtracting scroll offset,
+// mirroring clientToViewBox's division above.
 function itemScreenPosition(gx, gy, gz){
   const p = iso(gx, gy, gz);
+  const zoom = getZoom();
   return {
-    x: p.x - VB_MIN_X - stageViewportEl.scrollLeft,
-    y: p.y - VB_MIN_Y - stageViewportEl.scrollTop
+    x: (p.x - VB_MIN_X) * zoom - stageViewportEl.scrollLeft,
+    y: (p.y - VB_MIN_Y) * zoom - stageViewportEl.scrollTop
   };
 }
 
@@ -122,7 +126,8 @@ function applyTransform(el, gx, gy, gz){
 function centerViewportOn(gx, gy, gz){
   if(!stageViewportEl) return;
   const p = iso(gx, gy, gz);
-  const localX = p.x - VB_MIN_X, localY = p.y - VB_MIN_Y;
+  const zoom = getZoom();
+  const localX = (p.x - VB_MIN_X) * zoom, localY = (p.y - VB_MIN_Y) * zoom;
   const maxScrollLeft = Math.max(0, stageViewportEl.scrollWidth - stageViewportEl.clientWidth);
   const maxScrollTop = Math.max(0, stageViewportEl.scrollHeight - stageViewportEl.clientHeight);
   const targetLeft = Math.min(maxScrollLeft, Math.max(0, localX - stageViewportEl.clientWidth/2));
