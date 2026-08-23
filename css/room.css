@@ -19,13 +19,10 @@
 /* Part 2: the room can be bigger than the visible stage (see room.js —
    grid cells stay a fixed size, so a bigger room is a bigger canvas,
    not a zoomed-out one). .stage-viewport is the actual scroll
-   container; .stage-scroll is sized in JS (room.js's
-   applyStageDimensions) to the room's full natural pixel footprint and
-   holds every visual layer that should pan together. Kept as a
-   separate element from .stage itself specifically so the buttons/
-   popups (direct children of .stage, positioned absolute — see below)
-   stay pinned to the same corner of the visible stage instead of
-   scrolling away with the room. */
+   container. Kept as a separate element from .stage itself specifically
+   so the buttons/popups (direct children of .stage, positioned absolute
+   — see below) stay pinned to the same corner of the visible stage
+   instead of scrolling away with the room. */
 .stage-viewport{
   position:absolute;
   inset:0;
@@ -48,10 +45,25 @@
   scrollbar-width:none; /* Firefox */
 }
 .stage-viewport::-webkit-scrollbar{ display:none; } /* Safari/Chrome */
+
+/* Pinch-to-zoom (pinchZoom.js): .stage-zoom-sizer's own size is set via
+   JS (room.js's applyZoom) to the room's natural size × the current
+   zoom level — that's what .stage-viewport actually measures for
+   scroll bounds. .stage-scroll inside it always stays at its natural,
+   UNSCALED size (also set via JS — applyStageDimensions) and is
+   visually stretched to fill the sizer via a CSS transform, with
+   transform-origin pinned to the same top-left corner both boxes share
+   — so everything inside .stage-scroll keeps working in plain unscaled
+   coordinates, same as it already does for scrolling. */
+.stage-zoom-sizer{
+  position:relative;
+}
 .stage-scroll{
   position:relative;
+  transform-origin:0 0;
   /* width/height set via JS to match the room's current natural pixel
-     size — see room.js's applyStageDimensions(). */
+     size — see room.js's applyStageDimensions(). transform (scale) set
+     via JS to match the current zoom level — see room.js's applyZoom(). */
 }
 
 #skyBg{ position:absolute; inset:0; z-index:0; transition:background 1.4s ease; }
