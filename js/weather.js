@@ -163,6 +163,16 @@ export async function fetchWeather(lat, lon){
     + '&hourly=temperature_2m,weather_code&timezone=auto';
   const res = await fetch(url);
   const data = await res.json();
+  // Open-Meteo returns a normal 200 with an {error:true, reason:"..."}
+  // body for bad requests (e.g. out-of-range coordinates), not just a
+  // non-2xx status — so !res.ok alone isn't enough of a check. Without
+  // this, a bad response's missing `current` field would only surface
+  // later as a raw "undefined is not an object" crash on cur.weather_code
+  // below, which tells neither the person nor future-me anything useful
+  // about what actually went wrong.
+  if(!res.ok || !data || !data.current){
+    throw new Error((data && data.reason) || 'Weather data unavailable');
+  }
   // Remember the SELECTED location's own IANA timezone (e.g.
   // "Europe/Lisbon") so every "what time is it there" question downstream
   // (hourly bucket, day label, Updated stamp) can be answered correctly
@@ -204,6 +214,15 @@ export async function fetchWeather(lat, lon){
 
   renderScene();
 }
+
+// Shared fallback for every fetchWeather() call site below — a failed
+// fetch shouldn't ever surface as a raw "PROMISE ERROR" alert (see
+// app.js's unhandledrejection handler) when there's a much friendlier,
+// already-established place to put it: the same #statusMsg element
+// locate() already uses for "Finding your weather…".
+export function showWeatherFetchError(e){
+  $('statusMsg').textContent = "Couldn't load weather right now — try refreshing.";
+}
 async function reverseGeocodeName(lat, lon){
   try{
     const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en';
@@ -230,7 +249,7 @@ function setLocationFromResult(r){
   state.locationSub = [r.admin1, r.country].filter(Boolean).join(', ');
   $('placeName').textContent = state.locationName;
   $('placeSub').textContent = state.locationSub;
-  fetchWeather(state.lat, state.lon);
+  fetchWeather(state.lat, state.lon).catch(showWeatherFetchError);
   closePlaceSearch();
 }
 
@@ -287,7 +306,7 @@ export function closeSettingsSheet(){ $('sheet').classList.remove('open'); $('sh
 export function initWeatherUI(){
   $('settingsBtn').onclick = openSettingsSheet;
   $('closeSheetBtn').onclick = closeSettingsSheet;
-  $('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon); };
+  $('refreshBtn').onclick = () => { if(state.lat!=null) fetchWeather(state.lat, state.lon).catch(showWeatherFetchError); };
   document.querySelectorAll('.forecast-toggle').forEach(t => {
     t.onclick = () => {
       forecastMode = t.dataset.mode;
@@ -336,7 +355,9 @@ export function locate(){
       pos => {
         state.lat = pos.coords.latitude; state.lon = pos.coords.longitude;
         reverseGeocodeName(state.lat, state.lon);
-        fetchWeather(state.lat, state.lon).then(()=>{ $('statusMsg').textContent=''; });
+        fetchWeather(state.lat, state.lon)
+          .then(()=>{ $('statusMsg').textContent=''; })
+          .catch(showWeatherFetchError);
       },
       err => {
         $('statusMsg').textContent = 'Location off — tap the place name to search a city.';

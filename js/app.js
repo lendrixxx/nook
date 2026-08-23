@@ -36,7 +36,7 @@ import { initIcons } from './icons.js';
 import { loadTheme, currentThemeId, computeTileScale } from './room.js';
 import { resizeCanvas } from './particles.js';
 import {
-  initWeatherUI, applyInitialForecastToggleState, locate, fetchWeather
+  initWeatherUI, applyInitialForecastToggleState, locate, fetchWeather, showWeatherFetchError
 } from './weather.js';
 import { initTodos, loadTodosAndRender, notifyDueTodos } from './todos.js';
 import {
@@ -139,7 +139,7 @@ evaluateCalendarBusy();
 if(gcal.connected){ fetchCalendarList(); fetchCalendarEvents(); }
 setInterval(evaluateCalendarBusy, 60000);
 setInterval(() => { if(gcal.connected) fetchCalendarEvents(); }, 15*60000);
-setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon); }, 30*60000);
+setInterval(() => { if(state.lat!=null) fetchWeather(state.lat, state.lon).catch(showWeatherFetchError); }, 30*60000);
 // Meters decay continuously — re-render every minute so the bars visibly
 // creep down even if you never touch the app, not just after a log/tap.
 // drawCharacter() runs alongside it so mood (e.g. dropping out of
