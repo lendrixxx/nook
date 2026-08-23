@@ -16,45 +16,53 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
 
    Tap #editRoomBtn to enter: the weather card is swapped out for a
    room-edit panel with an item catalog, and the room becomes tappable.
+   Entering edit mode hides the normal scene chrome (settings, customize,
+   to-do, calendar) and swaps in a confirm/cancel/reset trio in the same
+   bottom-right spot — see .scene-btn-normal/.scene-btn-edit in room.css.
 
    Tapping a PLACED item opens a small Rotate / Move / Delete menu.
    Choosing "Move" arms it — or tapping "+" in the catalog arms a brand
    new, not-yet-real "ghost" item (see below). Once something is armed:
 
      - it goes translucent, and stays that way for as long as it's armed
-       (and its children too, if it's a surface — everything resting on
-       a desk should look like it's moving together, not just the desk)
      - a solid colored shape is drawn on the floor under it: green if
        the current spot is legal, red if not
-     - a SWIPE ANYWHERE in the room moves it now — the touch doesn't
-       have to start exactly on the (possibly small, translucent) item
-       itself
+     - a SWIPE ANYWHERE in the room moves it — the touch doesn't have to
+       start exactly on the (possibly small, translucent) item itself
      - releasing only PREVIEWS a position. A confirm (✓) and cancel (✕)
-       button pair appears, well clear of the item so neither is easy
-       to hit by accident. Confirm is blocked while the preview spot is
-       invalid; cancel discards the preview and reverts.
+       button pair appears next to the item; confirm is blocked while
+       the preview spot is invalid, cancel discards the preview.
+
+   While something is armed, the ROOM-LEVEL save/cancel/reset trio
+   (.scene-btn-edit) hides, and the "Add to room" catalog panel dims and
+   stops accepting input entirely — see .item-focused (room.css) and
+   updateFocusState() below. The idea: only one confirm/cancel pair
+   should ever be actionable at a time, and nothing new should be
+   addable until whatever's currently armed is resolved. That state is
+   driven purely by armedMoveId, toggled onto #app as a class so both
+   the CSS (for the buttons/catalog) and nothing else needs to know
+   furniture.js's internals.
 
    For a GHOST item (added via the catalog, never yet confirmed), it
    doesn't exist in ROOM_LAYOUT at all until confirmed — canceling it
-   just removes the temporary preview, with nothing left behind. This
-   matters: an earlier version inserted a new item into the real layout
-   immediately on add, so canceling only reset the UI's "armed" state
-   and left the (possibly overlapping) item permanently in the data.
+   just removes the temporary preview, with nothing left behind.
+
+   While a ghost is armed, tapping "+" again on the SAME catalog entry
+   is a no-op — that row's "+" renders disabled/greyed (see
+   renderCatalogList), and the whole catalog panel is dimmed anyway via
+   the focus overlay above it, so there's no live "+" to tap in the
+   first place once something is armed.
 
    Part 2: catalog entries not yet unlocked (see unlocks.js) render
-   greyed out with the level they unlock at, and have no "+" button —
-   they're visible (so there's something to look forward to) but not
-   addable. Nothing about placing/moving/deleting an *already-placed*
-   item changes; unlocking only gates adding new ones from the catalog.
+   greyed out with the level they unlock at, and have no "+" button.
 
-   Also Part 2: the room can now be bigger than the visible stage (see
+   Also Part 2: the room can be bigger than the visible stage (see
    room.js — grid cells stay a fixed size, so a bigger room is a bigger
    canvas, not a zoomed-out one), scrollable via #stageViewport. Screen-
-   pixel↔viewBox conversions below (clientToViewBox, itemScreenPosition)
-   account for both the viewBox's own min-x/min-y (which shifts as the
-   room grows — see room.js's setRoomSize) and #stageViewport's current
-   scroll offset, so dragging/popups stay correctly aligned no matter
-   how big the room is or how far it's scrolled.
+   pixel↔viewBox conversions below account for both the viewBox's own
+   min-x/min-y (which shifts as the room grows) and #stageViewport's
+   current scroll offset, so dragging/popups stay correctly aligned no
+   matter how big the room is or how far it's scrolled.
    ========================================================================= */
 
 const stageEl = $('stage');
@@ -77,13 +85,17 @@ function cloneLayout(layout){
   return layout.map(item => ({ ...item, at: [...item.at] }));
 }
 
-// Pointer event (screen pixels) -> SVG viewBox coordinates. Has to
-// account for #stageViewport's scroll offset (the room can be panned),
-// the viewBox's own min-x/min-y (which shifts as the room grows — see
-// room.js's setRoomSize), and now the current pinch-zoom level (see
-// pinchZoom.js) — since #stageScroll is visually scaled by that factor,
-// a screen pixel corresponds to 1/zoom natural-coordinate units, not a
-// flat 1:1 mapping.
+// The single source of truth for "is something currently armed" — the
+// only place armedMoveId is ever read for UI purposes outside this
+// module's own drag/placement logic. Call this every time armedMoveId
+// changes (armMove, armNewItem, cancelPendingMove — nowhere else
+// touches the variable) so the .item-focused class on #app can never
+// drift out of sync with it.
+function updateFocusState(){
+  appEl.classList.toggle('item-focused', !!armedMoveId);
+}
+
+// Pointer event (screen pixels) -> SVG viewBox coordinates.
 function clientToViewBox(clientX, clientY){
   const rect = stageViewportEl.getBoundingClientRect();
   const zoom = getZoom();
@@ -93,11 +105,7 @@ function clientToViewBox(clientX, clientY){
 }
 
 // The inverse direction: an item's grid position -> its current VISIBLE
-// screen position within #stage (for CSS-positioning the popup/confirm/
-// cancel controls, which live outside the scrollable area so they don't
-// scroll away with the room — see index.html). Natural coordinates are
-// multiplied by the current zoom level before subtracting scroll offset,
-// mirroring clientToViewBox's division above.
+// screen position within #stage.
 function itemScreenPosition(gx, gy, gz){
   const p = iso(gx, gy, gz);
   const zoom = getZoom();
@@ -114,15 +122,6 @@ function applyTransform(el, gx, gy, gz){
   el.setAttribute('transform', 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') '+rest);
 }
 
-// Auto-scrolls #stageViewport so the given grid position sits centered
-// in view. Called whenever an item is selected or armed — with a room
-// that can now be bigger than the visible stage, an item (or the spot a
-// brand-new catalog item spawns at) can easily be off-screen, and
-// nothing else prompts the person to go find it. A smooth scroll here
-// composes naturally with the existing scroll listener (see
-// initFurniture) that keeps the popup/controls tracking the item's
-// screen position on every scroll frame, so the popup visibly glides
-// into view along with the room rather than just teleporting.
 function centerViewportOn(gx, gy, gz){
   if(!stageViewportEl) return;
   const p = iso(gx, gy, gz);
@@ -135,8 +134,6 @@ function centerViewportOn(gx, gy, gz){
   stageViewportEl.scrollTo({ left: targetLeft, top: targetTop, behavior: 'smooth' });
 }
 
-/* Unified accessor: the armed item's data, whether it's a real
-   ROOM_LAYOUT entry or a not-yet-committed ghost candidate. */
 function armedItemSnapshot(){
   return pendingNewItem || (armedMoveId ? findItem(armedMoveId) : null);
 }
@@ -151,22 +148,15 @@ function clearEditStatus(){
   if(el){ el.textContent = ''; el.classList.remove('visible'); }
 }
 
-/* ---------------- drop validity ----------------
-   Used for both the live indicator color AND the confirm-button gate. */
+/* ---------------- drop validity ---------------- */
 function computeDropValidity(id, def, gx, gy){
   if(def.role === 'stackable'){
     const surface = findSupportingSurface(gx, gy);
     if(surface.id === 'floor'){
-      // Not landing on any real surface's clickable top — but the
-      // floor spot itself can still be physically occupied by a desk's
-      // legs or a stool sitting there. This used to be skipped
-      // entirely (any floor spot was assumed free for a stackable),
-      // which is how a lamp/mug/book could end up resting at floor
-      // level directly under/inside a desk's footprint.
       const blocked = isFloorSpotBlocked(def, gx, gy, id);
       return { valid: !blocked, parent: blocked ? null : surface };
     }
-    const step = 0.5, offset = 0.25; // fine enough to catch exact-cell duplicates
+    const step = 0.5, offset = 0.25;
     const occupied = getChildren(surface.id).some(sib => {
       if(sib.id === id) return false;
       const sibGx = snapToGrid(sib.at[0], step, offset);
@@ -195,12 +185,7 @@ function closeItemPopup(){
   $('itemPopup')?.classList.remove('visible');
 }
 
-/* ---------------- confirm / cancel placement controls ----------------
-   Positioned well above the item (not just barely clear of it) and
-   split into two separate buttons on either side of that point, so
-   neither is easy to hit by accident while trying to grab or inspect
-   the item itself. Clamped so they can't render above the visible
-   stage near the top edge. */
+/* ---------------- confirm / cancel placement controls ---------------- */
 function positionPlacementControls(){
   if(!pendingPlacement) return;
   const pos = itemScreenPosition(pendingPlacement.gx, pendingPlacement.gy, pendingPlacement.gz);
@@ -225,7 +210,7 @@ function hidePlacementControls(){
   $('itemCancelBtn')?.classList.remove('visible');
 }
 
-/* ---------------- drop indicator (guaranteed-visible floor tint) ---------------- */
+/* ---------------- drop indicator ---------------- */
 function ensureDropIndicator(){
   let el = document.getElementById('dropIndicatorShape');
   if(!el){
@@ -277,7 +262,7 @@ async function renderGhostItem(item){
     el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     el.setAttribute('id', 'ghostDeco');
     el.setAttribute('class', 'deco');
-    roomSvgEl.appendChild(el); // sibling of #roomDecorations, survives its re-renders
+    roomSvgEl.appendChild(el);
   }
   el.dataset.id = item.id;
   el.dataset.asset = item.asset;
@@ -317,12 +302,21 @@ function cancelPendingMove(){
   hidePlacementControls();
   hideDropIndicator();
   clearEditStatus();
+  updateFocusState();
   if(wasGhost){
     removeGhostItem();
+    // The ghost never existed in ROOM_LAYOUT — once it's gone, nothing
+    // legitimate is left "selected" either, so clear it rather than
+    // leaving selectedItemId pointing at an id that no longer resolves
+    // to anything.
+    selectedItemId = null;
     reapplyEditHighlights();
   } else {
     loadRoomDecorations().then(reapplyEditHighlights);
   }
+  // The catalog's "+" for whatever was just cancelled needs to become
+  // tappable again immediately, and the focus overlay needs to lift.
+  if(editMode) renderCatalogList();
 }
 
 function selectItem(id){
@@ -342,9 +336,10 @@ function armMove(id){
   closeItemPopup();
   clearEditStatus();
   stageEl.classList.add('item-arming');
+  updateFocusState();
 
   const item = findItem(id);
-  if(!item){ armedMoveId = null; stageEl.classList.remove('item-arming'); return; }
+  if(!item){ armedMoveId = null; stageEl.classList.remove('item-arming'); updateFocusState(); return; }
   const def = getItemDef(item);
   const { valid } = computeDropValidity(id, def, item.at[0], item.at[1]);
   const parent = def.role === 'stackable' ? { id:item.parentId, surfaceTopZ:item.at[2] } : null;
@@ -364,6 +359,7 @@ function armNewItem(candidate){
   selectedItemId = candidate.id;
   clearEditStatus();
   stageEl.classList.add('item-arming');
+  updateFocusState();
 
   const def = getItemDef(candidate);
   const { valid } = computeDropValidity(candidate.id, def, candidate.at[0], candidate.at[1]);
@@ -452,11 +448,6 @@ function renderCatalogList(){
     return;
   }
   el.innerHTML = entries.map(([key, def]) => {
-    // Locked entries stay visible (so there's something to look forward
-    // to) but greyed out, with the level they unlock at instead of a
-    // "+" button. Unlock status is live (see unlocks.js) — lowering
-    // level via the dev tools relocks these on the very next render,
-    // with no effect on anything already placed in the room.
     if(!isItemUnlocked(key)){
       return '<div class="catalog-row locked">'
         + '<div class="catalog-thumb" data-thumb="'+key+'"></div>'
@@ -465,34 +456,44 @@ function renderCatalogList(){
         + '</div>';
     }
     const n = countPlaced(key);
+    // Also greyed via the panel-wide focus overlay whenever ANYTHING is
+    // armed (see .item-focused in room.css) — this per-row "pending"
+    // state additionally survives that (e.g. if the overlay's opacity/
+    // pointer-events were ever bypassed) so this exact row can never be
+    // double-tapped into re-arming itself at a new spawn point.
+    const isPendingThis = !!pendingNewItem && pendingNewItem.asset === key;
+    const addBtn = isPendingThis
+      ? '<button class="catalog-add pending" data-key="'+key+'" disabled>+</button>'
+      : '<button class="catalog-add" data-key="'+key+'">+</button>';
     return '<div class="catalog-row">'
       + '<div class="catalog-thumb" data-thumb="'+key+'"></div>'
       + '<div class="catalog-name">'+def.label+(n>0?' <span class="catalog-count">×'+n+'</span>':'')+'</div>'
-      + '<button class="catalog-add" data-key="'+key+'">+</button>'
+      + addBtn
       + '</div>';
   }).join('');
-  el.querySelectorAll('.catalog-add').forEach(btn => {
+  el.querySelectorAll('.catalog-add:not(.pending)').forEach(btn => {
     btn.onclick = () => {
-      const candidate = buildNewItem(btn.dataset.key);
-      if(candidate) armNewItem(candidate); // arms a not-yet-real ghost — nothing is added to the room yet
+      // Belt-and-suspenders: the panel-wide focus overlay already blocks
+      // pointer events on this whole list whenever something's armed,
+      // so in practice this only ever fires with nothing armed yet.
+      if(armedMoveId) return;
+      const key = btn.dataset.key;
+      const candidate = buildNewItem(key);
+      if(candidate){
+        armNewItem(candidate);
+        renderCatalogList();
+      }
     };
   });
   hydrateCatalogThumbs(el);
 }
 
-// Public: lets other modules (devTools.js, after a dev-triggered level
-// change) refresh the visible catalog without needing to know about
-// editMode or activeCatalogCat internally. A no-op if the edit panel
-// isn't open.
 export function refreshCatalog(){
   if(editMode) renderCatalogList();
 }
 
 /* ---------------- drag handlers ---------------- */
 
-/* Once something is armed, ANY touch inside the room drags it — not
-   just one that happens to land exactly on its (possibly small,
-   translucent) artwork. */
 function beginArmedDrag(e){
   const id = armedMoveId;
   const item = armedItemSnapshot();
@@ -506,7 +507,7 @@ function beginArmedDrag(e){
     ? getChildren(id).map(c => ({ id:c.id, el: roomSvgEl.querySelector('[data-id="'+c.id+'"]') })).filter(c => c.el)
     : [];
 
-  hidePlacementControls(); // don't leave a stale button pair floating mid-drag
+  hidePlacementControls();
 
   dragging = {
     id, def, role: def.role, gz: item.at[2],
@@ -532,17 +533,8 @@ function onPointerDown(e){
 
   const target = e.target.closest('.deco');
   const id = target ? target.dataset.id : null;
-  // Not armed: track the gesture regardless of whether it started on an
-  // item or on empty floor — deciding "tap" vs. "scroll-drag" happens on
-  // pointerup (see onPointerUp) rather than here. This matters now that
-  // the room can be scrolled (#stageViewport): a touch starting on empty
-  // floor that turns into a scroll-drag must NOT immediately close
-  // whatever popup/controls are open, which is what used to happen when
-  // this branch called deselectAll() the instant any touch landed
-  // without a target — before the browser (or this handler) had any
-  // chance to tell a scroll from a tap apart.
   dragging = {
-    id: (id && findItem(id)) ? id : null, // a ghost only exists while armed, but stay safe
+    id: (id && findItem(id)) ? id : null,
     moved:false, armed:false,
     startClientX: e.clientX, startClientY: e.clientY,
     el: target
@@ -557,7 +549,7 @@ function onPointerMove(e){
     dragging.moved = true;
     if(dragging.armed) dragging.el.classList.add('dragging');
   }
-  if(!dragging.armed || !dragging.moved) return; // not cleared to reposition yet
+  if(!dragging.armed || !dragging.moved) return;
 
   const pt = clientToViewBox(e.clientX, e.clientY);
 
@@ -614,10 +606,6 @@ function onPointerUp(){
   if(!armed){
     dragging = null;
     if(!id){
-      // No item under the initial touch. If the gesture never moved, it
-      // was a genuine tap on empty floor — close whatever's open. If it
-      // DID move, it was a scroll-drag (see onPointerDown) and should
-      // leave the current selection/popup exactly as it was.
       if(!moved) deselectAll();
       return;
     }
@@ -643,6 +631,7 @@ function enterEditMode(){
   editMode = true;
   stageEl.classList.add('room-edit-mode');
   appEl.classList.add('room-editing');
+  appEl.classList.remove('item-focused'); // defensive — nothing should be armed on entry
   clearEditStatus();
   deselectAll();
   renderCatalogCategories();
@@ -661,6 +650,7 @@ function saveAndExit(){
   editMode = false;
   stageEl.classList.remove('room-edit-mode');
   appEl.classList.remove('room-editing');
+  appEl.classList.remove('item-focused');
   clearEditStatus();
   deselectAll();
 }
@@ -679,6 +669,7 @@ function cancelEdit(){
   editMode = false;
   stageEl.classList.remove('room-edit-mode');
   appEl.classList.remove('room-editing');
+  appEl.classList.remove('item-focused');
 }
 
 export function initFurniture(){
@@ -688,9 +679,10 @@ export function initFurniture(){
   window.addEventListener('pointercancel', onPointerUp);
 
   $('editRoomBtn')?.addEventListener('click', () => { if(!editMode) enterEditMode(); });
-  $('reditResetBtn')?.addEventListener('click', revertToSnapshot);
-  $('reditCancelBtn')?.addEventListener('click', cancelEdit);
-  $('reditSaveBtn')?.addEventListener('click', saveAndExit);
+
+  $('editResetBtn')?.addEventListener('click', revertToSnapshot);
+  $('editCancelBtn')?.addEventListener('click', cancelEdit);
+  $('editConfirmBtn')?.addEventListener('click', saveAndExit);
 
   $('itemConfirmBtn')?.addEventListener('click', confirmPlacement);
   $('itemCancelBtn')?.addEventListener('click', cancelPendingMove);
@@ -712,10 +704,6 @@ export function initFurniture(){
     renderCatalogList();
   });
 
-  // Popups/controls track the item's on-screen position, which changes
-  // as the room is panned (see itemScreenPosition above) — reposition
-  // on scroll rather than leaving them pinned to wherever they were
-  // when the item was first selected/armed.
   stageViewportEl?.addEventListener('scroll', () => {
     if(selectedItemId && !armedMoveId) positionPopup(selectedItemId);
     if(armedMoveId) positionPlacementControls();
