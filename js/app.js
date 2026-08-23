@@ -51,6 +51,7 @@ import { initStatsPanel, renderStatsPanel } from './statsPanel.js';
 import { initQuestsPanel, renderQuestsPanel } from './questsPanel.js';
 import { applyRoomSize } from './unlocks.js';
 import { initDevTools, initUnlockNotifications } from './devTools.js';
+import { initPinchZoom } from './pinchZoom.js';
 
 /* ---------------- Wire up every module's buttons/inputs/gestures ---------------- */
 initIcons();
@@ -60,6 +61,7 @@ initTodos();
 initCalendar();
 initMovement();
 initFurniture();
+initPinchZoom();
 initUI();
 // Isolated in its own try/catch: this is the newest, least battle-tested
 // part of the app, and everything below it in the boot sequence (theme
