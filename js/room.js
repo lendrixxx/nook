@@ -164,6 +164,19 @@ export function resolveSnapParams(def){
    #stageViewport's horizontal scroll takes over on its own with no
    extra math needed.
 
+   Because everything uses box-sizing:border-box (main.css), setting
+   #stage's height directly to VB_H would set its BORDER-BOX height —
+   its actual content area (where #stageViewport lives) would then be
+   VB_H minus its own border width, consistently a few pixels short of
+   the room's real natural size and cropping it by exactly that much.
+   #stage's width doesn't have this problem because computeTileScale()
+   above reads clientWidth (which already excludes border by
+   definition) rather than writing a raw value — but height is a write,
+   not a read, so it needs the same border compensation added back in
+   explicitly. Measured dynamically via getComputedStyle rather than a
+   hardcoded number so this can't quietly drift out of sync if the
+   border width in room.css ever changes.
+
    Pinch-zoom (see pinchZoom.js): #stageScroll's OWN size here always
    stays the natural, unscaled VB_W×VB_H — everything inside it (the
    SVGs, the character, drop indicators, etc.) keeps working in plain
@@ -171,10 +184,14 @@ export function resolveSnapParams(def){
    has zero awareness of scrolling. Only #stageZoomSizer's size
    reflects the current zoom level; it's what #stageViewport actually
    measures for scroll bounds, while #stageScroll is visually stretched
-   to fill it via a CSS transform (applyZoom, below). Re-applying the
-   current zoom here (not just on an explicit zoom gesture) keeps
-   #stageZoomSizer correctly sized whenever the room itself changes
-   size, e.g. growing to a new milestone while already zoomed in. */
+   to fill it via a CSS transform (applyZoom, below). #stage's own
+   height has to be finalized BEFORE applyZoom() runs, since it computes
+   its zoom-out floor from the viewport's actual visible size (see
+   computeMinZoom) — calling it any earlier would have it reading a
+   stale or not-yet-set height. Re-applying the current zoom here (not
+   just on an explicit pinch gesture) keeps #stageZoomSizer's size, and
+   the zoom-out floor itself, correct whenever the room changes size —
+   e.g. growing to a new milestone while already zoomed out. */
 function applyStageDimensions(){
   const stageEl = $('stage');
   const stageScrollEl = $('stageScroll');
@@ -186,13 +203,15 @@ function applyStageDimensions(){
     stageScrollEl.style.width = VB_W + 'px';
     stageScrollEl.style.height = VB_H + 'px';
   }
-  applyZoom(zoomLevel);
   if(stageEl){
-    stageEl.style.height = VB_H + 'px'; // CSS max-height (main.css) is what actually caps this visually
+    const cs = getComputedStyle(stageEl);
+    const borderVertical = (parseFloat(cs.borderTopWidth)||0) + (parseFloat(cs.borderBottomWidth)||0);
+    stageEl.style.height = (VB_H + borderVertical) + 'px'; // CSS max-height (main.css) is what actually caps this visually
   }
+  applyZoom(zoomLevel);
 }
 
-const MIN_ZOOM = 0.6, MAX_ZOOM = 2.2;
+const ABSOLUTE_MIN_ZOOM = 0.4, MAX_ZOOM = 2.2;
 let zoomLevel = 1;
 
 // Current zoom factor — 1 = natural size. Used by furniture.js/
@@ -200,14 +219,34 @@ let zoomLevel = 1;
 // (always-unscaled) coordinate space.
 export function getZoom(){ return zoomLevel; }
 
-// Applies a zoom level to the DOM (clamped to [MIN_ZOOM, MAX_ZOOM]).
-// Pure DOM application only — no scroll-position adjustment, since only
-// the caller knows what point (if any) should stay visually anchored
-// while zooming (see pinchZoom.js). Returns the actual clamped value
-// applied, since a caller computing a scroll adjustment needs to know
-// the REAL zoom that took effect, not the raw value it asked for.
+// The floor zoom is allowed to go to isn't a flat constant — it's
+// whatever scale keeps the room fully covering the visible viewport in
+// BOTH dimensions (the same math CSS background-size:cover uses).
+// Without this, zooming out on a room that's already at or near
+// viewport size (nothing grown yet, or not grown by much) could shrink
+// it small enough to reveal #stage's own background beyond its edges —
+// zooming out is only meaningful, and only ever allowed, in proportion
+// to how much BIGGER than the viewport the room currently is.
+// ABSOLUTE_MIN_ZOOM is just a last-resort floor for a degenerate read
+// (e.g. a 0-size viewport before first layout).
+function computeMinZoom(){
+  const stageViewportEl = $('stageViewport');
+  if(!stageViewportEl) return ABSOLUTE_MIN_ZOOM;
+  const vw = stageViewportEl.clientWidth, vh = stageViewportEl.clientHeight;
+  if(!vw || !vh) return ABSOLUTE_MIN_ZOOM;
+  return Math.max(ABSOLUTE_MIN_ZOOM, vw / VB_W, vh / VB_H);
+}
+
+// Applies a zoom level to the DOM (clamped between the dynamic
+// zoom-out floor above and MAX_ZOOM). Pure DOM application only — no
+// scroll-position adjustment, since only the caller knows what point
+// (if any) should stay visually anchored while zooming (see
+// pinchZoom.js). Returns the actual clamped value applied, since a
+// caller computing a scroll adjustment needs to know the REAL zoom that
+// took effect, not the raw value it asked for.
 export function applyZoom(z){
-  zoomLevel = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+  const minZoom = computeMinZoom();
+  zoomLevel = Math.min(MAX_ZOOM, Math.max(minZoom, z));
   const stageScrollEl = $('stageScroll');
   const zoomSizerEl = $('stageZoomSizer');
   if(stageScrollEl) stageScrollEl.style.transform = 'scale('+zoomLevel+')';
