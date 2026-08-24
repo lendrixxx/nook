@@ -138,6 +138,33 @@
   bottom:auto;
   right:auto;
 }
+
+/* ---------- Room-edit chrome swap ----------
+   Two mutually-exclusive groups of scene buttons share the same
+   bottom-right cluster: .scene-btn-normal (calendar/customize/todo/
+   edit-room) is what's normally visible, and .scene-btn-edit (confirm/
+   cancel/reset) replaces it entirely while #app.room-editing is set.
+   The top-left settings button also disappears during editing.
+
+   !important is needed here because calProp/todoProp/etc. sometimes
+   carry an inline style.display set directly by JS (e.g. calendar.js
+   toggling calProp based on connection state) — a plain class rule
+   would lose to that inline style otherwise. */
+.scene-btn-edit{ display:none; }
+#app.room-editing .scene-btn-settings{ display:none !important; }
+#app.room-editing .scene-btn-normal{ display:none !important; }
+#app.room-editing .scene-btn-edit{ display:flex !important; }
+
+/* Further narrowed: while something is actually ARMED (its own ✓/✕
+   controls are showing right next to it — see .item-confirm/.item-cancel
+   below), the room-level save/cancel/reset trio steps aside too. Having
+   both sets of confirm/cancel visible at once (one by the item, one at
+   the room level) reads as "which check mark do I even tap" — only the
+   item's own controls should be live until that's resolved. See
+   furniture.js's updateFocusState(), toggled on #app alongside
+   armedMoveId, for when this class is actually applied. */
+#app.room-editing.item-focused .scene-btn-edit{ display:none !important; }
+
 /* Settings lives top-left of the room now (mirroring the to-do/calendar/
    customize cluster bottom-right), a smaller, quieter chrome button
    rather than one of the room's action props. */
@@ -348,7 +375,10 @@
 .item-confirm:active, .item-cancel:active{ transform:translate(-50%, -50%) scale(0.88); }
 
 /* ---------- Room edit panel — replaces the weather card while editing
-   (see index.html #roomEditPanel; toggled via #app.room-editing) ----------
+   (see index.html #roomEditPanel; toggled via #app.room-editing). The
+   header holds only a title — save/cancel/undo live on the stage
+   itself (see .scene-btn-edit above). position:relative so the focus
+   overlay below can cover it edge-to-edge. ----------
 
    min-height matches roughly what the weather card normally occupies.
    Without this, a short catalog list (e.g. the empty "Rugs" category)
@@ -359,7 +389,7 @@
    click/drag math stays linear, that extra height shows up as visible
    vertical stretch rather than letterboxing. This keeps the overall
    #app layout roughly stable across every state instead. */
-#roomEditPanel{ display:none; min-height:270px; }
+#roomEditPanel{ display:none; min-height:270px; position:relative; }
 #app.room-editing .infocard:not(#roomEditPanel){ display:none; }
 #app.room-editing #roomEditPanel{ display:flex; flex-direction:column; }
 #app.room-editing #editRoomBtn{ display:none; }
@@ -411,6 +441,12 @@
   display:flex; align-items:center; justify-content:center;
 }
 .catalog-add:active{ transform:scale(0.9); }
+.catalog-add.pending{
+  background:#D8C9AE;
+  color:#8A7A5E;
+  cursor:default;
+  pointer-events:none;
+}
 .catalog-empty{ font-size:12px; color:var(--ink-soft); text-align:center; padding:16px 0; }
 
 /* ---------------- Part 2: locked catalog entries ----------------
@@ -424,4 +460,35 @@
   flex:none; font-size:10.5px; font-weight:800; color:var(--ink-soft);
   background:var(--cream); padding:4px 9px; border-radius:999px;
   white-space:nowrap;
+}
+
+/* ---------- "Resolve the armed item first" overlay ----------
+   Sits on top of the entire catalog panel (categories + list) while
+   something is armed (see .item-focused on #app, toggled from
+   furniture.js's updateFocusState()). Dims and disables the whole
+   panel rather than just the "+" buttons — while an item is armed,
+   switching categories or scrolling the list isn't meaningfully useful
+   either, since nothing can be added until the current item is
+   resolved. */
+.catalog-focus-hint{
+  display:none;
+  position:absolute;
+  inset:0;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:24px;
+  font-size:12.5px;
+  font-weight:800;
+  line-height:1.5;
+  color:var(--ink-soft);
+  background:rgba(255,253,248,0.9);
+  border-radius:inherit;
+  z-index:2;
+}
+#app.room-editing.item-focused .catalog-focus-hint{ display:flex; }
+#app.room-editing.item-focused .catalog-categories,
+#app.room-editing.item-focused .catalog-list{
+  opacity:0.35;
+  pointer-events:none;
 }
