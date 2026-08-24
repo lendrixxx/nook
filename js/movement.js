@@ -38,6 +38,24 @@ let wanderTimer = null;
 let busyReason = null; // null | 'todo' | 'calendar' | 'night' — whoever "claims" the character
 export function getBusyReason(){ return busyReason; }
 
+// Places the character at a given grid position. gx/gy are expected to
+// already be clamped to a valid on-floor spot by the caller (wander()'s
+// WALK_GRID, goToDesk/resolveIdleState's fixed FURNITURE stand spots,
+// and moveCharacterToTap's clamped tap target all satisfy this) — that's
+// what makes a flat top/left projection safe here.
+//
+// top used to be additionally clamped to VB_H*0.78 as a guard against
+// the character visually walking past the floor's front edge. That
+// clamp was wrong on two counts: it used the SAME cap regardless of
+// ROOM_W/ROOM_D (the real front vertex's fraction of VB_H shifts as the
+// room grows via setRoomSize), and — the actual bug reported — it only
+// applied to the Y axis, so left tracked a tap exactly while top could
+// get silently pulled up short near the room's front edge, producing a
+// visible X/Y mismatch between where you tapped and where the character
+// landed. Removing it and relying on the caller's existing gx/gy clamps
+// (see initMovement's click handler) fixes the drift without
+// reintroducing the walk-off-the-floor problem the cap was meant to
+// prevent.
 function placeCharAt(gx, gy){
   const p = iso(gx, gy, 0);
   charWrapEl.classList.toggle('facing-left', gx < lastGX);
@@ -49,7 +67,7 @@ function placeCharAt(gx, gy){
   // convert from iso()'s raw viewBox-space coordinate to a position
   // relative to #stageScroll's own (0,0) corner.
   charWrapEl.style.left = (p.x - VB_MIN_X) + 'px';
-  charWrapEl.style.top = Math.min(p.y - VB_MIN_Y, VB_H*0.78) + 'px'; // never past the room's visible floor edge
+  charWrapEl.style.top = (p.y - VB_MIN_Y) + 'px';
   lastGX = gx;
 }
 charWrapEl.addEventListener('transitionend', (e) => {
