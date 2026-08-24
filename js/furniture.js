@@ -16,58 +16,53 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
 
    Tap #editRoomBtn to enter: the weather card is swapped out for a
    room-edit panel with an item catalog, and the room becomes tappable.
-   Entering edit mode also hides the normal scene chrome (settings,
-   customize, to-do, calendar) — see .scene-btn-normal/.scene-btn-edit
-   in room.css — and swaps in the confirm/cancel/reset trio in the same
-   bottom-right spot, wired up at the bottom of this file.
+   Entering edit mode hides the normal scene chrome (settings, customize,
+   to-do, calendar) and swaps in a confirm/cancel/reset trio in the same
+   bottom-right spot — see .scene-btn-normal/.scene-btn-edit in room.css.
 
    Tapping a PLACED item opens a small Rotate / Move / Delete menu.
    Choosing "Move" arms it — or tapping "+" in the catalog arms a brand
    new, not-yet-real "ghost" item (see below). Once something is armed:
 
      - it goes translucent, and stays that way for as long as it's armed
-       (and its children too, if it's a surface — everything resting on
-       a desk should look like it's moving together, not just the desk)
      - a solid colored shape is drawn on the floor under it: green if
        the current spot is legal, red if not
-     - a SWIPE ANYWHERE in the room moves it now — the touch doesn't
-       have to start exactly on the (possibly small, translucent) item
-       itself
+     - a SWIPE ANYWHERE in the room moves it — the touch doesn't have to
+       start exactly on the (possibly small, translucent) item itself
      - releasing only PREVIEWS a position. A confirm (✓) and cancel (✕)
-       button pair appears, well clear of the item so neither is easy
-       to hit by accident. Confirm is blocked while the preview spot is
-       invalid; cancel discards the preview and reverts.
+       button pair appears next to the item; confirm is blocked while
+       the preview spot is invalid, cancel discards the preview.
+
+   While something is armed, the ROOM-LEVEL save/cancel/reset trio
+   (.scene-btn-edit) hides, and the "Add to room" catalog panel dims and
+   stops accepting input entirely — see .item-focused (room.css) and
+   updateFocusState() below. The idea: only one confirm/cancel pair
+   should ever be actionable at a time, and nothing new should be
+   addable until whatever's currently armed is resolved. That state is
+   driven purely by armedMoveId, toggled onto #app as a class so both
+   the CSS (for the buttons/catalog) and nothing else needs to know
+   furniture.js's internals.
 
    For a GHOST item (added via the catalog, never yet confirmed), it
    doesn't exist in ROOM_LAYOUT at all until confirmed — canceling it
-   just removes the temporary preview, with nothing left behind. This
-   matters: an earlier version inserted a new item into the real layout
-   immediately on add, so canceling only reset the UI's "armed" state
-   and left the (possibly overlapping) item permanently in the data.
+   just removes the temporary preview, with nothing left behind.
 
    While a ghost is armed, tapping "+" again on the SAME catalog entry
-   is a no-op — that button renders disabled/greyed (see
-   renderCatalogList) rather than cancelling the current ghost and
-   re-spawning a new one at a different spot, which is what used to
-   happen (buildNewItem's spawn point advances every call, so a
-   double-tap silently relocated the pending item out from under you).
-   Tapping "+" on a DIFFERENT catalog entry still swaps the armed item
-   as before — only the exact-same-asset case is guarded against.
+   is a no-op — that row's "+" renders disabled/greyed (see
+   renderCatalogList), and the whole catalog panel is dimmed anyway via
+   the focus overlay above it, so there's no live "+" to tap in the
+   first place once something is armed.
 
    Part 2: catalog entries not yet unlocked (see unlocks.js) render
-   greyed out with the level they unlock at, and have no "+" button —
-   they're visible (so there's something to look forward to) but not
-   addable. Nothing about placing/moving/deleting an *already-placed*
-   item changes; unlocking only gates adding new ones from the catalog.
+   greyed out with the level they unlock at, and have no "+" button.
 
-   Also Part 2: the room can now be bigger than the visible stage (see
+   Also Part 2: the room can be bigger than the visible stage (see
    room.js — grid cells stay a fixed size, so a bigger room is a bigger
    canvas, not a zoomed-out one), scrollable via #stageViewport. Screen-
-   pixel↔viewBox conversions below (clientToViewBox, itemScreenPosition)
-   account for both the viewBox's own min-x/min-y (which shifts as the
-   room grows — see room.js's setRoomSize) and #stageViewport's current
-   scroll offset, so dragging/popups stay correctly aligned no matter
-   how big the room is or how far it's scrolled.
+   pixel↔viewBox conversions below account for both the viewBox's own
+   min-x/min-y (which shifts as the room grows) and #stageViewport's
+   current scroll offset, so dragging/popups stay correctly aligned no
+   matter how big the room is or how far it's scrolled.
    ========================================================================= */
 
 const stageEl = $('stage');
@@ -90,13 +85,17 @@ function cloneLayout(layout){
   return layout.map(item => ({ ...item, at: [...item.at] }));
 }
 
-// Pointer event (screen pixels) -> SVG viewBox coordinates. Has to
-// account for #stageViewport's scroll offset (the room can be panned),
-// the viewBox's own min-x/min-y (which shifts as the room grows — see
-// room.js's setRoomSize), and now the current pinch-zoom level (see
-// pinchZoom.js) — since #stageScroll is visually scaled by that factor,
-// a screen pixel corresponds to 1/zoom natural-coordinate units, not a
-// flat 1:1 mapping.
+// The single source of truth for "is something currently armed" — the
+// only place armedMoveId is ever read for UI purposes outside this
+// module's own drag/placement logic. Call this every time armedMoveId
+// changes (armMove, armNewItem, cancelPendingMove — nowhere else
+// touches the variable) so the .item-focused class on #app can never
+// drift out of sync with it.
+function updateFocusState(){
+  appEl.classList.toggle('item-focused', !!armedMoveId);
+}
+
+// Pointer event (screen pixels) -> SVG viewBox coordinates.
 function clientToViewBox(clientX, clientY){
   const rect = stageViewportEl.getBoundingClientRect();
   const zoom = getZoom();
@@ -106,11 +105,7 @@ function clientToViewBox(clientX, clientY){
 }
 
 // The inverse direction: an item's grid position -> its current VISIBLE
-// screen position within #stage (for CSS-positioning the popup/confirm/
-// cancel controls, which live outside the scrollable area so they don't
-// scroll away with the room — see index.html). Natural coordinates are
-// multiplied by the current zoom level before subtracting scroll offset,
-// mirroring clientToViewBox's division above.
+// screen position within #stage.
 function itemScreenPosition(gx, gy, gz){
   const p = iso(gx, gy, gz);
   const zoom = getZoom();
@@ -127,15 +122,6 @@ function applyTransform(el, gx, gy, gz){
   el.setAttribute('transform', 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') '+rest);
 }
 
-// Auto-scrolls #stageViewport so the given grid position sits centered
-// in view. Called whenever an item is selected or armed — with a room
-// that can now be bigger than the visible stage, an item (or the spot a
-// brand-new catalog item spawns at) can easily be off-screen, and
-// nothing else prompts the person to go find it. A smooth scroll here
-// composes naturally with the existing scroll listener (see
-// initFurniture) that keeps the popup/controls tracking the item's
-// screen position on every scroll frame, so the popup visibly glides
-// into view along with the room rather than just teleporting.
 function centerViewportOn(gx, gy, gz){
   if(!stageViewportEl) return;
   const p = iso(gx, gy, gz);
@@ -148,8 +134,6 @@ function centerViewportOn(gx, gy, gz){
   stageViewportEl.scrollTo({ left: targetLeft, top: targetTop, behavior: 'smooth' });
 }
 
-/* Unified accessor: the armed item's data, whether it's a real
-   ROOM_LAYOUT entry or a not-yet-committed ghost candidate. */
 function armedItemSnapshot(){
   return pendingNewItem || (armedMoveId ? findItem(armedMoveId) : null);
 }
@@ -164,8 +148,7 @@ function clearEditStatus(){
   if(el){ el.textContent = ''; el.classList.remove('visible'); }
 }
 
-/* ---------------- drop validity ----------------
-   Used for both the live indicator color AND the confirm-button gate. */
+/* ---------------- drop validity ---------------- */
 function computeDropValidity(id, def, gx, gy){
   if(def.role === 'stackable'){
     const surface = findSupportingSurface(gx, gy);
@@ -227,7 +210,7 @@ function hidePlacementControls(){
   $('itemCancelBtn')?.classList.remove('visible');
 }
 
-/* ---------------- drop indicator (guaranteed-visible floor tint) ---------------- */
+/* ---------------- drop indicator ---------------- */
 function ensureDropIndicator(){
   let el = document.getElementById('dropIndicatorShape');
   if(!el){
@@ -279,7 +262,7 @@ async function renderGhostItem(item){
     el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     el.setAttribute('id', 'ghostDeco');
     el.setAttribute('class', 'deco');
-    roomSvgEl.appendChild(el); // sibling of #roomDecorations, survives its re-renders
+    roomSvgEl.appendChild(el);
   }
   el.dataset.id = item.id;
   el.dataset.asset = item.asset;
@@ -319,15 +302,20 @@ function cancelPendingMove(){
   hidePlacementControls();
   hideDropIndicator();
   clearEditStatus();
+  updateFocusState();
   if(wasGhost){
     removeGhostItem();
+    // The ghost never existed in ROOM_LAYOUT — once it's gone, nothing
+    // legitimate is left "selected" either, so clear it rather than
+    // leaving selectedItemId pointing at an id that no longer resolves
+    // to anything.
+    selectedItemId = null;
     reapplyEditHighlights();
   } else {
     loadRoomDecorations().then(reapplyEditHighlights);
   }
-  // Whatever just got cancelled might have been the pending "new item"
-  // whose catalog "+" button was greyed out — re-render so it becomes
-  // tappable again immediately, rather than staying stuck disabled.
+  // The catalog's "+" for whatever was just cancelled needs to become
+  // tappable again immediately, and the focus overlay needs to lift.
   if(editMode) renderCatalogList();
 }
 
@@ -348,9 +336,10 @@ function armMove(id){
   closeItemPopup();
   clearEditStatus();
   stageEl.classList.add('item-arming');
+  updateFocusState();
 
   const item = findItem(id);
-  if(!item){ armedMoveId = null; stageEl.classList.remove('item-arming'); return; }
+  if(!item){ armedMoveId = null; stageEl.classList.remove('item-arming'); updateFocusState(); return; }
   const def = getItemDef(item);
   const { valid } = computeDropValidity(id, def, item.at[0], item.at[1]);
   const parent = def.role === 'stackable' ? { id:item.parentId, surfaceTopZ:item.at[2] } : null;
@@ -370,6 +359,7 @@ function armNewItem(candidate){
   selectedItemId = candidate.id;
   clearEditStatus();
   stageEl.classList.add('item-arming');
+  updateFocusState();
 
   const def = getItemDef(candidate);
   const { valid } = computeDropValidity(candidate.id, def, candidate.at[0], candidate.at[1]);
@@ -466,11 +456,11 @@ function renderCatalogList(){
         + '</div>';
     }
     const n = countPlaced(key);
-    // While a not-yet-confirmed ghost of THIS exact asset is already
-    // armed, the "+" button greys out rather than staying tappable —
-    // tapping it again used to cancel the current ghost and spawn a
-    // fresh one at a different spot (buildNewItem's spawn point
-    // advances every call), which looked like the item randomly jumped.
+    // Also greyed via the panel-wide focus overlay whenever ANYTHING is
+    // armed (see .item-focused in room.css) — this per-row "pending"
+    // state additionally survives that (e.g. if the overlay's opacity/
+    // pointer-events were ever bypassed) so this exact row can never be
+    // double-tapped into re-arming itself at a new spawn point.
     const isPendingThis = !!pendingNewItem && pendingNewItem.asset === key;
     const addBtn = isPendingThis
       ? '<button class="catalog-add pending" data-key="'+key+'" disabled>+</button>'
@@ -483,24 +473,21 @@ function renderCatalogList(){
   }).join('');
   el.querySelectorAll('.catalog-add:not(.pending)').forEach(btn => {
     btn.onclick = () => {
+      // Belt-and-suspenders: the panel-wide focus overlay already blocks
+      // pointer events on this whole list whenever something's armed,
+      // so in practice this only ever fires with nothing armed yet.
+      if(armedMoveId) return;
       const key = btn.dataset.key;
-      // Belt-and-suspenders: even if some stale render let a click
-      // through, never re-arm the exact same pending asset.
-      if(pendingNewItem && pendingNewItem.asset === key) return;
       const candidate = buildNewItem(key);
       if(candidate){
-        armNewItem(candidate); // arms a not-yet-real ghost — nothing is added to the room yet
-        renderCatalogList();   // grey out this row's "+" immediately
+        armNewItem(candidate);
+        renderCatalogList();
       }
     };
   });
   hydrateCatalogThumbs(el);
 }
 
-// Public: lets other modules (devTools.js, after a dev-triggered level
-// change) refresh the visible catalog without needing to know about
-// editMode or activeCatalogCat internally. A no-op if the edit panel
-// isn't open.
 export function refreshCatalog(){
   if(editMode) renderCatalogList();
 }
@@ -644,6 +631,7 @@ function enterEditMode(){
   editMode = true;
   stageEl.classList.add('room-edit-mode');
   appEl.classList.add('room-editing');
+  appEl.classList.remove('item-focused'); // defensive — nothing should be armed on entry
   clearEditStatus();
   deselectAll();
   renderCatalogCategories();
@@ -662,6 +650,7 @@ function saveAndExit(){
   editMode = false;
   stageEl.classList.remove('room-edit-mode');
   appEl.classList.remove('room-editing');
+  appEl.classList.remove('item-focused');
   clearEditStatus();
   deselectAll();
 }
@@ -680,6 +669,7 @@ function cancelEdit(){
   editMode = false;
   stageEl.classList.remove('room-edit-mode');
   appEl.classList.remove('room-editing');
+  appEl.classList.remove('item-focused');
 }
 
 export function initFurniture(){
@@ -690,9 +680,6 @@ export function initFurniture(){
 
   $('editRoomBtn')?.addEventListener('click', () => { if(!editMode) enterEditMode(); });
 
-  // Confirm/cancel/reset now live as scene buttons on the stage itself
-  // (see .scene-btn-edit in index.html/room.css) rather than as header
-  // buttons on the room-edit panel.
   $('editResetBtn')?.addEventListener('click', revertToSnapshot);
   $('editCancelBtn')?.addEventListener('click', cancelEdit);
   $('editConfirmBtn')?.addEventListener('click', saveAndExit);
