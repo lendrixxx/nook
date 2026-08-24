@@ -287,15 +287,23 @@
 
   <!-- Room edit panel — swaps in for the weather card above while
        #editRoomBtn is active (see #app.room-editing in room.css). The
-       undo/cancel/save controls used to live in this header — they now
-       live as scene buttons on the stage itself (see .scene-btn-edit
-       above), so this panel is just the catalog now. -->
+       undo/cancel/save controls live as scene buttons on the stage
+       itself (see .scene-btn-edit) rather than in this header.
+
+       #catalogFocusHint is an overlay that dims/disables this whole
+       panel while something is currently armed — see .item-focused in
+       room.css and updateFocusState() in furniture.js — so it's clear
+       the current item needs to be confirmed or cancelled before
+       adding anything else. -->
   <div class="infocard" id="roomEditPanel">
     <div class="redit-header">
       <div class="redit-title">Add to room</div>
     </div>
     <div class="catalog-categories" id="catalogCategories"></div>
     <div class="catalog-list" id="catalogList"></div>
+    <div class="catalog-focus-hint" id="catalogFocusHint">
+      Confirm or cancel the selected item first.
+    </div>
   </div>
 
   <div class="switcher" id="switcher"></div>
