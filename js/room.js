@@ -370,11 +370,20 @@ export const ITEM_CATALOG = {
     // defaults to when nothing overrides it (offset = snapStep/2).
     // Two earlier attempts (0.5/0, then 1/0.5) both explicitly
     // overrode this default and both landed on a line intersection as
-    // a result, just at different granularities. No override needed —
-    // clampMargin is kept explicit since 0.35 (vs. the 0.25 default)
-    // leaves a bit more buffer against the room edge for this
-    // footprint size.
-    scale:1.5, clampMargin:0.35, anchor:[0,8],
+    // a result, just at different granularities. No override needed.
+    //
+    // clampMargin also left at its default (0.25, same as every other
+    // freestanding item) rather than the footprint-matched 0.35 tried
+    // earlier — clampSnappedToRoom rounds UP to the next valid quarter-
+    // integer that clears the margin, and 0.35 is just far enough past
+    // 0.25 that it skips the outermost ring (0.25 / roomExtent-0.25)
+    // entirely, making the edge-most row unreachable. The trade-off:
+    // since the stool's own footprint (halfX/halfY 0.3) is slightly
+    // bigger than this default margin, its art can overhang the true
+    // wall edge by about 0.05 grid units when placed in that outermost
+    // ring — small enough to likely be invisible against the wall, but
+    // worth an eyeball check once live.
+    scale:1.5, anchor:[0,8],
     footprint:{ halfX:0.3, halfY:0.3 }
   },
   'plant-pot': {
