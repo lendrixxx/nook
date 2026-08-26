@@ -358,25 +358,23 @@ export const ITEM_CATALOG = {
   },
   stool: {
     label:'Stool', category:'seating', role:'freestanding', defaultZ:0,
-    // snapStep:1/snapOffset:0.5 forces the stored grid coordinate to
-    // always land on a whole-cell CENTER (0.5, 1.5, 2.5, ...) — never
-    // on a grid corner. The drop-indicator diamond (furniture.js's
-    // footprintQuad) is drawn directly from this coordinate with no
-    // anchor correction, so this is what was making it straddle 4
-    // tiles: the previous 0.5/0 pairing could resolve to either a
-    // corner or a center depending on where a drag ended.
-    //
-    // anchor:[0,8] — the single vertex stool.svg's two leg polygons
-    // SHARE (left leg: ...,0,8,...; right leg: ...,0,8,...), i.e. the
-    // one true frontmost/lowest contact point where both legs meet.
-    // A first attempt at anchor:[0,7] averaged in the legs' OUTER
-    // bottom corners too (which sit higher, at y=6), pulling the pivot
-    // above the real contact point and making the artwork render too
-    // low/overlapping the floor tint. Anchoring to the single shared
-    // vertex instead matches the same "anchor at the lowest point, not
-    // a centroid of the whole base" convention already used for the
-    // companion sprite (see #stageChar's margin-top:-82px in room.css).
-    scale:1.5, snapStep:1, snapOffset:0.5, clampMargin:0.35, anchor:[0,8],
+    // The floor's dashed sub-grid (buildRoomStructure's #floorSubGrid)
+    // draws full LINES at every half-integer gx/gy, splitting each
+    // 1-unit cell into four 0.5×0.5 visible squares — it does NOT mark
+    // cell centers. That's the actual root cause of the tint bug: any
+    // snap config that can land ON a half-integer is landing on one of
+    // those sub-grid LINES, same as landing on an integer lands on a
+    // main grid line. The true center of one of those 0.5×0.5 squares
+    // is a QUARTER-integer (0.25, 0.75, 1.25, ...) — step 0.5, offset
+    // 0.25 — which is exactly what resolveSnapParams() already
+    // defaults to when nothing overrides it (offset = snapStep/2).
+    // Two earlier attempts (0.5/0, then 1/0.5) both explicitly
+    // overrode this default and both landed on a line intersection as
+    // a result, just at different granularities. No override needed —
+    // clampMargin is kept explicit since 0.35 (vs. the 0.25 default)
+    // leaves a bit more buffer against the room edge for this
+    // footprint size.
+    scale:1.5, clampMargin:0.35, anchor:[0,8],
     footprint:{ halfX:0.3, halfY:0.3 }
   },
   'plant-pot': {
