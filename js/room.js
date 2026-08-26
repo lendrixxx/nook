@@ -378,13 +378,22 @@ export const ITEM_CATALOG = {
     // integer that clears the margin, and 0.35 is just far enough past
     // 0.25 that it skips the outermost ring (0.25 / roomExtent-0.25)
     // entirely, making the edge-most row unreachable. The trade-off:
-    // since the stool's own footprint (halfX/halfY 0.3) is slightly
-    // bigger than this default margin, its art can overhang the true
-    // wall edge by about 0.05 grid units when placed in that outermost
-    // ring — small enough to likely be invisible against the wall, but
-    // worth an eyeball check once live.
+    // since the stool's own footprint (see below — currently
+    // halfX/halfY 0.2) is slightly smaller than this default margin
+    // now, this particular overhang risk is moot; it only mattered
+    // when footprint was larger than the margin.
     scale:1.5, anchor:[0,8],
-    footprint:{ halfX:0.3, halfY:0.3 }
+    // halfX/halfY sized to the LEGS' base span (stool.svg's leg
+    // polygons run x:-4 to 4, vs. the seat's wider -6 to 6) rather than
+    // the seat's overhang, since footprint represents the floor-contact
+    // collision box, not the widest visible point. At the previous
+    // 0.3/0.3 (seat-derived), the collision threshold against another
+    // stool (0.3+0.3+padding = 0.65) exceeded the 0.5 spacing between
+    // adjacent quarter-cells, making two stools unplaceable side by
+    // side no matter where they were dragged. 0.2/0.2 (leg-derived)
+    // brings that threshold to 0.45, under the 0.5 spacing, while still
+    // blocking a genuinely overlapping placement.
+    footprint:{ halfX:0.2, halfY:0.2 }
   },
   'plant-pot': {
     label:'Plant pot', category:'plants', role:'stackable',
