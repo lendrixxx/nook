@@ -358,16 +358,23 @@ export const ITEM_CATALOG = {
   },
   stool: {
     label:'Stool', category:'seating', role:'freestanding', defaultZ:0,
-    scale:1.5, snapStep:0.5, snapOffset:0, clampMargin:0.35,
+    // snapStep:1/snapOffset:0.5 forces the stored grid coordinate to
+    // always land on a whole-cell CENTER (0.5, 1.5, 2.5, ...) — never
+    // on a grid corner. The drop-indicator diamond (furniture.js's
+    // footprintQuad) is drawn directly from this coordinate with no
+    // anchor correction, so this is what was making it straddle 4
+    // tiles: the previous 0.5/0 pairing could resolve to either a
+    // corner or a center depending on where a drag ended.
+    //
+    // anchor:[0,7] shifts the ARTWORK relative to that now-correct
+    // pivot, separately from the above — averaged from stool.svg's own
+    // leg-bottom geometry: left leg bottom edge (-4,6)-(0,8), right leg
+    // bottom edge (0,8)-(4,6). A previous attempt at this same value
+    // looked wrong, but that test ran while the snap bug above was
+    // still present, so the corner-coordinate was likely confounding
+    // the result rather than the anchor value itself being wrong.
+    scale:1.5, snapStep:1, snapOffset:0.5, clampMargin:0.35, anchor:[0,7],
     footprint:{ halfX:0.3, halfY:0.3 }
-    // Anchor removed — [0,7], calculated from the legs' bottom points,
-    // made the actual on-screen position measurably worse rather than
-    // better. That means my read of what "anchor" means for this
-    // pipeline (bottom-most point of the geometry) doesn't match how it
-    // actually resolves in practice, and I don't have a way to verify
-    // a replacement value without seeing the live render. Back to no
-    // override (defaults to [0,0]) — the known, previously-reported
-    // "somewhat off" state rather than a worse, unverified guess.
   },
   'plant-pot': {
     label:'Plant pot', category:'plants', role:'stackable',
