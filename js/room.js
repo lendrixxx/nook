@@ -366,14 +366,17 @@ export const ITEM_CATALOG = {
     // tiles: the previous 0.5/0 pairing could resolve to either a
     // corner or a center depending on where a drag ended.
     //
-    // anchor:[0,7] shifts the ARTWORK relative to that now-correct
-    // pivot, separately from the above — averaged from stool.svg's own
-    // leg-bottom geometry: left leg bottom edge (-4,6)-(0,8), right leg
-    // bottom edge (0,8)-(4,6). A previous attempt at this same value
-    // looked wrong, but that test ran while the snap bug above was
-    // still present, so the corner-coordinate was likely confounding
-    // the result rather than the anchor value itself being wrong.
-    scale:1.5, snapStep:1, snapOffset:0.5, clampMargin:0.35, anchor:[0,7],
+    // anchor:[0,8] — the single vertex stool.svg's two leg polygons
+    // SHARE (left leg: ...,0,8,...; right leg: ...,0,8,...), i.e. the
+    // one true frontmost/lowest contact point where both legs meet.
+    // A first attempt at anchor:[0,7] averaged in the legs' OUTER
+    // bottom corners too (which sit higher, at y=6), pulling the pivot
+    // above the real contact point and making the artwork render too
+    // low/overlapping the floor tint. Anchoring to the single shared
+    // vertex instead matches the same "anchor at the lowest point, not
+    // a centroid of the whole base" convention already used for the
+    // companion sprite (see #stageChar's margin-top:-82px in room.css).
+    scale:1.5, snapStep:1, snapOffset:0.5, clampMargin:0.35, anchor:[0,8],
     footprint:{ halfX:0.3, halfY:0.3 }
   },
   'plant-pot': {
