@@ -358,16 +358,42 @@ export const ITEM_CATALOG = {
   },
   stool: {
     label:'Stool', category:'seating', role:'freestanding', defaultZ:0,
-    scale:1.5, snapStep:0.5, snapOffset:0, clampMargin:0.35,
-    footprint:{ halfX:0.3, halfY:0.3 }
-    // Anchor removed — [0,7], calculated from the legs' bottom points,
-    // made the actual on-screen position measurably worse rather than
-    // better. That means my read of what "anchor" means for this
-    // pipeline (bottom-most point of the geometry) doesn't match how it
-    // actually resolves in practice, and I don't have a way to verify
-    // a replacement value without seeing the live render. Back to no
-    // override (defaults to [0,0]) — the known, previously-reported
-    // "somewhat off" state rather than a worse, unverified guess.
+    // The floor's dashed sub-grid (buildRoomStructure's #floorSubGrid)
+    // draws full LINES at every half-integer gx/gy, splitting each
+    // 1-unit cell into four 0.5×0.5 visible squares — it does NOT mark
+    // cell centers. That's the actual root cause of the tint bug: any
+    // snap config that can land ON a half-integer is landing on one of
+    // those sub-grid LINES, same as landing on an integer lands on a
+    // main grid line. The true center of one of those 0.5×0.5 squares
+    // is a QUARTER-integer (0.25, 0.75, 1.25, ...) — step 0.5, offset
+    // 0.25 — which is exactly what resolveSnapParams() already
+    // defaults to when nothing overrides it (offset = snapStep/2).
+    // Two earlier attempts (0.5/0, then 1/0.5) both explicitly
+    // overrode this default and both landed on a line intersection as
+    // a result, just at different granularities. No override needed.
+    //
+    // clampMargin also left at its default (0.25, same as every other
+    // freestanding item) rather than the footprint-matched 0.35 tried
+    // earlier — clampSnappedToRoom rounds UP to the next valid quarter-
+    // integer that clears the margin, and 0.35 is just far enough past
+    // 0.25 that it skips the outermost ring (0.25 / roomExtent-0.25)
+    // entirely, making the edge-most row unreachable. The trade-off:
+    // since the stool's own footprint (see below — currently
+    // halfX/halfY 0.2) is slightly smaller than this default margin
+    // now, this particular overhang risk is moot; it only mattered
+    // when footprint was larger than the margin.
+    scale:1.5, anchor:[0,8],
+    // halfX/halfY sized to the LEGS' base span (stool.svg's leg
+    // polygons run x:-4 to 4, vs. the seat's wider -6 to 6) rather than
+    // the seat's overhang, since footprint represents the floor-contact
+    // collision box, not the widest visible point. At the previous
+    // 0.3/0.3 (seat-derived), the collision threshold against another
+    // stool (0.3+0.3+padding = 0.65) exceeded the 0.5 spacing between
+    // adjacent quarter-cells, making two stools unplaceable side by
+    // side no matter where they were dragged. 0.2/0.2 (leg-derived)
+    // brings that threshold to 0.45, under the 0.5 spacing, while still
+    // blocking a genuinely overlapping placement.
+    footprint:{ halfX:0.2, halfY:0.2 }
   },
   'plant-pot': {
     label:'Plant pot', category:'plants', role:'stackable',
