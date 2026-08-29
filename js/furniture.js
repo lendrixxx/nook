@@ -33,6 +33,17 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
        button pair appears next to the item; confirm is blocked while
        the preview spot is invalid, cancel discards the preview.
 
+   Nothing is written to ROOM_LAYOUT until confirm — so while an item is
+   armed, ROOM_LAYOUT still holds its ORIGINAL (pre-arm) data the whole
+   time, no matter how many times it gets dragged/tapped in preview.
+   pendingPlacement is the only thing that tracks "where is it right
+   now" during that window. This distinction matters for two things
+   below: re-arming a drag has to start from pendingPlacement (the live
+   preview), not from ROOM_LAYOUT (which is stale until confirm) — see
+   armedOriginalAt and beginArmedDrag's comment. Getting this backwards
+   is what previously caused a second drag, on an item already moved
+   once but not yet confirmed, to snap back toward its pre-arm spot.
+
    Two distinct ways to move an armed item, both handled below:
 
      - A plain TAP (down + up with no real movement) places the item
@@ -97,8 +108,13 @@ let dragging = null;
 let activeCatalogCat = 'furniture';
 let selectedItemId = null;
 let armedMoveId = null;      // the one item, if any, currently armed for Move
-let pendingPlacement = null; // { gx, gy, gz, parent, valid } — the armed item's unconfirmed preview
+let pendingPlacement = null; // { gx, gy, gz, parent, valid } — the armed item's unconfirmed preview, updated on every drag/tap
 let pendingNewItem = null;   // the full candidate object while armed item is a not-yet-real ghost; else null
+let armedOriginalAt = null;  // [gx, gy, gz] — the item's TRUE position from the moment it was armed, fixed for the
+                              // whole armed session regardless of how many times it's re-dragged in preview. Only
+                              // used for surface-child offset math (see applyArmedPreview) — children still live in
+                              // ROOM_LAYOUT at this same original spot until confirm, so their offset from it has to
+                              // be measured against this fixed baseline, not against a per-drag-session "start".
 
 export function isEditMode(){ return editMode; }
 
@@ -319,6 +335,7 @@ function cancelPendingMove(){
   armedMoveId = null;
   pendingPlacement = null;
   pendingNewItem = null;
+  armedOriginalAt = null;
   stageEl.classList.remove('item-arming');
   hidePlacementControls();
   hideDropIndicator();
@@ -365,6 +382,7 @@ function armMove(id){
   const { valid } = computeDropValidity(id, def, item.at[0], item.at[1]);
   const parent = def.role === 'stackable' ? { id:item.parentId, surfaceTopZ:item.at[2] } : null;
   pendingPlacement = { gx:item.at[0], gy:item.at[1], gz:item.at[2], parent, valid };
+  armedOriginalAt = [item.at[0], item.at[1], item.at[2]];
 
   reapplyEditHighlights();
   updateDropIndicator();
@@ -386,6 +404,7 @@ function armNewItem(candidate){
   const { valid } = computeDropValidity(candidate.id, def, candidate.at[0], candidate.at[1]);
   const parent = def.role === 'stackable' ? { id:candidate.parentId, surfaceTopZ:candidate.at[2] } : null;
   pendingPlacement = { gx:candidate.at[0], gy:candidate.at[1], gz:candidate.at[2], parent, valid };
+  armedOriginalAt = [candidate.at[0], candidate.at[1], candidate.at[2]];
 
   renderGhostItem(candidate).then(() => {
     reapplyEditHighlights();
@@ -518,7 +537,7 @@ export function refreshCatalog(){
 function beginArmedDrag(e){
   const id = armedMoveId;
   const item = armedItemSnapshot();
-  if(!item) return;
+  if(!item || !pendingPlacement) return;
   const def = getItemDef(item);
   const { snapStep, snapOffset, clampMargin } = resolveSnapParams(def);
   const el = roomSvgEl.querySelector('[data-id="'+id+'"]');
@@ -530,25 +549,29 @@ function beginArmedDrag(e){
 
   hidePlacementControls();
 
-  // downPt: where the pointer FIRST went down, in viewBox coordinates.
-  // This — not the item's own on-screen position — is the fixed anchor
-  // both movement modes below measure against: a plain tap targets
-  // this point directly (see resolveTapClamped in onPointerUp), and a
-  // drag measures how far the pointer has traveled FROM this point and
-  // applies that same delta to the item's own start position (see
-  // resolveClamped in onPointerMove) — which is what makes "swipe
-  // anywhere in the room" work regardless of where the touch started
-  // relative to the (possibly small, translucent) item itself.
+  // downPt: where the pointer FIRST went down THIS drag session, in
+  // viewBox coordinates. A plain tap targets this point directly (see
+  // resolveTapClamped in onPointerUp); a drag measures how far the
+  // pointer has traveled FROM this point and applies that same delta to
+  // startGx/startGy below.
   const downPt = clientToViewBox(e.clientX, e.clientY);
 
   dragging = {
-    id, def, role: def.role, gz: item.at[2],
+    id, def, role: def.role,
+    // gz/startGx/startGy anchor to the LIVE PREVIEW (pendingPlacement),
+    // not to ROOM_LAYOUT's item.at — ROOM_LAYOUT still holds the
+    // item's original, pre-arm data for as long as it stays armed (see
+    // the module comment above), so anchoring here to item.at would
+    // make every drag after the first ignore whatever the previous
+    // preview drag/tap had already done, snapping back toward the
+    // original spot instead of continuing from where it visually is.
+    gz: pendingPlacement.gz,
     snapStep, snapOffset, clampMargin,
-    startGx: item.at[0], startGy: item.at[1],
+    startGx: pendingPlacement.gx, startGy: pendingPlacement.gy,
     downPt,
     el, childEls,
-    previewGx: item.at[0], previewGy: item.at[1],
-    validDrop: true, resolvedParent: null,
+    previewGx: pendingPlacement.gx, previewGy: pendingPlacement.gy,
+    validDrop: pendingPlacement.valid, resolvedParent: pendingPlacement.parent,
     moved: false, startClientX: e.clientX, startClientY: e.clientY,
     armed: true
   };
@@ -585,7 +608,15 @@ function applyArmedPreview(resolveClampedFn){
   } else if(dragging.role === 'surface'){
     const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
     dragging.validDrop = valid;
-    const dx = clamped.gx - dragging.startGx, dy = clamped.gy - dragging.startGy;
+    // Children are still sitting in ROOM_LAYOUT at their TRUE, original
+    // (pre-arm, uncommitted) position — that data doesn't change until
+    // confirm — so their offset has to be measured from the surface's
+    // own true original position (armedOriginalAt, fixed for the whole
+    // armed session), not from dragging.startGx (which resets to the
+    // current preview at the start of every new drag session — see
+    // beginArmedDrag). Using dragging.startGx here would compound
+    // incorrectly across repeated preview drags.
+    const dx = clamped.gx - armedOriginalAt[0], dy = clamped.gy - armedOriginalAt[1];
     applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
     dragging.childEls.forEach(({ id: cid, el: cel }) => {
       const child = findItem(cid);
@@ -636,14 +667,15 @@ function onPointerMove(e){
   const pt = clientToViewBox(e.clientX, e.clientY);
 
   // RELATIVE drag: how far the pointer has moved from where it went
-  // down (both computed in the same grid space, at whatever gz applies
-  // this frame) is the delta applied to the item's own pre-drag
-  // position — not the pointer's absolute position — and the result is
-  // immediately snapped to the grid. This is what makes an item at
-  // (0,0), pressed at (10,0) and dragged to (10,10), land at (0,10):
-  // the delta is (0,+10) either way, regardless of where the press
-  // itself happened to start, and it's on-grid every frame rather than
-  // only once confirmed.
+  // down THIS session (both computed in the same grid space, at
+  // whatever gz applies this frame) is the delta applied to
+  // dragging.startGx/Gy — the item's live preview position at the
+  // moment this drag began (see beginArmedDrag) — not the pointer's
+  // absolute position, and the result is immediately snapped to the
+  // grid. This is what makes an item at (0,0), pressed at (10,0) and
+  // dragged to (10,10), land at (0,10): the delta is (0,+10) either
+  // way, regardless of where the press itself happened to start, and
+  // it's on-grid every frame rather than only once confirmed.
   function resolveClamped(gz){
     const cur = screenToIsoGrid(pt.x, pt.y, gz);
     const down = screenToIsoGrid(dragging.downPt.x, dragging.downPt.y, gz);
