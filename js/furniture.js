@@ -36,7 +36,7 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
    Two distinct ways to move an armed item, both handled below:
 
      - A plain TAP (down + up with no real movement) places the item
-       directly at the tapped spot — see resolveTapTargets in the drag
+       directly at the tapped spot — see resolveTapClamped in the drag
        handlers section.
      - A TAP-THEN-SWIPE moves the item RELATIVE to wherever it already
        was: the swipe's delta (in grid units, both axes at once) is
@@ -44,14 +44,15 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
        position. E.g. an item at (0,0), pressed at (10,0) and dragged to
        (10,10), ends at (0,10) — the same +10 the finger moved, applied
        to the item's own start point, regardless of where on the floor
-       the press itself happened to land. See resolveDragTargets.
+       the press itself happened to land. See resolveClamped.
 
-   While actively dragging, the item's own on-screen position follows
-   the finger CONTINUOUSLY on both axes (not stepping cell-by-cell) —
-   only the collision/validity check, the drop indicator, and whatever
-   ultimately gets committed on confirm are snapped to a grid cell. See
-   applyArmedPreview, which is the single function both the drag and tap
-   paths funnel through so they can never drift out of sync on this.
+   The item's own on-screen position SNAPS TO THE GRID every frame while
+   dragging (not a smooth/continuous follow) — what you see mid-drag is
+   exactly the candidate cell that validity is being checked against and
+   that confirm would commit, so releasing never leaves it looking
+   "unsnapped" or mid-cell; there's nothing further to settle on release.
+   See applyArmedPreview, which is the single function both the drag and
+   tap paths funnel through so they can never drift out of sync on this.
 
    While something is armed, the ROOM-LEVEL save/cancel/reset trio
    (.scene-btn-edit) hides, and the "Add to room" catalog panel dims and
@@ -532,10 +533,10 @@ function beginArmedDrag(e){
   // downPt: where the pointer FIRST went down, in viewBox coordinates.
   // This — not the item's own on-screen position — is the fixed anchor
   // both movement modes below measure against: a plain tap targets
-  // this point directly (see resolveTapTargets in onPointerUp), and a
+  // this point directly (see resolveTapClamped in onPointerUp), and a
   // drag measures how far the pointer has traveled FROM this point and
   // applies that same delta to the item's own start position (see
-  // resolveDragTargets in onPointerMove) — which is what makes "swipe
+  // resolveClamped in onPointerMove) — which is what makes "swipe
   // anywhere in the room" work regardless of where the touch started
   // relative to the (possibly small, translucent) item itself.
   const downPt = clientToViewBox(e.clientX, e.clientY);
@@ -555,58 +556,52 @@ function beginArmedDrag(e){
 }
 
 /* Shared by both movement modes (drag and tap) — takes a function that
-   resolves this frame's target position and applies everything that
-   follows from it: stackable surface-hover detection (re-resolving the
-   target if hovering a different surface changes gz), collision/
-   validity, the item's own on-screen transform (and its children's, for
-   a surface being dragged as a group), the pending-placement record
-   used by confirm/cancel, and the drop indicator.
+   resolves this frame's target GRID CELL (already snapped/clamped/
+   wall-locked) and applies everything that follows from it: stackable
+   surface-hover detection (re-resolving the target if hovering a
+   different surface changes gz), collision/validity, the item's own
+   on-screen transform (and its children's, for a surface being dragged
+   as a group), the pending-placement record used by confirm/cancel, and
+   the drop indicator.
 
-   resolveTargetsFn(gz) must return { raw, snapped } — raw is what the
-   item's own transform follows (continuous, not rounded to a grid
-   step, so a drag tracks the finger smoothly on both axes at once
-   rather than stepping cell-by-cell), snapped is the actual candidate
-   grid cell used for validity/indicator/commit. For a plain tap (no
-   drag phase to be continuous about) the two are simply the same
-   value — see resolveTapTargets below. */
-function applyArmedPreview(resolveTargetsFn){
-  let targets = resolveTargetsFn(dragging.gz);
+   The item's transform is driven by this same snapped cell every frame
+   — nothing here tracks the raw pointer position — so what's on screen
+   while dragging IS the candidate placement, and release never needs a
+   separate "now snap it" step. */
+function applyArmedPreview(resolveClampedFn){
+  let clamped = resolveClampedFn(dragging.gz);
 
   if(dragging.role === 'stackable'){
-    let { valid, parent } = computeDropValidity(dragging.id, dragging.def, targets.snapped.gx, targets.snapped.gy);
-    const hoverSurface = findSupportingSurface(targets.snapped.gx, targets.snapped.gy);
+    let { valid, parent } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
+    const hoverSurface = findSupportingSurface(clamped.gx, clamped.gy);
     if(hoverSurface.surfaceTopZ !== dragging.gz){
       dragging.gz = hoverSurface.surfaceTopZ;
-      targets = resolveTargetsFn(dragging.gz);
-      ({ valid, parent } = computeDropValidity(dragging.id, dragging.def, targets.snapped.gx, targets.snapped.gy));
+      clamped = resolveClampedFn(dragging.gz);
+      ({ valid, parent } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy));
     }
     dragging.validDrop = valid;
     dragging.resolvedParent = parent;
-    applyTransform(dragging.el, targets.raw.gx, targets.raw.gy, dragging.gz);
+    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
   } else if(dragging.role === 'surface'){
-    const { valid } = computeDropValidity(dragging.id, dragging.def, targets.snapped.gx, targets.snapped.gy);
+    const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
     dragging.validDrop = valid;
-    // Children follow the same CONTINUOUS delta as the surface itself
-    // (not a re-snapped one), so the whole group glides together
-    // smoothly rather than the children hopping cell-to-cell under a
-    // smoothly-moving parent.
-    const dx = targets.raw.gx - dragging.startGx, dy = targets.raw.gy - dragging.startGy;
-    applyTransform(dragging.el, targets.raw.gx, targets.raw.gy, dragging.gz);
+    const dx = clamped.gx - dragging.startGx, dy = clamped.gy - dragging.startGy;
+    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
     dragging.childEls.forEach(({ id: cid, el: cel }) => {
       const child = findItem(cid);
       applyTransform(cel, child.at[0]+dx, child.at[1]+dy, child.at[2]);
     });
   } else {
-    const { valid } = computeDropValidity(dragging.id, dragging.def, targets.snapped.gx, targets.snapped.gy);
+    const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
     dragging.validDrop = valid;
-    applyTransform(dragging.el, targets.raw.gx, targets.raw.gy, dragging.gz);
+    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
   }
 
-  pendingPlacement = { gx: targets.snapped.gx, gy: targets.snapped.gy, gz: dragging.gz, parent: dragging.resolvedParent, valid: dragging.validDrop };
+  pendingPlacement = { gx: clamped.gx, gy: clamped.gy, gz: dragging.gz, parent: dragging.resolvedParent, valid: dragging.validDrop };
   updateDropIndicator();
 
-  dragging.previewGx = targets.snapped.gx;
-  dragging.previewGy = targets.snapped.gy;
+  dragging.previewGx = clamped.gx;
+  dragging.previewGy = clamped.gy;
 }
 
 function onPointerDown(e){
@@ -643,40 +638,26 @@ function onPointerMove(e){
   // RELATIVE drag: how far the pointer has moved from where it went
   // down (both computed in the same grid space, at whatever gz applies
   // this frame) is the delta applied to the item's own pre-drag
-  // position — not the pointer's absolute position. This is what makes
-  // an item at (0,0), pressed at (10,0) and dragged to (10,10), land at
-  // (0,10): the delta is (0,+10) either way, regardless of where the
-  // press itself happened to start.
-  function resolveDragTargets(gz){
+  // position — not the pointer's absolute position — and the result is
+  // immediately snapped to the grid. This is what makes an item at
+  // (0,0), pressed at (10,0) and dragged to (10,10), land at (0,10):
+  // the delta is (0,+10) either way, regardless of where the press
+  // itself happened to start, and it's on-grid every frame rather than
+  // only once confirmed.
+  function resolveClamped(gz){
     const cur = screenToIsoGrid(pt.x, pt.y, gz);
     const down = screenToIsoGrid(dragging.downPt.x, dragging.downPt.y, gz);
     const rawGx = dragging.startGx + (cur.gx - down.gx);
     const rawGy = dragging.startGy + (cur.gy - down.gy);
     const step = dragging.snapStep, offset = dragging.snapOffset, margin = dragging.clampMargin;
-
-    // Continuous position (both axes at once, no per-cell stepping) —
-    // just clamped to the room's edges so it can't be dragged clean off
-    // the floor. This is what the item's own transform follows while
-    // actively dragging.
-    const raw = applyWallLock(
-      dragging.def,
-      Math.min(Math.max(rawGx, margin), ROOM_W - margin),
-      Math.min(Math.max(rawGy, margin), ROOM_D - margin)
-    );
-
-    // Snapped position — the actual candidate grid cell, used for
-    // collision/validity, the drop indicator, and whatever gets
-    // committed on confirm.
-    const snappedPre = {
+    const snapped = {
       gx: clampSnappedToRoom(snapToGrid(rawGx, step, offset), step, offset, margin, ROOM_W),
       gy: clampSnappedToRoom(snapToGrid(rawGy, step, offset), step, offset, margin, ROOM_D)
     };
-    const snapped = applyWallLock(dragging.def, snappedPre.gx, snappedPre.gy);
-
-    return { raw, snapped };
+    return applyWallLock(dragging.def, snapped.gx, snapped.gy);
   }
 
-  applyArmedPreview(resolveDragTargets);
+  applyArmedPreview(resolveClamped);
 }
 
 function onPointerUp(){
@@ -696,22 +677,21 @@ function onPointerUp(){
   }
 
   // A plain tap (no movement) while something is armed places it
-  // directly at the tapped spot — same validity/indicator/transform
-  // pipeline as a drag (see applyArmedPreview), just fed the tap
-  // location instead of a start->current delta (there's no "current"
-  // distinct from "down" when nothing moved).
+  // directly at the tapped spot's grid cell — same validity/indicator/
+  // transform pipeline as a drag (see applyArmedPreview), just fed the
+  // tap location instead of a start->current delta (there's no
+  // "current" distinct from "down" when nothing moved).
   if(!moved){
-    function resolveTapTargets(gz){
+    function resolveTapClamped(gz){
       const { gx, gy } = screenToIsoGrid(dragging.downPt.x, dragging.downPt.y, gz);
       const step = dragging.snapStep, offset = dragging.snapOffset, margin = dragging.clampMargin;
-      const snappedPre = {
+      const snapped = {
         gx: clampSnappedToRoom(snapToGrid(gx, step, offset), step, offset, margin, ROOM_W),
         gy: clampSnappedToRoom(snapToGrid(gy, step, offset), step, offset, margin, ROOM_D)
       };
-      const snapped = applyWallLock(dragging.def, snappedPre.gx, snappedPre.gy);
-      return { raw: snapped, snapped };
+      return applyWallLock(dragging.def, snapped.gx, snapped.gy);
     }
-    applyArmedPreview(resolveTapTargets);
+    applyArmedPreview(resolveTapClamped);
   }
 
   dragging = null;
