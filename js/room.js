@@ -339,13 +339,33 @@ function buildRoomStructure(){
    `footprint` is the half-width/half-height (in grid units) of the
    asset's actual floor footprint, used for real rectangle-overlap
    collision (see isFloorSpotBlocked below).
-   ========================================================================= */
+
+   `rotatable: true` opts an item into PER-ROTATION ART instead of a
+   plain CSS rotate() on a single drawing. This matters because these
+   assets are pre-shaded, single-camera-angle isometric drawings — a
+   flat rotate() doesn't turn the object, it just skews the 2D picture
+   (wrong faces, wrong shading direction, reads as visually broken).
+   The correct fix is a separate hand-drawn file per 90° step:
+   assets/room/decorations/<asset>-0.svg, -90.svg, -180.svg, -270.svg
+   (see decorationAssetPath() below, and loadRoomDecorations()'s use of
+   it). item.rotate still just cycles 0/90/180/270 exactly as before —
+   only which FILE that value selects has changed for these items.
+
+   Items WITHOUT this flag never get per-rotation art authored, and
+   furniture.js hides the "Rotate" popup option for them entirely (see
+   openPopup() there) rather than leaving a control wired up to art
+   that isn't built for it. */
 export const ITEM_CATALOG = {
   desk: {
     label:'Desk', category:'furniture', role:'surface', defaultZ:0,
     surfaceTopZ:0.58, surfaceBounds:{ minX:-0.42, maxX:0.42, minY:-0.42, maxY:0.42 },
     snapStep:0.5, snapOffset:0, clampMargin:0.4, anchor:[22,30],
-    footprint:{ halfX:0.42, halfY:0.42 }
+    footprint:{ halfX:0.42, halfY:0.42 },
+    // Square footprint, so the anchor/footprint stay identical at every
+    // rotation — only which of the 4 pre-drawn files gets loaded (via
+    // decorationAssetPath) changes. See assets/room/decorations/
+    // desk-0.svg / desk-90.svg / desk-180.svg / desk-270.svg.
+    rotatable:true
   },
   shelf: {
     label:'Shelf', category:'furniture', role:'surface', defaultZ:3.05,
@@ -353,7 +373,9 @@ export const ITEM_CATALOG = {
     footprint:{ halfX:0.5, halfY:0.25 }, // not currently checked — shelf is wall-mounted, see isFloorLevel()
     // Locked to the back wall (gy=0, the wall WITHOUT the window — see
     // buildRoomStructure()'s rightWall) rather than freely draggable
-    // across the floor like the desk/stool. Only gx varies.
+    // across the floor like the desk/stool. Only gx varies. Not marked
+    // rotatable — a wall-mounted shelf sliding along one wall was never
+    // a real rotation candidate to begin with.
     wallLock:{ axis:'y', value:0 }
   },
   stool: {
@@ -394,6 +416,11 @@ export const ITEM_CATALOG = {
     // brings that threshold to 0.45, under the 0.5 spacing, while still
     // blocking a genuinely overlapping placement.
     footprint:{ halfX:0.2, halfY:0.2 }
+    // Not marked rotatable — the stool only draws its two NEAREST legs
+    // (the far two are implied/hidden behind the seat), and its seat is
+    // round, so a 90°/180°/270° turn wouldn't read as visually distinct
+    // from 0° even with dedicated art. Rotate is hidden for it in the
+    // popup rather than offering a control with nothing to show for it.
   },
   'plant-pot': {
     label:'Plant pot', category:'plants', role:'stackable',
@@ -401,12 +428,18 @@ export const ITEM_CATALOG = {
     footprint:{ halfX:0.22, halfY:0.22 }
     // Same reasoning as the stool above — reverting the (0,8) guess
     // rather than risk the same kind of regression here untested.
+    // Also not rotatable: round pot, no asymmetric front/back detail.
   },
   lamp: {
     label:'Desk lamp', category:'decor', role:'stackable', anchor:[32,48], scale:0.55
+    // Not rotatable — round shade, no meaningful "facing" to turn.
   },
   mug: {
     label:'Mug', category:'decor', role:'stackable', anchor:[29,50], scale:0.4
+    // Not rotatable yet — the handle IS asymmetric (it'd genuinely look
+    // different rotated), but no per-rotation art exists for it. Worth
+    // revisiting with dedicated mug-0/90/180/270 art if handle-facing
+    // ever matters to how the room reads.
   },
   book: {
     label:'Book', category:'decor', role:'stackable', scale:0.65,
@@ -418,6 +451,9 @@ export const ITEM_CATALOG = {
     // stool result above, treat this as unconfirmed too until you've
     // actually seen it.
     anchor:[1.8,4.3]
+    // Not rotatable yet — the bookmark is an asymmetric detail similar
+    // to the mug's handle, same "worth revisiting with dedicated art
+    // later" note applies.
   }
 };
 
@@ -437,6 +473,21 @@ export function getItemDef(item){
 export const DEFAULT_FOOTPRINT = { halfX:0.18, halfY:0.18 };
 export function getFootprint(def){
   return (def && def.footprint) || DEFAULT_FOOTPRINT;
+}
+
+/* Resolves which SVG file actually gets drawn for a placed/ghost item.
+   Rotatable items (see ITEM_CATALOG comment above) load a dedicated
+   per-rotation file — <asset>-<rotate>.svg — since a plain CSS rotate()
+   on pre-shaded isometric art produces a skewed, visually-wrong result
+   rather than an actually-turned object. Everything else keeps loading
+   its single <asset>.svg exactly as before. */
+export function decorationAssetPath(item, def){
+  def = def || getItemDef(item);
+  if(def && def.rotatable){
+    const rot = item.rotate || 0;
+    return 'assets/room/decorations/'+item.asset+'-'+rot+'.svg';
+  }
+  return 'assets/room/decorations/'+item.asset+'.svg';
 }
 
 /* Every player starts with a bare room — no default furniture. This is
@@ -643,11 +694,19 @@ export async function loadRoomDecorations(){
   const placed = await Promise.all(ROOM_LAYOUT.map(async item => {
     const def = getItemDef(item);
     let svgText;
-    try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
+    try{ svgText = await fetchAsset(decorationAssetPath(item, def)); }
     catch(e){ return ''; }
     const p = iso(item.at[0], item.at[1], item.at[2]);
     const scale = def.scale || 1;
-    const rotate = item.rotate || 0;
+    // Rotatable assets bake their orientation directly into WHICH file
+    // gets loaded (see decorationAssetPath above) — the transform's own
+    // rotate stays at 0 for those, so the pre-shaded art is never also
+    // spun in 2D on top of that (which would double up and look wrong
+    // again). Non-rotatable items keep the old plain rotate() behavior
+    // for completeness, though in practice nothing in the UI currently
+    // offers to rotate them (see furniture.js's openPopup), so
+    // item.rotate stays 0 for those in normal use.
+    const rotate = def.rotatable ? 0 : (item.rotate || 0);
     const inner = stripSvgWrapper(svgText);
     const anchor = def.anchor || [0, 0];
     const transform = 'translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+') rotate('+rotate+') scale('+scale+') translate('+(-anchor[0]).toFixed(1)+','+(-anchor[1]).toFixed(1)+')';
