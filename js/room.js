@@ -415,31 +415,42 @@ export const ITEM_CATALOG = {
     // side no matter where they were dragged. 0.2/0.2 (leg-derived)
     // brings that threshold to 0.45, under the 0.5 spacing, while still
     // blocking a genuinely overlapping placement.
-    footprint:{ halfX:0.2, halfY:0.2 }
-    // Not marked rotatable — the stool only draws its two NEAREST legs
-    // (the far two are implied/hidden behind the seat), and its seat is
-    // round, so a 90°/180°/270° turn wouldn't read as visually distinct
-    // from 0° even with dedicated art. Rotate is hidden for it in the
-    // popup rather than offering a control with nothing to show for it.
+    footprint:{ halfX:0.2, halfY:0.2 },
+    // Marked rotatable for consistency with the rest of the catalog,
+    // but stool-0/90/180/270.svg are all identical content — the seat
+    // is round and only the two nearest legs are ever drawn (the far
+    // two are implied/hidden), so there's genuinely no different view
+    // to show at any angle. Rotate will be offered but won't visibly
+    // change anything.
+    rotatable:true
   },
   'plant-pot': {
     label:'Plant pot', category:'plants', role:'stackable',
     scale:0.7,
-    footprint:{ halfX:0.22, halfY:0.22 }
+    footprint:{ halfX:0.22, halfY:0.22 },
     // Same reasoning as the stool above — reverting the (0,8) guess
     // rather than risk the same kind of regression here untested.
-    // Also not rotatable: round pot, no asymmetric front/back detail.
+    // Marked rotatable for consistency, but the pot's round and the
+    // leaves are already a bushy, all-around arrangement — no clearly
+    // different view exists at another angle, so plant-pot-0/90/180/
+    // 270.svg are identical content.
+    rotatable:true
   },
   lamp: {
-    label:'Desk lamp', category:'decor', role:'stackable', anchor:[32,48], scale:0.55
-    // Not rotatable — round shade, no meaningful "facing" to turn.
+    label:'Desk lamp', category:'decor', role:'stackable', anchor:[32,48], scale:0.55,
+    // Marked rotatable for consistency, but shade/stem/base are all
+    // round in plan with no directional feature (cord, switch) — no
+    // different view exists at another angle, so lamp-0/90/180/270.svg
+    // are identical content.
+    rotatable:true
   },
   mug: {
-    label:'Mug', category:'decor', role:'stackable', anchor:[29,50], scale:0.4
-    // Not rotatable yet — the handle IS asymmetric (it'd genuinely look
-    // different rotated), but no per-rotation art exists for it. Worth
-    // revisiting with dedicated mug-0/90/180/270 art if handle-facing
-    // ever matters to how the room reads.
+    label:'Mug', category:'decor', role:'stackable', anchor:[29,50], scale:0.4,
+    // Handle is a real asymmetric feature — mug-0/90/180/270.svg are
+    // genuinely distinct: handle right (0°), mirrored to left (90°),
+    // hidden behind the body (180°/270°), same convention as the desk
+    // drawer.
+    rotatable:true
   },
   book: {
     label:'Book', category:'decor', role:'stackable', scale:0.65,
@@ -450,10 +461,12 @@ export const ITEM_CATALOG = {
     // not (0,0). Trying that instead of the comment's claim. Given the
     // stool result above, treat this as unconfirmed too until you've
     // actually seen it.
-    anchor:[1.8,4.3]
-    // Not rotatable yet — the bookmark is an asymmetric detail similar
-    // to the mug's handle, same "worth revisiting with dedicated art
-    // later" note applies.
+    anchor:[1.8,4.3],
+    // Bookmark is a real asymmetric feature — book-0/90/180/270.svg
+    // are genuinely distinct: mirrored to the opposite edge at 90°,
+    // hidden toward the spine at 180°/270°, same convention as the
+    // mug handle.
+    rotatable:true
   }
 };
 
