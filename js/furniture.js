@@ -5,7 +5,7 @@ import {
   ROOM_W, ROOM_D, VB_MIN_X, VB_MIN_Y, resolveSnapParams, getFootprint, applyWallLock,
   currentThemeId, findItem, getChildren, findSupportingSurface, getItemDef,
   isFloorSpotBlocked, updateItemPosition, moveSurfaceGroup, validateLayout,
-  setRoomLayout, persistRoomLayout, loadRoomDecorations,
+  setRoomLayout, persistRoomLayout, loadRoomDecorations, decorationAssetPath,
   buildNewItem, commitNewItem, removeItem, rotateItem, countPlaced,
   ITEM_CATALOG, ITEM_CATEGORIES, getZoom
 } from './room.js';
@@ -21,8 +21,14 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
    bottom-right spot — see .scene-btn-normal/.scene-btn-edit in room.css.
 
    Tapping a PLACED item opens a small Rotate / Move / Delete menu.
-   Choosing "Move" arms it — or tapping "+" in the catalog arms a brand
-   new, not-yet-real "ghost" item (see below). Once something is armed:
+   Rotate only shows for items whose catalog entry has per-rotation art
+   authored (ITEM_CATALOG's `rotatable:true`, see room.js) — a plain CSS
+   rotate() on a single pre-shaded isometric drawing skews the artwork
+   into something that reads as visually broken rather than an actually-
+   turned object, so items without dedicated rotation art simply don't
+   offer the option (see openPopup() below). Choosing "Move" arms it —
+   or tapping "+" in the catalog arms a brand new, not-yet-real "ghost"
+   item (see below). Once something is armed:
 
      - it goes translucent, and stays that way for as long as it's armed
      - a solid colored shape is drawn on the floor under it: green if
@@ -32,38 +38,6 @@ import { isItemUnlocked, getUnlockLevel } from './unlocks.js';
      - releasing only PREVIEWS a position. A confirm (✓) and cancel (✕)
        button pair appears next to the item; confirm is blocked while
        the preview spot is invalid, cancel discards the preview.
-
-   Nothing is written to ROOM_LAYOUT until confirm — so while an item is
-   armed, ROOM_LAYOUT still holds its ORIGINAL (pre-arm) data the whole
-   time, no matter how many times it gets dragged/tapped in preview.
-   pendingPlacement is the only thing that tracks "where is it right
-   now" during that window. This distinction matters for two things
-   below: re-arming a drag has to start from pendingPlacement (the live
-   preview), not from ROOM_LAYOUT (which is stale until confirm) — see
-   armedOriginalAt and beginArmedDrag's comment. Getting this backwards
-   is what previously caused a second drag, on an item already moved
-   once but not yet confirmed, to snap back toward its pre-arm spot.
-
-   Two distinct ways to move an armed item, both handled below:
-
-     - A plain TAP (down + up with no real movement) places the item
-       directly at the tapped spot — see resolveTapClamped in the drag
-       handlers section.
-     - A TAP-THEN-SWIPE moves the item RELATIVE to wherever it already
-       was: the swipe's delta (in grid units, both axes at once) is
-       added to the item's own pre-drag position, not the pointer's raw
-       position. E.g. an item at (0,0), pressed at (10,0) and dragged to
-       (10,10), ends at (0,10) — the same +10 the finger moved, applied
-       to the item's own start point, regardless of where on the floor
-       the press itself happened to land. See resolveClamped.
-
-   The item's own on-screen position SNAPS TO THE GRID every frame while
-   dragging (not a smooth/continuous follow) — what you see mid-drag is
-   exactly the candidate cell that validity is being checked against and
-   that confirm would commit, so releasing never leaves it looking
-   "unsnapped" or mid-cell; there's nothing further to settle on release.
-   See applyArmedPreview, which is the single function both the drag and
-   tap paths funnel through so they can never drift out of sync on this.
 
    While something is armed, the ROOM-LEVEL save/cancel/reset trio
    (.scene-btn-edit) hides, and the "Add to room" catalog panel dims and
@@ -108,13 +82,8 @@ let dragging = null;
 let activeCatalogCat = 'furniture';
 let selectedItemId = null;
 let armedMoveId = null;      // the one item, if any, currently armed for Move
-let pendingPlacement = null; // { gx, gy, gz, parent, valid } — the armed item's unconfirmed preview, updated on every drag/tap
+let pendingPlacement = null; // { gx, gy, gz, parent, valid } — the armed item's unconfirmed preview
 let pendingNewItem = null;   // the full candidate object while armed item is a not-yet-real ghost; else null
-let armedOriginalAt = null;  // [gx, gy, gz] — the item's TRUE position from the moment it was armed, fixed for the
-                              // whole armed session regardless of how many times it's re-dragged in preview. Only
-                              // used for surface-child offset math (see applyArmedPreview) — children still live in
-                              // ROOM_LAYOUT at this same original spot until confirm, so their offset from it has to
-                              // be measured against this fixed baseline, not against a per-drag-session "start".
 
 export function isEditMode(){ return editMode; }
 
@@ -216,6 +185,16 @@ function positionPopup(itemId){
 }
 function openPopup(itemId){
   positionPopup(itemId);
+  // Rotate only makes sense for items with dedicated per-rotation art
+  // (see room.js's ITEM_CATALOG comment) — for everything else, a
+  // plain CSS rotate() on the single pre-shaded drawing just skews it
+  // into something that reads as broken. Hiding the button entirely is
+  // simpler and safer than leaving a control wired up to art that
+  // isn't built for it.
+  const item = findItem(itemId);
+  const def = item ? getItemDef(item) : {};
+  const rotateBtn = $('itemPopupRotate');
+  if(rotateBtn) rotateBtn.style.display = def.rotatable ? 'flex' : 'none';
   $('itemPopup')?.classList.add('visible');
 }
 function closeItemPopup(){
@@ -288,7 +267,7 @@ function hideDropIndicator(){
 async function renderGhostItem(item){
   const def = getItemDef(item);
   let svgText;
-  try{ svgText = await fetchAsset('assets/room/decorations/'+item.asset+'.svg'); }
+  try{ svgText = await fetchAsset(decorationAssetPath(item, def)); }
   catch(e){ return; }
   const p = iso(item.at[0], item.at[1], item.at[2]);
   const scale = def.scale || 1;
@@ -335,7 +314,6 @@ function cancelPendingMove(){
   armedMoveId = null;
   pendingPlacement = null;
   pendingNewItem = null;
-  armedOriginalAt = null;
   stageEl.classList.remove('item-arming');
   hidePlacementControls();
   hideDropIndicator();
@@ -382,7 +360,6 @@ function armMove(id){
   const { valid } = computeDropValidity(id, def, item.at[0], item.at[1]);
   const parent = def.role === 'stackable' ? { id:item.parentId, surfaceTopZ:item.at[2] } : null;
   pendingPlacement = { gx:item.at[0], gy:item.at[1], gz:item.at[2], parent, valid };
-  armedOriginalAt = [item.at[0], item.at[1], item.at[2]];
 
   reapplyEditHighlights();
   updateDropIndicator();
@@ -404,7 +381,6 @@ function armNewItem(candidate){
   const { valid } = computeDropValidity(candidate.id, def, candidate.at[0], candidate.at[1]);
   const parent = def.role === 'stackable' ? { id:candidate.parentId, surfaceTopZ:candidate.at[2] } : null;
   pendingPlacement = { gx:candidate.at[0], gy:candidate.at[1], gz:candidate.at[2], parent, valid };
-  armedOriginalAt = [candidate.at[0], candidate.at[1], candidate.at[2]];
 
   renderGhostItem(candidate).then(() => {
     reapplyEditHighlights();
@@ -537,7 +513,7 @@ export function refreshCatalog(){
 function beginArmedDrag(e){
   const id = armedMoveId;
   const item = armedItemSnapshot();
-  if(!item || !pendingPlacement) return;
+  if(!item) return;
   const def = getItemDef(item);
   const { snapStep, snapOffset, clampMargin } = resolveSnapParams(def);
   const el = roomSvgEl.querySelector('[data-id="'+id+'"]');
@@ -549,90 +525,17 @@ function beginArmedDrag(e){
 
   hidePlacementControls();
 
-  // downPt: where the pointer FIRST went down THIS drag session, in
-  // viewBox coordinates. A plain tap targets this point directly (see
-  // resolveTapClamped in onPointerUp); a drag measures how far the
-  // pointer has traveled FROM this point and applies that same delta to
-  // startGx/startGy below.
-  const downPt = clientToViewBox(e.clientX, e.clientY);
-
   dragging = {
-    id, def, role: def.role,
-    // gz/startGx/startGy anchor to the LIVE PREVIEW (pendingPlacement),
-    // not to ROOM_LAYOUT's item.at — ROOM_LAYOUT still holds the
-    // item's original, pre-arm data for as long as it stays armed (see
-    // the module comment above), so anchoring here to item.at would
-    // make every drag after the first ignore whatever the previous
-    // preview drag/tap had already done, snapping back toward the
-    // original spot instead of continuing from where it visually is.
-    gz: pendingPlacement.gz,
+    id, def, role: def.role, gz: item.at[2],
     snapStep, snapOffset, clampMargin,
-    startGx: pendingPlacement.gx, startGy: pendingPlacement.gy,
-    downPt,
+    startGx: item.at[0], startGy: item.at[1],
     el, childEls,
-    previewGx: pendingPlacement.gx, previewGy: pendingPlacement.gy,
-    validDrop: pendingPlacement.valid, resolvedParent: pendingPlacement.parent,
+    previewGx: item.at[0], previewGy: item.at[1],
+    validDrop: true, resolvedParent: null,
     moved: false, startClientX: e.clientX, startClientY: e.clientY,
     armed: true
   };
   e.target.setPointerCapture?.(e.pointerId);
-}
-
-/* Shared by both movement modes (drag and tap) — takes a function that
-   resolves this frame's target GRID CELL (already snapped/clamped/
-   wall-locked) and applies everything that follows from it: stackable
-   surface-hover detection (re-resolving the target if hovering a
-   different surface changes gz), collision/validity, the item's own
-   on-screen transform (and its children's, for a surface being dragged
-   as a group), the pending-placement record used by confirm/cancel, and
-   the drop indicator.
-
-   The item's transform is driven by this same snapped cell every frame
-   — nothing here tracks the raw pointer position — so what's on screen
-   while dragging IS the candidate placement, and release never needs a
-   separate "now snap it" step. */
-function applyArmedPreview(resolveClampedFn){
-  let clamped = resolveClampedFn(dragging.gz);
-
-  if(dragging.role === 'stackable'){
-    let { valid, parent } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
-    const hoverSurface = findSupportingSurface(clamped.gx, clamped.gy);
-    if(hoverSurface.surfaceTopZ !== dragging.gz){
-      dragging.gz = hoverSurface.surfaceTopZ;
-      clamped = resolveClampedFn(dragging.gz);
-      ({ valid, parent } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy));
-    }
-    dragging.validDrop = valid;
-    dragging.resolvedParent = parent;
-    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
-  } else if(dragging.role === 'surface'){
-    const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
-    dragging.validDrop = valid;
-    // Children are still sitting in ROOM_LAYOUT at their TRUE, original
-    // (pre-arm, uncommitted) position — that data doesn't change until
-    // confirm — so their offset has to be measured from the surface's
-    // own true original position (armedOriginalAt, fixed for the whole
-    // armed session), not from dragging.startGx (which resets to the
-    // current preview at the start of every new drag session — see
-    // beginArmedDrag). Using dragging.startGx here would compound
-    // incorrectly across repeated preview drags.
-    const dx = clamped.gx - armedOriginalAt[0], dy = clamped.gy - armedOriginalAt[1];
-    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
-    dragging.childEls.forEach(({ id: cid, el: cel }) => {
-      const child = findItem(cid);
-      applyTransform(cel, child.at[0]+dx, child.at[1]+dy, child.at[2]);
-    });
-  } else {
-    const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
-    dragging.validDrop = valid;
-    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
-  }
-
-  pendingPlacement = { gx: clamped.gx, gy: clamped.gy, gz: dragging.gz, parent: dragging.resolvedParent, valid: dragging.validDrop };
-  updateDropIndicator();
-
-  dragging.previewGx = clamped.gx;
-  dragging.previewGy = clamped.gy;
 }
 
 function onPointerDown(e){
@@ -666,30 +569,49 @@ function onPointerMove(e){
 
   const pt = clientToViewBox(e.clientX, e.clientY);
 
-  // RELATIVE drag: how far the pointer has moved from where it went
-  // down THIS session (both computed in the same grid space, at
-  // whatever gz applies this frame) is the delta applied to
-  // dragging.startGx/Gy — the item's live preview position at the
-  // moment this drag began (see beginArmedDrag) — not the pointer's
-  // absolute position, and the result is immediately snapped to the
-  // grid. This is what makes an item at (0,0), pressed at (10,0) and
-  // dragged to (10,10), land at (0,10): the delta is (0,+10) either
-  // way, regardless of where the press itself happened to start, and
-  // it's on-grid every frame rather than only once confirmed.
   function resolveClamped(gz){
-    const cur = screenToIsoGrid(pt.x, pt.y, gz);
-    const down = screenToIsoGrid(dragging.downPt.x, dragging.downPt.y, gz);
-    const rawGx = dragging.startGx + (cur.gx - down.gx);
-    const rawGy = dragging.startGy + (cur.gy - down.gy);
+    const { gx, gy } = screenToIsoGrid(pt.x, pt.y, gz);
     const step = dragging.snapStep, offset = dragging.snapOffset, margin = dragging.clampMargin;
     const snapped = {
-      gx: clampSnappedToRoom(snapToGrid(rawGx, step, offset), step, offset, margin, ROOM_W),
-      gy: clampSnappedToRoom(snapToGrid(rawGy, step, offset), step, offset, margin, ROOM_D)
+      gx: clampSnappedToRoom(snapToGrid(gx, step, offset), step, offset, margin, ROOM_W),
+      gy: clampSnappedToRoom(snapToGrid(gy, step, offset), step, offset, margin, ROOM_D)
     };
     return applyWallLock(dragging.def, snapped.gx, snapped.gy);
   }
 
-  applyArmedPreview(resolveClamped);
+  let clamped = resolveClamped(dragging.gz);
+
+  if(dragging.role === 'stackable'){
+    let { valid, parent } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
+    const hoverSurface = findSupportingSurface(clamped.gx, clamped.gy);
+    if(hoverSurface.surfaceTopZ !== dragging.gz){
+      dragging.gz = hoverSurface.surfaceTopZ;
+      clamped = resolveClamped(dragging.gz);
+      ({ valid, parent } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy));
+    }
+    dragging.validDrop = valid;
+    dragging.resolvedParent = parent;
+    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
+  } else if(dragging.role === 'surface'){
+      const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
+      dragging.validDrop = valid;
+      const dx = clamped.gx - dragging.startGx, dy = clamped.gy - dragging.startGy;
+      applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
+      dragging.childEls.forEach(({ id: cid, el: cel }) => {
+        const child = findItem(cid);
+        applyTransform(cel, child.at[0]+dx, child.at[1]+dy, child.at[2]);
+      });
+  } else {
+    const { valid } = computeDropValidity(dragging.id, dragging.def, clamped.gx, clamped.gy);
+    dragging.validDrop = valid;
+    applyTransform(dragging.el, clamped.gx, clamped.gy, dragging.gz);
+  }
+
+  pendingPlacement = { gx: clamped.gx, gy: clamped.gy, gz: dragging.gz, parent: dragging.resolvedParent, valid: dragging.validDrop };
+  updateDropIndicator();
+
+  dragging.previewGx = clamped.gx;
+  dragging.previewGy = clamped.gy;
 }
 
 function onPointerUp(){
@@ -708,29 +630,13 @@ function onPointerUp(){
     return;
   }
 
-  // A plain tap (no movement) while something is armed places it
-  // directly at the tapped spot's grid cell — same validity/indicator/
-  // transform pipeline as a drag (see applyArmedPreview), just fed the
-  // tap location instead of a start->current delta (there's no
-  // "current" distinct from "down" when nothing moved).
-  if(!moved){
-    function resolveTapClamped(gz){
-      const { gx, gy } = screenToIsoGrid(dragging.downPt.x, dragging.downPt.y, gz);
-      const step = dragging.snapStep, offset = dragging.snapOffset, margin = dragging.clampMargin;
-      const snapped = {
-        gx: clampSnappedToRoom(snapToGrid(gx, step, offset), step, offset, margin, ROOM_W),
-        gy: clampSnappedToRoom(snapToGrid(gy, step, offset), step, offset, margin, ROOM_D)
-      };
-      return applyWallLock(dragging.def, snapped.gx, snapped.gy);
-    }
-    applyArmedPreview(resolveTapClamped);
-  }
-
   dragging = null;
-  if(pendingPlacement && !pendingPlacement.valid){
-    showEditStatus("That spot's taken — drag it somewhere clear, then tap the check.");
-  } else {
-    clearEditStatus();
+  if(moved){
+    if(pendingPlacement && !pendingPlacement.valid){
+      showEditStatus("That spot's taken — drag it somewhere clear, then tap the check.");
+    } else {
+      clearEditStatus();
+    }
   }
   showPlacementControls();
 }
@@ -799,6 +705,8 @@ export function initFurniture(){
 
   $('itemPopupRotate')?.addEventListener('click', () => {
     if(!selectedItemId) return;
+    const item = findItem(selectedItemId);
+    if(!item || !getItemDef(item).rotatable) return; // belt-and-suspenders — button is hidden for these anyway
     rotateItem(selectedItemId);
     loadRoomDecorations().then(() => { reapplyEditHighlights(); positionPopup(selectedItemId); });
   });
