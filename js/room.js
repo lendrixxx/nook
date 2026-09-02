@@ -490,6 +490,20 @@ export function decorationAssetPath(item, def){
   return 'assets/room/decorations/'+item.asset+'.svg';
 }
 
+/* Same idea as decorationAssetPath, but for contexts that only have a
+   catalog KEY, not a placed item — the "Add to room" catalog thumbnail
+   (furniture.js) and the unlock-toast icon (unlocks.js). Both used to
+   hardcode plain '<asset>.svg' paths, which meant a rotatable item like
+   the desk needed its own separate, easy-to-forget-and-delete
+   duplicate file (desk.svg) purely to feed these two spots, on top of
+   the real desk-0/90/180/270.svg set. Routing them through this
+   instead means desk-0.svg IS the single source of truth for "what the
+   desk looks like at rest" — nothing else needs a copy of it. */
+export function catalogThumbPath(assetKey){
+  const def = ITEM_CATALOG[assetKey];
+  return 'assets/room/decorations/'+assetKey+(def && def.rotatable ? '-0' : '')+'.svg';
+}
+
 /* Every player starts with a bare room — no default furniture. This is
    also what "reset" now falls back to (see the settings-sheet button in
    index.html): there's no separate "theme default" layout to restore
