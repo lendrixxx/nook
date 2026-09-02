@@ -5,7 +5,7 @@ import {
   ROOM_W, ROOM_D, VB_MIN_X, VB_MIN_Y, resolveSnapParams, getFootprint, applyWallLock,
   currentThemeId, findItem, getChildren, findSupportingSurface, getItemDef,
   isFloorSpotBlocked, updateItemPosition, moveSurfaceGroup, validateLayout,
-  setRoomLayout, persistRoomLayout, loadRoomDecorations, decorationAssetPath,
+  setRoomLayout, persistRoomLayout, loadRoomDecorations, decorationAssetPath, catalogThumbPath,
   buildNewItem, commitNewItem, removeItem, rotateItem, countPlaced,
   ITEM_CATALOG, ITEM_CATEGORIES, getZoom
 } from './room.js';
@@ -430,7 +430,7 @@ const catalogThumbCache = {};
 async function getCatalogThumbHTML(assetKey){
   if(catalogThumbCache[assetKey]) return catalogThumbCache[assetKey];
   try{
-    const svgText = await fetchAsset('assets/room/decorations/'+assetKey+'.svg');
+    const svgText = await fetchAsset(catalogThumbPath(assetKey));
     const vb = svgText.match(/<svg[^>]*\sviewBox="([^"]+)"/);
     const html = '<svg viewBox="'+(vb ? vb[1] : '0 0 64 64')+'">'+stripSvgWrapper(svgText)+'</svg>';
     catalogThumbCache[assetKey] = html;
