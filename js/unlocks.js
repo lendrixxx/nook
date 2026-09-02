@@ -32,7 +32,7 @@
 
 import { getLevelInfo, xpForLevel } from './xp.js';
 import { loadXpTotal, saveXpTotal, clearProgressionStorage } from './storage.js';
-import { setRoomSize } from './room.js';
+import { setRoomSize, catalogThumbPath } from './room.js';
 
 /* ---------------- Catalogs ---------------- */
 
@@ -43,13 +43,13 @@ import { setRoomSize } from './room.js';
 // the existing quest XP economy (~65 XP/day at most), so unlocks land
 // every few days rather than all at once or never.
 export const ITEM_UNLOCKS = [
-  { id:'desk', level:1, label:'Desk', icon:'assets/room/decorations/desk.svg' },
-  { id:'stool', level:1, label:'Stool', icon:'assets/room/decorations/stool.svg' },
-  { id:'plant-pot', level:1, label:'Plant Pot', icon:'assets/room/decorations/plant-pot.svg' },
-  { id:'lamp', level:4, label:'Desk Lamp', icon:'assets/room/decorations/lamp.svg' },
-  { id:'mug', level:4, label:'Mug', icon:'assets/room/decorations/mug.svg' },
-  { id:'book', level:7, label:'Book', icon:'assets/room/decorations/book.svg' },
-  { id:'shelf', level:10, label:'Shelf', icon:'assets/room/decorations/shelf.svg' }
+  { id:'desk', level:1, label:'Desk', icon:catalogThumbPath('desk') },
+  { id:'stool', level:1, label:'Stool', icon:catalogThumbPath('stool') },
+  { id:'plant-pot', level:1, label:'Plant Pot', icon:catalogThumbPath('plant-pot') },
+  { id:'lamp', level:4, label:'Desk Lamp', icon:catalogThumbPath('lamp') },
+  { id:'mug', level:4, label:'Mug', icon:catalogThumbPath('mug') },
+  { id:'book', level:7, label:'Book', icon:catalogThumbPath('book') },
+  { id:'shelf', level:10, label:'Shelf', icon:catalogThumbPath('shelf') }
 ];
 
 // Empty for now — character customization has no unlockable parts yet.
