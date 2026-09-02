@@ -1,14 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="-4 0 54 46">
 
-  <!-- Nook room decoration asset: desk (grid-precise rebuild v2)
-       Authored to exactly match room.js's iso(gx,gy,gz) formula
-       (x=(gx-gy)*30, y=(gx+gy)*15-gz*26). Footprint: 0.8 x 0.8 grid
-       units (square), tabletop height 0.58 grid units.
-       Anchor (grid 0,0,0 — the back floor corner) = SVG point (22,18).
-       Draw order matters: all 4 legs first, then tabletop + thickness
-       (which occlude the legs' inset tops), then the drawer/knob on
-       top of the now-topmost thickness face. -->
+  <!-- Nook room decoration asset: desk, rotation 90
+       Part of a 4-file rotation set — see desk-0.svg's header comment.
+       Legs + tabletop are UNCHANGED from rotation 0: the desk's
+       footprint is a symmetric square, so from this fixed iso camera
+       the silhouette looks identical at every 90° step — only the
+       drawer (the one asymmetric detail) actually moves.
+       The drawer + knob below are mirrored across x=22 (the shared
+       front-corner vertex) onto the front-LEFT thickness face, which
+       is what "turning the desk a quarter turn" actually looks like
+       from this angle. -->
 
 
   <!-- back leg (mostly hidden behind tabletop) -->
@@ -61,16 +63,17 @@
     stroke-linejoin="round"/>
 
 
-  <!-- drawer, set into the front-right thickness face -->
+  <!-- drawer, set into the front-LEFT thickness face (mirror of
+       rotation 0's front-right drawer across x=22) -->
   <path
-    d="M39.3 18.3 L28.7 23.5 L28.7 27.5 L39.3 22.3 Z"
+    d="M4.7 18.3 L15.3 23.5 L15.3 27.5 L4.7 22.3 Z"
     fill="var(--room-wood-hi,#E3B27B)"
     stroke="var(--room-outline,#74553B)"
     stroke-width="2.5"
     stroke-linejoin="round"/>
 
   <circle
-    cx="34.0"
+    cx="10.0"
     cy="21.5"
     r="1"
     fill="var(--room-metal,#74553B)"/>

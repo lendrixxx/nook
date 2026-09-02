@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="-4 0 54 46">
+
+  <!-- Nook room decoration asset: desk, rotation 180
+       Part of a 4-file rotation set — see desk-0.svg's header comment.
+       Legs + tabletop unchanged (symmetric square footprint). At 180°
+       the drawer-bearing edge now faces the back-right side, which
+       this iso camera has never rendered for any desk orientation
+       (the two back thickness faces are hidden behind the tabletop/
+       legs, same as they are at rotation 0) — so no drawer is drawn
+       here. That's the physically correct result, not a missing
+       feature: a desk turned to face away really does hide its
+       drawer from this angle. -->
+
+
+  <!-- back leg (mostly hidden behind tabletop) -->
+  <path
+    d="M20.0 4.5 L24.0 6.5 L24.0 21.6 L20.0 19.6 Z"
+    fill="var(--room-wood-dark,#A96C46)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+  <!-- left leg -->
+  <path
+    d="M1.3 13.9 L5.3 15.9 L5.3 31.0 L1.3 29.0 Z"
+    fill="var(--room-wood,#B9784D)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+  <!-- right leg -->
+  <path
+    d="M38.7 13.9 L42.7 15.9 L42.7 31.0 L38.7 29.0 Z"
+    fill="var(--room-wood,#B9784D)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+  <!-- front leg -->
+  <path
+    d="M20.0 23.3 L24.0 25.3 L24.0 40.4 L20.0 38.4 Z"
+    fill="var(--room-wood,#B9784D)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+
+  <!-- tabletop -->
+  <path
+    d="M22.0 2.9 L46.0 14.9 L22.0 26.9 L-2.0 14.9 Z"
+    fill="var(--room-wood-hi,#D5A06A)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3.5"
+    stroke-linejoin="round"/>
+
+  <!-- tabletop thickness (visible underside of the front two edges) —
+       no drawer set into it at this orientation -->
+  <path
+    d="M-2.0 14.9 L22.0 26.9 L46.0 14.9 L46.0 18.9 L22.0 30.9 L-2.0 18.9 Z"
+    fill="var(--room-wood,#B9784D)"
+    stroke="var(--room-outline,#74553B)"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+</svg>
